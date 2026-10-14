@@ -2,6 +2,11 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.1.1] — 2026-10-14
+
+### Corrigido
+- Barra superior (Mic, Câmera, Guarda-roupa, Gatos, Chat, Tela cheia) agora fica **centralizada** no computador e no modo sentado do cinema; no celular as margens laterais ficam simétricas.
+
 ## [0.1.0] — MVP
 
 ### Adicionado
