@@ -199,6 +199,7 @@ function spFB(g, L, back, fi, o) {
 
   /* ---------- chapéus, óculos, fone ---------- */
   if (H.id === "bone") { R(5, 1 + hy, 10, 4, H.color); R(7, 1 + hy, 3, 1, shade(H.color, 1.35)); R(5, 4 + hy, 10, 1, shade(H.color, .8)); if (!back) R(4, 5 + hy, 12, 1, shade(H.color, .68)); }
+  else if (H.id === "natal") { const c = H.color; R(5, 0 + hy, 10, 4, c); R(6, -1 + hy, 7, 1, c); R(10, -2 + hy, 4, 2, c); R(13, -1 + hy, 3, 3, c); R(15, 1 + hy, 2, 2, "#f4f4f4"); R(4, 3 + hy, 12, 2, "#f4f4f4"); R(5, 3 + hy, 10, 1, "#ffffff"); R(6, 1 + hy, 1, 2, shade(c, 1.3)); }
   else if (H.id === "gorro") { R(5, 0 + hy, 10, 5, H.color); R(5, 4 + hy, 10, 2, shade(H.color, .8)); R(8, -2 + hy, 4, 2, "#f4f4f4"); R(6, 1 + hy, 1, 3, shade(H.color, 1.25)); }
   else if (H.id === "chapeu") { R(6, 0 + hy, 8, 4, H.color); R(6, 3 + hy, 8, 1, shade(H.color, .6)); R(2, 4 + hy, 16, 2, shade(H.color, .82)); R(8, 0 + hy, 3, 1, shade(H.color, 1.3)); }
   if (H.id === "capuz") {
@@ -345,6 +346,7 @@ function spSD(g, L, fi, o) {
     if (hid === "rabo") { R(2, 4 + hy, 3, 2, hc); R(1, 6 + hy, 3, 6, hc); R(2, 11 + hy, 2, 1, hd); }
   }
   if (H.id === "bone") { R(5, 1 + hy, 9, 4, H.color); R(7, 1 + hy, 3, 1, shade(H.color, 1.35)); R(4, 4 + hy, 10, 1, shade(H.color, .8)); R(12, 5 + hy, 5, 1, shade(H.color, .68)); }
+  else if (H.id === "natal") { const c = H.color; R(5, 0 + hy, 9, 4, c); R(6, -1 + hy, 6, 1, c); R(9, -2 + hy, 4, 2, c); R(12, -1 + hy, 3, 3, c); R(14, 1 + hy, 2, 2, "#f4f4f4"); R(4, 3 + hy, 11, 2, "#f4f4f4"); R(5, 3 + hy, 9, 1, "#ffffff"); }
   else if (H.id === "gorro") { R(5, 0 + hy, 9, 5, H.color); R(4, 4 + hy, 10, 2, shade(H.color, .8)); R(7, -2 + hy, 4, 2, "#f4f4f4"); }
   else if (H.id === "chapeu") { R(5, 0 + hy, 8, 4, H.color); R(5, 3 + hy, 8, 1, shade(H.color, .6)); R(1, 4 + hy, 16, 2, shade(H.color, .82)); }
   if (GL.id !== "none") {

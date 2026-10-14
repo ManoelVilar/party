@@ -38,8 +38,10 @@ function frame() {
   camX += (cx - camX) * .12; camY += (cy - camY) * .12;
   camRX = Math.round(camX * K) / K; camRY = Math.round(camY * K) / K; const kx = camRX, ky = camRY;
 
-  ctx = lctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = BG; ctx.fillRect(0, 0, LW, LH);
+  natalT = now;
+  ctx = lctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = NATAL ? NATAL_BG : BG; ctx.fillRect(0, 0, LW, LH);
   ctx.setTransform(K, 0, 0, K, -kx * K, -ky * K);
+  if (NATAL) drawSnowGround(kx, ky, vw, vh);
   drawFloor(kx, ky, vw, vh);
   OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); });
   const mk = Object.keys(messes);
@@ -67,6 +69,7 @@ function frame() {
     }});
   });
   DOORS.forEach(d => list.push({ d: d.x + d.y + 1.02, run: () => drawDoor(d) }));
+  if (NATAL) natalPushDecor(list, vis);
 
   /* gatos */
   for (const id in cats) {
@@ -128,6 +131,7 @@ function frame() {
   list.sort((a, b) => a.d - b.d).forEach(o => o.run());
 
   posterize();                                                       // paleta limitada = visual 8-bit
+  if (NATAL) natalSnow(now);
   mctx.setTransform(1, 0, 0, 1, 0, 0); mctx.imageSmoothingEnabled = false; mctx.drawImage(lo, 0, 0, cv.width, cv.height);
 
   /* rótulos e balões na resolução da tela (texto nítido) */

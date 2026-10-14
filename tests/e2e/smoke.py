@@ -64,6 +64,17 @@ with sync_playwright() as p:
     ok("4+" in pg2.inner_text("#err"), "código curto é recusado")
     ctx.close()
 
+    # 4b) tema de Natal: liga/desliga, persiste e não quebra o desenho
+    ctxn = b.new_context(viewport={"width": 1280, "height": 800}); pn = new_page(ctxn); enter(pn, "Ana", "natal-smoke"); pn.wait_for_timeout(500)
+    ok(pn.evaluate("typeof NATAL") == "boolean", "tema de Natal carregado")
+    pn.evaluate("setNatal(true)"); pn.wait_for_timeout(200)
+    ok(pn.evaluate("NATAL && store.get('nc_natal') === '1' && document.body.classList.contains('natal')"), "tema de Natal liga e persiste")
+    ok(pn.evaluate("(() => { for (let i = 0; i < 5; i++) frame(); return true; })()"), "quadro desenha com o tema ligado")
+    pn.evaluate("setNatal(false)"); pn.wait_for_timeout(200)
+    ok(pn.evaluate("!NATAL && store.get('nc_natal') === '0' && !document.body.classList.contains('natal')"), "tema de Natal desliga e volta ao normal")
+    ok(pn.evaluate("STOCK_OUTFITS.filter(o => o.cat === 'Natal').length") == 4, "4 fantasias de Natal disponíveis")
+    ctxn.close()
+
     # 5) celular: sem rolagem lateral e sem imagem esticada
     for w, h in ((390, 844), (844, 390)):
         ctx = b.new_context(viewport={"width": w, "height": h}, device_scale_factor=2, is_mobile=True, has_touch=True)

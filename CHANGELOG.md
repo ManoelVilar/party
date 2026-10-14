@@ -2,6 +2,17 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.2.0] — 2026-10-14
+
+### Adicionado
+- **Tema de Natal** 🎄: cômodos com cores de festa, plantas viram árvores de Natal, estante vira lareira com meias, guirlandas com luzes piscando, neve no chão do quintal, pinheiros e bonecos de neve, presentes, janelas e portas decoradas e neve caindo.
+- Botão **🎄 Natal** na barra superior para ligar/desligar o tema (escolha salva só neste aparelho; vem ligado até 10/01/2027).
+- Fantasias da categoria **Natal** (Papai Noel, Mamãe Noel, Elfo do Papai Noel, Suéter de Natal) e o gorro de Natal nos acessórios.
+
+### Notas
+- O tema é apenas visual e individual: não muda colisões, móveis nem dados no Firebase, e cada jogador vê o mapa do jeito que escolheu.
+- Custo medido em navegador sem GPU: cerca de +2 a 3 ms por quadro com o tema ligado. Se ficar pesado em aparelhos fracos, basta desligar no botão.
+
 ## [0.1.1] — 2026-10-14
 
 ### Corrigido

@@ -18,6 +18,7 @@ Espaço virtual em **pixel art isométrica** para festas, encontros com amigos e
 | **Gatos** | Sombra e Neblina têm fome, sede, energia, banheiro e bem-estar; ração, areia, carinho, petisco e brincadeira |
 | **Chat** | Chat do espaço com hora, reiniciado a cada sessão |
 | **Código do espaço** | Gerador de código aleatório (`party-lua-trevo-4821`); só quem tem o código entra |
+| **Tema de Natal** | Mapa decorado (árvores, lareira, guirlandas, neve) e fantasias natalinas; botão 🎄 liga/desliga, escolha individual |
 | **Celular** | Layout responsivo, direcional na tela, toque para andar, pinça para zoom |
 
 ## Controles
