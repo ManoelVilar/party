@@ -1,6 +1,6 @@
 {
   "name": "party",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Espa\u00e7o virtual em pixel art (isom\u00e9trico) para festas, encontros e reuni\u00f5es, com voz e v\u00eddeo por proximidade.",
   "private": true,
   "type": "module",

@@ -79,7 +79,7 @@
   body.full #app { display:block; padding:0; max-width:none; margin:0; }
   body.full #stage { position:fixed; inset:0; z-index:1; border:0; box-shadow:none; }
   body.full canvas#cv { width:100%; height:100%; }
-  body.full .top { position:fixed; top:6px; left:140px; z-index:20; padding:4px 8px; width:max-content; max-width:calc(100vw - 200px); }
+  body.full .top { position:fixed; top:6px; left:50%; transform:translateX(-50%); z-index:20; padding:4px 8px; width:max-content; max-width:calc(100vw - 300px); }   /* centralizada (as laterais ficam livres para o nome da sala e o zoom) */
   body.full #roomtag { z-index:19; }
   body.full #btnCatsT, body.full #btnChatT { display:inline-block; }
   body.full #videos { position:fixed; top:56px; left:8px; z-index:20; flex-direction:column; align-items:flex-start; max-height:calc(100vh - 150px); overflow:auto; min-height:0; }
@@ -169,7 +169,7 @@
   body.theater #videos .vt { width:100%; height:auto; aspect-ratio:4/3; }
   body.theater #vhint { display:none; }
   body.theater .top, body.theater #status, body.theater #prompts, body.theater #chatpanel { z-index:70; }
-  body.theater .top { max-width:calc(100vw - 340px); }
+  body.theater .top { left:calc((100vw - 196px) / 2); max-width:calc(100vw - 196px - 300px); }   /* centralizada na área à esquerda da coluna de vídeos */
   .vt.hand { outline:3px solid #ffd166; outline-offset:-3px; }
   .viewer:fullscreen { width:100vw; height:100vh; aspect-ratio:auto; border:0; background:#000; }
   .viewer:fullscreen > .vbar { display:flex; }
@@ -209,7 +209,7 @@
   button { touch-action:manipulation; }
   html.nofs #btnFull, html.nofs #zFull { display:none; }
   @media (max-width:720px), (max-height:520px) {
-    body.full .top { top:calc(6px + env(safe-area-inset-top)); left:calc(74px + env(safe-area-inset-left)); right:calc(54px + env(safe-area-inset-right)); width:auto; max-width:none; flex-wrap:nowrap; overflow-x:auto; gap:6px; padding:4px 6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    body.full .top { top:calc(6px + env(safe-area-inset-top)); left:calc(74px + env(safe-area-inset-left)); right:calc(74px + env(safe-area-inset-right)); transform:none; width:auto; max-width:none; flex-wrap:nowrap; overflow-x:auto; gap:6px; padding:4px 6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
     body.full .top::-webkit-scrollbar { display:none; }
     body.full .top .room, body.full .top .who { display:none; }
     body.full .top button { flex:0 0 auto; white-space:nowrap; min-height:38px; padding:4px 10px; font-size:.88rem; }
@@ -233,7 +233,7 @@
     body.full #roompanel, body.full #roompanel.rpcompact { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
     body.theater #videos { width:104px; padding:6px; gap:6px; top:0; }
     body.theater #videos .vt { width:100%; height:auto; }
-    body.theater .top { right:118px; max-width:none; }
+    body.theater .top { left:calc(74px + env(safe-area-inset-left)); right:118px; max-width:none; }
   }
   @media (orientation:landscape) and (max-height:520px) {
     body.full #actions { left:calc(196px + env(safe-area-inset-left)); bottom:calc(8px + env(safe-area-inset-bottom)); }
