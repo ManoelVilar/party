@@ -27,6 +27,7 @@
 | `02b_sprite.js` | Renderização do personagem em pixel art por camadas, cache de sprites, poses (andar, dormir, nadar) |
 | `03_cats.js` | Gatos: desenho, necessidades, IA (decide/anda/age), cuidados (ração, areia, sujeira), painel dos gatos. Só **um cliente por vez** simula (dono eleito entre as abas visíveis) |
 | `04_house.js` | Planta: cômodos (`ROOMS`), paredes, portas (`DOORS`), móveis, desenho do piso/paredes/janelas |
+| `04b_natal.js` | Tema de Natal (opcional, só visual): paletas, árvores, lareira, guirlandas, neve, presentes; `NATAL`/`setNatal()` e o botão 🎄 |
 | `05_net.js` | Layout (`resizeView`, tela cheia), login e código do espaço, `startGame` (todos os *listeners* do Firebase), movimento e colisão, pathfinding (`bfs`), portas com permissão, guarda-roupa, ações contextuais, chat, ciclo lento (`tick`) |
 | `06_rtc.js` | WebRTC: criação de conexões, sinalização, mídia da câmera/mic, **transmissão** (tela/vídeo/slides), qualidade adaptativa, tiles de vídeo |
 | `07_rooms.js` | Cinema e sala de reuniões: YouTube sincronizado, slides/PDF, painel da sala, mão levantada, chat da reunião, **modo sentado** (teatro) |

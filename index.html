@@ -285,6 +285,7 @@
     <button id="btnWard">Guarda-roupa</button>
     <button id="btnCatsT">Gatos</button>
     <button id="btnChatT">Chat</button>
+    <button id="btnNatal" title="Ligar/desligar o tema de Natal" aria-pressed="false">🎄 Natal</button>
     <button id="btnFull" title="Tela cheia (F)">Tela cheia</button>
   </div>
   <div id="videos"><div id="vhint">Ative mic e câmera e chegue perto de alguém para conversar.</div></div>
@@ -463,7 +464,7 @@ const TOPS = [["camiseta", "Camiseta"], ["camisa", "Camisa"], ["blusa", "Blusa"]
 const OUTERS = [["none", "Nenhum"], ["jaqueta", "Jaqueta"], ["casaco", "Casaco"], ["blazer", "Blazer"], ["colete", "Colete"], ["manto", "Manto"], ["capa", "Capa"]];
 const BOTTOMS = [["calca", "Calça"], ["short", "Short"], ["saia", "Saia"], ["esporte", "Short esportivo"], ["social", "Calça social"], ["malha", "Malha colada"]];
 const SHOES = [["tenis", "Tênis"], ["bota", "Bota"], ["sapato", "Sapato social"], ["chinelo", "Chinelo"], ["descalco", "Descalço"]];
-const HATS = [["none", "Nenhum"], ["bone", "Boné"], ["gorro", "Gorro"], ["chapeu", "Chapéu"], ["capuz", "Capuz"], ["mago", "Chapéu de mago"], ["capacete", "Capacete"], ["elmo", "Elmo"], ["faixa", "Faixa de testa"]];
+const HATS = [["none", "Nenhum"], ["bone", "Boné"], ["gorro", "Gorro"], ["chapeu", "Chapéu"], ["capuz", "Capuz"], ["mago", "Chapéu de mago"], ["capacete", "Capacete"], ["elmo", "Elmo"], ["faixa", "Faixa de testa"], ["natal", "Gorro de Natal"]];
 const GLASSES = [["none", "Nenhum"], ["redondo", "Redondo"], ["quadrado", "Quadrado"], ["sol", "Sol"]];
 const ACCS = [["none", "Nenhum"], ["mochila", "Mochila"], ["bolsa", "Bolsa"], ["cachecol", "Cachecol"], ["fone", "Fone"], ["espada", "Espada nas costas"], ["cajado", "Cajado"]];
 const PRESETS = [
@@ -472,7 +473,7 @@ const PRESETS = [
   ["neutra", "Neutra", { body: "reto", brows: "fino", mouth: "sorriso", hair: "raspado", lashes: false }]
 ];
 /* fantasias prontas (visual original, inspirado em estilos de anime, heróis de esquadrão e RPG de mesa) */
-const FANT_CATS = ["Anime", "Heróis", "RPG", "Ficção"];
+const FANT_CATS = ["Anime", "Heróis", "RPG", "Ficção", "Natal"];
 const STOCK_OUTFITS = [
   { name: "Mestre do quimono", cat: "Anime", items: { top: { id: "quimono", color: "#f2f2f2" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#f2f2f2" }, shoes: { id: "descalco", color: "#d9534f" }, hat: { id: "faixa", color: "#d9534f" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "none", color: "#a8693a" } } },
   { name: "Lutador verde", cat: "Anime", items: { top: { id: "quimono", color: "#4a9a6a" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#3b3b46" }, shoes: { id: "bota", color: "#3b3b46" }, hat: { id: "none", color: "#d9534f" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "none", color: "#a8693a" } } },
@@ -492,7 +493,11 @@ const STOCK_OUTFITS = [
   { name: "Bárbaro", cat: "RPG", items: { top: { id: "regata", color: "#a8693a" }, outer: { id: "colete", color: "#8a5a30" }, bottom: { id: "short", color: "#6b4423" }, shoes: { id: "bota", color: "#6b4423" }, hat: { id: "none", color: "#d9534f" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "espada", color: "#8a8a96" } } },
   { name: "Bardo", cat: "RPG", items: { top: { id: "tunica", color: "#d9534f" }, outer: { id: "colete", color: "#2f4f9a" }, bottom: { id: "calca", color: "#6b8f3a" }, shoes: { id: "bota", color: "#6b4423" }, hat: { id: "chapeu", color: "#6b8f3a" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "bolsa", color: "#a8693a" } } },
   { name: "Piloto estelar", cat: "Ficção", items: { top: { id: "traje", color: "#ff9f6b" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "malha", color: "#ff9f6b" }, shoes: { id: "bota", color: "#3b3b46" }, hat: { id: "capacete", color: "#f2f2f2" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "mochila", color: "#8a8a96" } } },
-  { name: "Soldado do futuro", cat: "Ficção", items: { top: { id: "armadura", color: "#4a5668" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#2c3340" }, shoes: { id: "bota", color: "#2c3340" }, hat: { id: "capacete", color: "#4a5668" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "mochila", color: "#2c3340" } } }
+  { name: "Soldado do futuro", cat: "Ficção", items: { top: { id: "armadura", color: "#4a5668" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#2c3340" }, shoes: { id: "bota", color: "#2c3340" }, hat: { id: "capacete", color: "#4a5668" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "mochila", color: "#2c3340" } } },
+  { name: "Papai Noel", cat: "Natal", items: { top: { id: "camisa", color: "#f2f2f2" }, outer: { id: "casaco", color: "#c9302c" }, bottom: { id: "calca", color: "#c9302c" }, shoes: { id: "bota", color: "#26242d" }, hat: { id: "natal", color: "#c9302c" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "none", color: "#a8693a" } } },
+  { name: "Mamãe Noel", cat: "Natal", items: { top: { id: "vestido", color: "#c9302c" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#f2f2f2" }, shoes: { id: "bota", color: "#26242d" }, hat: { id: "natal", color: "#c9302c" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "cachecol", color: "#f2f2f2" } } },
+  { name: "Elfo do Papai Noel", cat: "Natal", items: { top: { id: "tunica", color: "#3f9a52" }, outer: { id: "colete", color: "#c9302c" }, bottom: { id: "calca", color: "#2f7a45" }, shoes: { id: "bota", color: "#d6b24a" }, hat: { id: "natal", color: "#2f8446" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "none", color: "#a8693a" } } },
+  { name: "Suéter de Natal", cat: "Natal", items: { top: { id: "moletom", color: "#2f7a45" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#3b3b46" }, shoes: { id: "bota", color: "#6b4423" }, hat: { id: "natal", color: "#c9302c" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "cachecol", color: "#c9302c" } } }
 ];
 const DEFAULT_LOOK = {
   body: "reto", skin: SKIN_TONES[1], hair: { id: "curto", color: HAIR_COLORS[0] }, eyes: { color: EYE_COLORS[0], lashes: false },
@@ -860,6 +865,7 @@ function spFB(g, L, back, fi, o) {
 
   /* ---------- chapéus, óculos, fone ---------- */
   if (H.id === "bone") { R(5, 1 + hy, 10, 4, H.color); R(7, 1 + hy, 3, 1, shade(H.color, 1.35)); R(5, 4 + hy, 10, 1, shade(H.color, .8)); if (!back) R(4, 5 + hy, 12, 1, shade(H.color, .68)); }
+  else if (H.id === "natal") { const c = H.color; R(5, 0 + hy, 10, 4, c); R(6, -1 + hy, 7, 1, c); R(10, -2 + hy, 4, 2, c); R(13, -1 + hy, 3, 3, c); R(15, 1 + hy, 2, 2, "#f4f4f4"); R(4, 3 + hy, 12, 2, "#f4f4f4"); R(5, 3 + hy, 10, 1, "#ffffff"); R(6, 1 + hy, 1, 2, shade(c, 1.3)); }
   else if (H.id === "gorro") { R(5, 0 + hy, 10, 5, H.color); R(5, 4 + hy, 10, 2, shade(H.color, .8)); R(8, -2 + hy, 4, 2, "#f4f4f4"); R(6, 1 + hy, 1, 3, shade(H.color, 1.25)); }
   else if (H.id === "chapeu") { R(6, 0 + hy, 8, 4, H.color); R(6, 3 + hy, 8, 1, shade(H.color, .6)); R(2, 4 + hy, 16, 2, shade(H.color, .82)); R(8, 0 + hy, 3, 1, shade(H.color, 1.3)); }
   if (H.id === "capuz") {
@@ -1006,6 +1012,7 @@ function spSD(g, L, fi, o) {
     if (hid === "rabo") { R(2, 4 + hy, 3, 2, hc); R(1, 6 + hy, 3, 6, hc); R(2, 11 + hy, 2, 1, hd); }
   }
   if (H.id === "bone") { R(5, 1 + hy, 9, 4, H.color); R(7, 1 + hy, 3, 1, shade(H.color, 1.35)); R(4, 4 + hy, 10, 1, shade(H.color, .8)); R(12, 5 + hy, 5, 1, shade(H.color, .68)); }
+  else if (H.id === "natal") { const c = H.color; R(5, 0 + hy, 9, 4, c); R(6, -1 + hy, 6, 1, c); R(9, -2 + hy, 4, 2, c); R(12, -1 + hy, 3, 3, c); R(14, 1 + hy, 2, 2, "#f4f4f4"); R(4, 3 + hy, 11, 2, "#f4f4f4"); R(5, 3 + hy, 9, 1, "#ffffff"); }
   else if (H.id === "gorro") { R(5, 0 + hy, 9, 5, H.color); R(4, 4 + hy, 10, 2, shade(H.color, .8)); R(7, -2 + hy, 4, 2, "#f4f4f4"); }
   else if (H.id === "chapeu") { R(5, 0 + hy, 8, 4, H.color); R(5, 3 + hy, 8, 1, shade(H.color, .6)); R(1, 4 + hy, 16, 2, shade(H.color, .82)); }
   if (GL.id !== "none") {
@@ -1642,6 +1649,7 @@ const DEF = {
     box(x, y, .15, .1, .45, .5, 72, 80, "#e8d9b8"); box(x, y, .55, .1, .85, .5, 72, 78, "#d9534f");
   }},
   estante: { solid: true, draw(o) {
+    if (NATAL && o.y === 9 && (o.x === 14 || o.x === 15)) return drawFireplace(o);             // tema de Natal: lareira
     const x = o.x, y = o.y, cols = ["#d9534f", "#5bc0de", "#f0ad4e", "#5cb85c", "#9b59b6", "#e8e8e8", "#e9a23b"];
     box(x, y, .06, .1, .94, .62, 0, 76, "#7a5230"); faceY(x, y, .12, .88, .62, 5, 71, "#4b321d");
     [6, 28, 50].forEach((z, r) => {
@@ -1655,6 +1663,7 @@ const DEF = {
     box(x, y, .4, .45, .6, .6, 16, 19, "#222"); box(x, y, .1, .42, .9, .54, 19, 50, "#12141b"); faceY(x, y, .14, .86, .54, 22, 47, "#3a8fe0"); faceY(x, y, .14, .5, .54, 36, 47, "#7ec0f5");
   }},
   planta: { solid: true, draw(o) {
+    if (NATAL) return drawPlantAsTree(o);                                                      // tema de Natal: árvore
     const x = o.x, y = o.y;
     box(x, y, .3, .3, .7, .7, 0, 14, "#b5653c"); box(x, y, .26, .26, .74, .74, 14, 18, "#c9784a");
     ball(x + .5, y + .5, 34, -9, 12, "#2f8446"); ball(x + .5, y + .5, 32, 9, 11, "#3f9a52"); ball(x + .5, y + .5, 28, 0, 11, "#2c7a40");
@@ -1664,10 +1673,10 @@ const DEF = {
     const x = o.x, y = o.y; glow(x + .5, y + .5, 60, 60, "rgba(255,225,120,.38)");
     box(x, y, .35, .35, .65, .65, 0, 3, "#444"); box(x, y, .47, .47, .53, .53, 3, 56, "#777"); box(x, y, .3, .3, .7, .7, 52, 70, "#f5d36b");
   }},
-  tapete: { solid: false, flat: true, draw(o) { rugDraw(o, "#7b5ea7", "#9b7fc7"); } },
-  tapete2: { solid: false, flat: true, draw(o) { rugDraw(o, "#2f9a86", "#58c2ae"); } },
-  tapete3: { solid: false, flat: true, draw(o) { rugDraw(o, "#6a1f33", "#8a2f45"); } },
-  tapete4: { solid: false, flat: true, draw(o) { rugDraw(o, "#3a5f9a", "#4f7bc0"); } },
+  tapete: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#a8262c", "#cf4a4f") : rugDraw(o, "#7b5ea7", "#9b7fc7"); } },
+  tapete2: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#2f7a45", "#4aa064") : rugDraw(o, "#2f9a86", "#58c2ae"); } },
+  tapete3: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#7a1c24", "#a2303a") : rugDraw(o, "#6a1f33", "#8a2f45"); } },
+  tapete4: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#2f6a52", "#3f8a6a") : rugDraw(o, "#3a5f9a", "#4f7bc0"); } },
   criado: { solid: true, draw(o) {
     const x = o.x, y = o.y; glow(x + .5, y + .5, 30, 30, "rgba(255,225,120,.3)");
     box(x, y, .14, .14, .86, .86, 0, 18, "#8a5a30"); box(x, y, .1, .1, .9, .9, 18, 21, "#b98550"); faceY(x, y, .2, .8, .86, 4, 16, "#9a6a40"); faceY(x, y, .44, .56, .865, 9, 11, "#e8d9b8");
@@ -1817,8 +1826,9 @@ function wslab(x, y, x0, y0, x1, y1, H, topC, cS, cE) {
   poly([P(ax, ay, H), P(bx, ay, H), P(bx, by, H), P(ax, by, H)], topC);               // topo
 }
 function drawWall(w) {
-  const x = w.x, y = w.y, H = w.H, top = w.tall ? "#f1eef7" : "#e4e0ee";
-  const cS = shade(w.cL || "#8d7fa8", .95), cE = shade(w.cR || "#8d7fa8", .78), bS = shade(w.cL || "#8d7fa8", .7), bE = shade(w.cR || "#8d7fa8", .55);
+  const x = w.x, y = w.y, H = w.H, top = NATAL ? (w.tall ? "#f6f9ff" : "#ffffff") : (w.tall ? "#f1eef7" : "#e4e0ee");
+  const oc = NATAL ? "#aebbd2" : "#8d7fa8";                                                  // face de fora das paredes (no Natal: azul-gelo)
+  const cS = shade(w.cL || oc, .95), cE = shade(w.cR || oc, .78), bS = shade(w.cL || oc, .7), bE = shade(w.cR || oc, .55);
   const fr = roomOf(x, y + 1) || roomOf(x + 1, y) || roomOf(x, y - 1) || roomOf(x - 1, y);
   if (fr) poly([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], ROOMBY[fr].floor[(x + y) % 2 ? 0 : 1]);
   const segs = [];
@@ -1850,6 +1860,7 @@ function drawWall(w) {
   if (w.tall && w.cL && y === 0 && [3, 4, 11, 12, 19, 20, 26, 27].includes(x)) windowY(x, y + WT1);
   if (w.tall && w.cL && y === 0 && x === 14) frameY(x, y + WT1);
   if (w.tall && w.cR && x === 0 && [3, 4, 10, 11, 16, 17].includes(y)) windowX(x + WT1, y);
+  if (NATAL) natalWall(w);
 }
 const WZ0 = 44, WZ1 = 82;                                         // janela (altura do parapeito / topo)
 function windowY(x, y) {
@@ -1858,6 +1869,7 @@ function windowY(x, y) {
   poly([P(x + .08, y, WZ1), P(x + .92, y, WZ1), P(x + .92, y, m + 8), P(x + .08, y, m + 8)], "#e6f4ff");
   poly([P(x + .48, y, WZ1), P(x + .52, y, WZ1), P(x + .52, y, WZ0), P(x + .48, y, WZ0)], "#fff");
   poly([P(x + .08, y, m), P(x + .92, y, m), P(x + .92, y, m - 2), P(x + .08, y, m - 2)], "#fff");
+  if (NATAL) natalWindowSnow(P(x + .06, y, WZ0 + 1), P(x + .94, y, WZ0 + 1));
 }
 function windowX(x, y) {
   const m = (WZ0 + WZ1) / 2;
@@ -1865,6 +1877,7 @@ function windowX(x, y) {
   poly([P(x, y + .08, WZ1), P(x, y + .92, WZ1), P(x, y + .92, m + 8), P(x, y + .08, m + 8)], "#d6edfc");
   poly([P(x, y + .48, WZ1), P(x, y + .52, WZ1), P(x, y + .52, WZ0), P(x, y + .48, WZ0)], "#fff");
   poly([P(x, y + .08, m), P(x, y + .92, m), P(x, y + .92, m - 2), P(x, y + .08, m - 2)], "#fff");
+  if (NATAL) natalWindowSnow(P(x, y + .06, WZ0 + 1), P(x, y + .94, WZ0 + 1));
 }
 function frameY(x, y) {
   poly([P(x + .1, y, 80), P(x + .9, y, 80), P(x + .9, y, 50), P(x + .1, y, 50)], "#6b4423");
@@ -1881,6 +1894,7 @@ function drawDoor(d) {
     box(x, y, .1, WT0 + .04, .9, WT1 - .04, 0, DOOR_H - 8, "#8a5a30");
     faceY(x, y, .17, .83, WT1 - .04, 5, 32, "#9a6a40"); faceY(x, y, .17, .83, WT1 - .04, 38, DOOR_H - 13, "#9a6a40");
     ball(x + .78, y + WT1 - .04, 34, 0, 2.2, "#e8d9a8");
+    if (NATAL) natalDoor(d);
   }
 }
 
@@ -1895,6 +1909,213 @@ function drawFloor(kx, ky, vw, vh) {
     if (R.pat === "tile") poly([P(x + .08, y + .08), P(x + .92, y + .08), P(x + .92, y + .92), P(x + .08, y + .92)], null, "rgba(255,246,216,.4)");
     if (isWall(x, y - 1)) poly([P(x, y), P(x + 1, y), P(x + 1, y + .3), P(x, y + .3)], "rgba(26,16,38,.18)");
     if (isWall(x - 1, y)) poly([P(x, y), P(x + .3, y), P(x + .3, y + 1), P(x, y + 1)], "rgba(26,16,38,.18)");
+  }
+}
+/* =========================================================
+   TEMA NATALINO
+   Só visual: nenhuma colisão, posição ou dado do jogo muda. Cada jogador liga/desliga no botão 🎄.
+   Nasce ligado até 10/jan/2027; depois disso nasce desligado (o botão continua disponível).
+   Enfeites usados: plantas viram árvores, estante vira lareira, guirlandas nas paredes altas,
+   coroas nas portas, neve nas janelas, presentes, pinheiros e bonecos de neve no quintal, neve caindo.
+   ========================================================= */
+const NATAL_ATE = new Date(2027, 0, 10).getTime(), NATAL_BG = "#0e1a36";
+let NATAL = (() => { const s = store.get("nc_natal"); return s === "1" ? true : s === "0" ? false : Date.now() < NATAL_ATE; })();
+let natalT = Date.now();                                      // relógio do quadro atual (luzes piscando, fogo)
+
+/* paleta festiva por cômodo (verde, vermelho, dourado e branco) */
+const ROOM_ORIG = {}; ROOMS.forEach(r => { ROOM_ORIG[r.id] = { floor: r.floor, wall: r.wall }; });
+const ROOM_NATAL = {
+  esc1: { floor: ["#d9e3d2", "#cfdac8"], wall: "#3f7a56" }, esc2: { floor: ["#ecd9d6", "#e3cecb"], wall: "#b0414a" },
+  coz:  { floor: ["#fbf6ee", "#efe6d6"], wall: "#d0604f" }, cin:  { floor: ["#4a1e2c", "#431a28"], wall: "#2f5a4a" },
+  sala: { floor: ["#d9b48a", "#cda57a"], wall: "#2f7a52" }, q1:   { floor: ["#f2e2e6", "#eadadf"], wall: "#c05a6a" },
+  q2:   { floor: ["#dbe8ef", "#d0dfe8"], wall: "#5f9bb8" }, ban:  { floor: ["#d2ebf3", "#c5e2ec"], wall: "#7fb9c9" },
+  reu:  { floor: ["#d6dde8", "#ccd5e2"], wall: "#3f6c8f" }
+};
+function refreshWalls() {                                      // as paredes guardam a cor do cômodo no momento da criação
+  WALLTILES.forEach(w => { const rS = roomOf(w.x, w.y + 1), rE = roomOf(w.x + 1, w.y); w.cL = rS ? ROOMBY[rS].wall : null; w.cR = rE ? ROOMBY[rE].wall : null; });
+}
+function applyNatal() {
+  ROOMS.forEach(r => { const c = (NATAL ? ROOM_NATAL : ROOM_ORIG)[r.id]; r.floor = c.floor; r.wall = c.wall; });
+  refreshWalls();
+  const b = $("btnNatal"); if (b) { b.classList.toggle("on", NATAL); b.setAttribute("aria-pressed", NATAL ? "true" : "false"); }
+  document.body.classList.toggle("natal", NATAL);
+}
+function setNatal(v) {
+  NATAL = !!v; store.set("nc_natal", NATAL ? "1" : "0"); applyNatal();
+  if (typeof setStatus === "function") setStatus(NATAL ? "🎄 Tema de Natal ligado. Feliz Natal!" : "Tema normal.", 2500);
+}
+applyNatal();
+if ($("btnNatal")) $("btnNatal").onclick = () => setNatal(!NATAL);
+
+/* ---------- utilitários ---------- */
+const nrand = seed => { let s = (seed * 2654435761) >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; };
+const XLIGHT = ["#ff5a5a", "#ffe066", "#66d9ff", "#8dff8d"], XBALL = ["#ff3b3b", "#ffd166", "#4aa3df", "#f2f2f2", "#d94bd1"];
+
+/* ---------- árvore de Natal (também usada, menor, no lugar das plantas, e no quintal) ---------- */
+function drawXmasTree(gx, gy, sc, seed, snowy) {
+  const c = P(gx + .5, gy + .5, 0), cx = c[0], cy = c[1], g = ctx;
+  g.fillStyle = "rgba(26,16,38,.28)"; g.beginPath(); g.ellipse(cx, cy + 1, 15 * sc, 6 * sc, 0, 0, 7); g.fill();
+  g.fillStyle = "#5a3a22"; g.fillRect(cx - 3 * sc, cy - 10 * sc, 6 * sc, 10 * sc);
+  const tiers = [[24, 30, 8], [19, 28, 28], [14, 26, 46], [9, 24, 62]];            // [meia-largura, altura, z da base]
+  g.lineWidth = 1; g.strokeStyle = LN;
+  tiers.forEach(t => {
+    const hw = t[0] * sc, h = t[1] * sc, z = t[2] * sc, by = cy - z, ry = hw * .38;
+    g.fillStyle = "#1f5c33"; g.beginPath(); g.ellipse(cx, by, hw, ry, 0, 0, 7); g.fill();
+    g.fillStyle = "#38944f"; g.beginPath(); g.moveTo(cx - hw, by); g.lineTo(cx, by - h); g.lineTo(cx, by + ry); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = "#26703b"; g.beginPath(); g.moveTo(cx + hw, by); g.lineTo(cx, by - h); g.lineTo(cx, by + ry); g.closePath(); g.fill(); g.stroke();
+    if (snowy) { g.fillStyle = "#f2f7ff"; g.beginPath(); g.moveTo(cx - hw * .42, by - h * .58); g.lineTo(cx, by - h); g.lineTo(cx + hw * .42, by - h * .58); g.lineTo(cx + hw * .2, by - h * .5); g.lineTo(cx, by - h * .56); g.lineTo(cx - hw * .22, by - h * .5); g.closePath(); g.fill(); }
+  });
+  if (snowy) return;
+  const R = nrand(seed + 7), n = sc < .7 ? 5 : 9;
+  for (let i = 0; i < n; i++) {                                                     // bolinhas
+    const t = tiers[i % 4], u = (.14 + R() * .38) * t[1] * sc, lim = t[0] * sc * (1 - u / (t[1] * sc)) * .78, dx = (R() * 2 - 1) * lim;
+    g.fillStyle = XBALL[Math.floor(R() * XBALL.length)]; g.beginPath(); g.arc(cx + dx, cy - t[2] * sc - u + 2 * sc, 1.9 * sc + .3, 0, 7); g.fill();
+    g.fillStyle = "rgba(255,255,255,.75)"; g.fillRect(cx + dx - .8, cy - t[2] * sc - u + 1.2 * sc, .8, .8);
+  }
+  const m = sc < .7 ? 5 : 9;
+  for (let i = 0; i < m; i++) {                                                     // luzes piscando
+    const t = tiers[i % 4], u = (.25 + R() * .45) * t[1] * sc, lim = t[0] * sc * (1 - u / (t[1] * sc)) * .85, dx = (R() * 2 - 1) * lim;
+    if (((natalT / 380 + i * 1.7 + seed) % 3) < 2) { g.fillStyle = XLIGHT[(i + Math.floor(natalT / 1900)) % 4]; g.fillRect(cx + dx - .8, cy - t[2] * sc - u, 1.7, 1.7); }
+  }
+  const topY = cy - 86 * sc;
+  if (sc >= .7) { glow(gx + .5, gy + .5, 88 * sc, 26, "rgba(255,225,120,.3)"); }
+  g.imageSmoothingEnabled = false; g.drawImage(iconCanvas("star"), cx - 5.5 * sc - 1, topY - 9 * sc - 2, 11 * sc + 2, 11 * sc + 2);
+}
+
+/* ---------- presentes ---------- */
+function drawGift(x, y, dx, dy, w, z, col, rib) {
+  box(x, y, dx, dy, dx + w, dy + w, 0, z, col);
+  flat(x, y, dx + w * .42, dy, dx + w * .58, dy + w, z, rib); flat(x, y, dx, dy + w * .42, dx + w, dy + w * .58, z, rib);
+  faceY(x, y, dx + w * .42, dx + w * .58, dy + w, 0, z, rib); faceX(x, y, dx + w, dy + w * .42, dy + w * .58, 0, z, rib);
+  ball(x + dx + w / 2, y + dy + w / 2, z + 2.4, -1.6, 1.7, rib); ball(x + dx + w / 2, y + dy + w / 2, z + 2.4, 1.6, 1.7, rib);
+}
+const GIFTC = [["#d9372f", "#ffd166"], ["#2f8446", "#f2f2f2"], ["#3a7bd5", "#ffd166"], ["#f2f2f2", "#d9372f"], ["#8a4fc7", "#ffd166"]];
+
+/* ---------- boneco de neve ---------- */
+function drawSnowman(gx, gy) {
+  const c = P(gx + .5, gy + .5, 0), cx = c[0], cy = c[1], g = ctx;
+  g.fillStyle = "rgba(26,16,38,.25)"; g.beginPath(); g.ellipse(cx, cy + 1, 15, 5.5, 0, 0, 7); g.fill();
+  [[10, 12], [26, 9], [39, 7]].forEach(b => {
+    g.fillStyle = "#cfdcee"; g.beginPath(); g.arc(cx, cy - b[0], b[1], 0, 7); g.fill();
+    g.fillStyle = "#f4f8ff"; g.beginPath(); g.arc(cx - b[1] * .2, cy - b[0] - b[1] * .15, b[1] * .78, 0, 7); g.fill();
+    g.strokeStyle = LN; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy - b[0], b[1], 0, 7); g.stroke();
+  });
+  g.strokeStyle = "#5a3a22"; g.lineWidth = 1.6; g.beginPath(); g.moveTo(cx - 9, cy - 27); g.lineTo(cx - 20, cy - 34); g.moveTo(cx + 9, cy - 27); g.lineTo(cx + 20, cy - 32); g.stroke();
+  g.fillStyle = "#26242d"; g.fillRect(cx - 3, cy - 42, 1.6, 1.6); g.fillRect(cx + 2, cy - 42, 1.6, 1.6);
+  g.fillStyle = "#ff8a2a"; g.beginPath(); g.moveTo(cx - 1, cy - 39); g.lineTo(cx + 7, cy - 38); g.lineTo(cx - 1, cy - 37); g.closePath(); g.fill();
+  g.fillStyle = "#d9372f"; g.fillRect(cx - 8, cy - 33, 16, 3); g.fillRect(cx + 3, cy - 31, 3.4, 7);
+  g.fillStyle = "#26242d"; g.fillRect(cx - 4, cy - 56, 8, 8); g.fillRect(cx - 8, cy - 48.5, 16, 2.4); g.fillStyle = "#d9372f"; g.fillRect(cx - 4, cy - 50, 8, 1.6);
+  g.fillStyle = "#26242d"; [20, 27].forEach(z => g.fillRect(cx - .8, cy - z, 1.6, 1.6));
+}
+
+/* ---------- lareira (no lugar da estante em (14,9)-(15,9)) ---------- */
+function drawFireplace(o) {
+  const x = o.x, y = o.y, left = o.x === 14, now = natalT, S = "#a39a90", SD = "rgba(40,30,30,.22)";
+  box(x, y, 0, .05, 1, .95, 0, 46, S);
+  [14, 26, 38].forEach(z => faceY(x, y, 0, 1, .95, z, z + 1, SD));
+  const u0 = left ? .42 : 0, u1 = left ? 1 : .58;
+  faceY(x, y, u0, u1, .955, 4, 31, "#1c1216");
+  box(x, y, u0 + (left ? 0.12 : 0.02), .55, u1 - (left ? 0.02 : 0.12), .9, 4, 9, "#5a3a22");
+  const fl = left ? [.56, .74, .92] : [.08, .26, .44];
+  fl.forEach((u, k) => {
+    const hgt = 12 + 7 * Math.sin(now / 110 + k * 2.1 + (left ? 0 : 1.3)), b = P(x + u, y + .94, 9), w = 4.6;
+    tri(ctx, b[0] - w, b[1], b[0] + w, b[1], b[0] + Math.sin(now / 140 + k) * 1.6, b[1] - hgt, "#ff7a1a");
+    tri(ctx, b[0] - w * .6, b[1], b[0] + w * .6, b[1], b[0] + Math.sin(now / 130 + k) * 1.2, b[1] - hgt * .7, "#ffd23f");
+    tri(ctx, b[0] - w * .28, b[1], b[0] + w * .28, b[1], b[0], b[1] - hgt * .4, "#fff3b0");
+  });
+  box(x, y, -.01, 0, 1.01, 1.05, 46, 52, "#d8cfc4");                       // prateleira
+  const cols = ["#d9372f", "#2f8446", "#f2f2f2"];
+  (left ? [.3, .72] : [.22, .64]).forEach((u, k) => {                         // meias penduradas
+    const c1 = cols[(k + (left ? 0 : 1)) % 3];
+    faceY(x, y, u - .07, u + .07, 1.06, 33, 46, c1); faceY(x, y, u - .07, u + .12, 1.06, 30, 35, c1); faceY(x, y, u - .09, u + .09, 1.06, 43, 47, "#f4f4f4");
+  });
+  for (let i = 0; i < 6; i++) ball(x + .08 + i * .17, y + 1.02, 51.5 + (i % 2) * .8, 0, 1.9, i % 2 ? "#2f8446" : "#3f9a52");   // guirlanda
+  [.2, .52, .84].forEach((u, k) => ball(x + u, y + 1.02, 53, 0, 1.4, XBALL[(k + (left ? 0 : 2)) % 3]));
+  if (left) glow(x + 1, y + .9, 20, 80, "rgba(255,150,60,.32)");
+}
+
+/* ---------- planta vira árvore ---------- */
+function drawPlantAsTree(o) {
+  const x = o.x, y = o.y;
+  box(x, y, .3, .3, .7, .7, 0, 12, "#b3282d"); box(x, y, .26, .26, .74, .74, 12, 16, "#d9372f");
+  drawXmasTree(x, y, .66, o.x * 7 + o.y * 13, false);
+}
+
+/* ---------- guirlandas nas paredes altas, coroas nas portas, neve nas janelas ---------- */
+function festoon(pts, key) {
+  const g = ctx; g.lineCap = "round";
+  g.strokeStyle = "#1f5c33"; g.lineWidth = 3.6; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke();
+  g.strokeStyle = "#38944f"; g.lineWidth = 2.2; g.stroke();
+  pts.forEach((p, i) => {
+    if (i % 2 === 1) { g.fillStyle = "#d9372f"; g.fillRect(p[0] - 1, p[1] + 1, 2, 2); }
+    if (i > 0 && i < pts.length - 1 && ((natalT / 420 + i * 1.3 + key) % 3) < 2) { g.fillStyle = XLIGHT[(i + key) % 4]; g.fillRect(p[0] - .8, p[1] + 2.4, 1.8, 1.8); }
+  });
+  g.lineCap = "butt";
+}
+function natalWall(w) {
+  if (!w.tall) return;
+  const x = w.x, y = w.y, N = 6;
+  if (y === 0 && w.cL) {
+    const pts = []; for (let i = 0; i <= N; i++) pts.push(P(x + i / N, y + WT1 + .02, 90 - 7 * Math.sin(Math.PI * i / N))); festoon(pts, x);
+    const b = P(x, y + WT1 + .02, 90); ctx.fillStyle = "#d9372f"; ctx.fillRect(b[0] - 2.5, b[1] - 1, 5, 4); ctx.fillStyle = "#ffd166"; ctx.fillRect(b[0] - .6, b[1], 1.2, 2);
+  } else if (x === 0 && w.cR) {
+    const pts = []; for (let i = 0; i <= N; i++) pts.push(P(x + WT1 + .02, y + i / N, 90 - 7 * Math.sin(Math.PI * i / N))); festoon(pts, y + 5);
+  }
+}
+function natalWindowSnow(a, b, z) {                                                // parapeito nevado + alguns flocos no vidro
+  poly([a, b, [b[0], b[1] + 2.6], [a[0], a[1] + 2.6]], "#f4f8ff");
+  ctx.fillStyle = "#ffffff"; [.2, .55, .8].forEach((t, i) => ctx.fillRect(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - 10 - i * 6, 1.4, 1.4));
+}
+function natalDoor(d) {
+  const x = d.x, y = d.y, c = P(x + .5, y + WT1 - .03, 46), g = ctx;
+  g.strokeStyle = "#1f5c33"; g.lineWidth = 4.4; g.beginPath(); g.arc(c[0], c[1], 7, 0, 7); g.stroke();
+  g.strokeStyle = "#38944f"; g.lineWidth = 2.6; g.beginPath(); g.arc(c[0], c[1], 7, 0, 7); g.stroke();
+  g.fillStyle = "#d9372f"; [[-5, -2], [4, -5], [5, 3], [-3, 5]].forEach(q => g.fillRect(c[0] + q[0] - 1, c[1] + q[1] - 1, 2.2, 2.2));
+  g.fillStyle = "#d9372f"; g.fillRect(c[0] - 4, c[1] + 6, 8, 3); g.fillRect(c[0] - 6, c[1] + 8, 3, 4); g.fillRect(c[0] + 3, c[1] + 8, 3, 4); g.fillStyle = "#ffd166"; g.fillRect(c[0] - 1, c[1] + 6.4, 2, 2.2);
+}
+
+/* ---------- quintal: chão de neve, pinheiros, bonecos de neve, presentes ---------- */
+function drawSnowGround(kx, ky, vw, vh) {
+  const m = 6; poly([P(-m, -m), P(COLS + m, -m), P(COLS + m, ROWS + m), P(-m, ROWS + m)], "#c9d8ec");
+  for (let gy = -m; gy < ROWS + m; gy++) for (let gx = -m; gx < COLS + m; gx++) {
+    const h = ((gx * 73856093) ^ (gy * 19349663)) >>> 0; if (h % 3) continue;
+    const p = P(gx + (h % 10) / 10, gy + ((h >> 4) % 10) / 10); if (p[0] < kx - 4 || p[0] > kx + vw + 4 || p[1] < ky - 4 || p[1] > ky + vh + 4) continue;
+    ctx.fillStyle = h % 2 ? "#f4f9ff" : "#a9bedb"; ctx.fillRect(p[0], p[1], 1.6, 1);
+  }
+}
+const NATAL_YARD = [];
+(function () {
+  const addTree = (gx, gy, sc, s) => NATAL_YARD.push({ gx, gy, d: gx + gy + 1, draw: () => drawXmasTree(gx, gy, sc, s, true) });
+  [2, 7, 12, 17, 22, 27, 32, 37, 42].forEach((x, i) => addTree(x, -1.7, .95 + (i % 3) * .15, i));
+  [3, 8, 13, 17].forEach((y, i) => addTree(-1.7, y, 1 + (i % 2) * .15, 20 + i));
+  [3, 10, 17, 24, 31, 38, 44].forEach((x, i) => addTree(x, 20.3, .8 + (i % 3) * .15, 40 + i));
+  [2, 7, 12, 16].forEach((y, i) => addTree(45.3, y, 1 + (i % 2) * .1, 60 + i));
+  [[6, 20.5], [27, 20.5], [-1.5, 10], [45.5, 9]].forEach(p => NATAL_YARD.push({ gx: p[0], gy: p[1], d: p[0] + p[1] + 1.1, draw: () => drawSnowman(p[0], p[1]) }));
+})();
+/* presentes (não bloqueiam ninguém e não entram no mapa do jogo): ao lado de cada planta */
+const NATAL_GIFTS = [];
+(function () {
+  let n = 0;
+  OBJS.filter(o => o.t === "planta").forEach(o => {
+    [[1, 0], [0, 1], [-1, 0], [0, -1]].filter(d => { const gx = o.x + d[0], gy = o.y + d[1]; return roomOf(gx, gy) && !ITEM[gx + "_" + gy] && !DOORAT[gx + "_" + gy]; }).slice(0, 2).forEach((d, k) => {
+      const c = GIFTC[(n++) % GIFTC.length], s = k ? .26 : .34;
+      NATAL_GIFTS.push({ gx: o.x + d[0], gy: o.y + d[1], d: o.x + d[0] + o.y + d[1] + 1.0, draw: () => drawGift(o.x + d[0], o.y + d[1], k ? .55 : .12, k ? .1 : .5, s, k ? 9 : 12, c[0], c[1]) });
+    });
+  });
+})();
+function natalPushDecor(list, vis) {
+  NATAL_YARD.forEach(o => { if (vis(o.gx, o.gy, 100)) list.push({ d: o.d, run: o.draw }); });
+  NATAL_GIFTS.forEach(o => { if (vis(o.gx, o.gy, 20)) list.push({ d: o.d, run: o.draw }); });
+}
+
+/* ---------- neve caindo (por cima do mundo, na resolução de arte) ---------- */
+function natalSnow(now) {
+  const g = lctx, n = Math.min(90, Math.round(LW * LH / 2200));
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  for (let i = 0; i < n; i++) {
+    const sp = 7 + (i % 5) * 3.4, sz = i % 7 === 0 ? 2 : 1;
+    const x = ((i * 97.31 + Math.sin(now / 1700 + i) * 6 + now * .004 * (i % 3)) % LW + LW) % LW, y = (i * 53.7 + now / 1000 * sp) % LH;
+    g.fillStyle = i % 4 ? "rgba(255,255,255,.9)" : "rgba(220,235,255,.75)"; g.fillRect(Math.round(x), Math.round(y), sz, sz);
   }
 }
 /* =========================================================
@@ -2974,8 +3195,10 @@ function frame() {
   camX += (cx - camX) * .12; camY += (cy - camY) * .12;
   camRX = Math.round(camX * K) / K; camRY = Math.round(camY * K) / K; const kx = camRX, ky = camRY;
 
-  ctx = lctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = BG; ctx.fillRect(0, 0, LW, LH);
+  natalT = now;
+  ctx = lctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = NATAL ? NATAL_BG : BG; ctx.fillRect(0, 0, LW, LH);
   ctx.setTransform(K, 0, 0, K, -kx * K, -ky * K);
+  if (NATAL) drawSnowGround(kx, ky, vw, vh);
   drawFloor(kx, ky, vw, vh);
   OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); });
   const mk = Object.keys(messes);
@@ -3003,6 +3226,7 @@ function frame() {
     }});
   });
   DOORS.forEach(d => list.push({ d: d.x + d.y + 1.02, run: () => drawDoor(d) }));
+  if (NATAL) natalPushDecor(list, vis);
 
   /* gatos */
   for (const id in cats) {
@@ -3064,6 +3288,7 @@ function frame() {
   list.sort((a, b) => a.d - b.d).forEach(o => o.run());
 
   posterize();                                                       // paleta limitada = visual 8-bit
+  if (NATAL) natalSnow(now);
   mctx.setTransform(1, 0, 0, 1, 0, 0); mctx.imageSmoothingEnabled = false; mctx.drawImage(lo, 0, 0, cv.width, cv.height);
 
   /* rótulos e balões na resolução da tela (texto nítido) */

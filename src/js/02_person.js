@@ -15,7 +15,7 @@ const TOPS = [["camiseta", "Camiseta"], ["camisa", "Camisa"], ["blusa", "Blusa"]
 const OUTERS = [["none", "Nenhum"], ["jaqueta", "Jaqueta"], ["casaco", "Casaco"], ["blazer", "Blazer"], ["colete", "Colete"], ["manto", "Manto"], ["capa", "Capa"]];
 const BOTTOMS = [["calca", "Calça"], ["short", "Short"], ["saia", "Saia"], ["esporte", "Short esportivo"], ["social", "Calça social"], ["malha", "Malha colada"]];
 const SHOES = [["tenis", "Tênis"], ["bota", "Bota"], ["sapato", "Sapato social"], ["chinelo", "Chinelo"], ["descalco", "Descalço"]];
-const HATS = [["none", "Nenhum"], ["bone", "Boné"], ["gorro", "Gorro"], ["chapeu", "Chapéu"], ["capuz", "Capuz"], ["mago", "Chapéu de mago"], ["capacete", "Capacete"], ["elmo", "Elmo"], ["faixa", "Faixa de testa"]];
+const HATS = [["none", "Nenhum"], ["bone", "Boné"], ["gorro", "Gorro"], ["chapeu", "Chapéu"], ["capuz", "Capuz"], ["mago", "Chapéu de mago"], ["capacete", "Capacete"], ["elmo", "Elmo"], ["faixa", "Faixa de testa"], ["natal", "Gorro de Natal"]];
 const GLASSES = [["none", "Nenhum"], ["redondo", "Redondo"], ["quadrado", "Quadrado"], ["sol", "Sol"]];
 const ACCS = [["none", "Nenhum"], ["mochila", "Mochila"], ["bolsa", "Bolsa"], ["cachecol", "Cachecol"], ["fone", "Fone"], ["espada", "Espada nas costas"], ["cajado", "Cajado"]];
 const PRESETS = [
@@ -24,7 +24,7 @@ const PRESETS = [
   ["neutra", "Neutra", { body: "reto", brows: "fino", mouth: "sorriso", hair: "raspado", lashes: false }]
 ];
 /* fantasias prontas (visual original, inspirado em estilos de anime, heróis de esquadrão e RPG de mesa) */
-const FANT_CATS = ["Anime", "Heróis", "RPG", "Ficção"];
+const FANT_CATS = ["Anime", "Heróis", "RPG", "Ficção", "Natal"];
 const STOCK_OUTFITS = [
   { name: "Mestre do quimono", cat: "Anime", items: { top: { id: "quimono", color: "#f2f2f2" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#f2f2f2" }, shoes: { id: "descalco", color: "#d9534f" }, hat: { id: "faixa", color: "#d9534f" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "none", color: "#a8693a" } } },
   { name: "Lutador verde", cat: "Anime", items: { top: { id: "quimono", color: "#4a9a6a" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#3b3b46" }, shoes: { id: "bota", color: "#3b3b46" }, hat: { id: "none", color: "#d9534f" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "none", color: "#a8693a" } } },
@@ -44,7 +44,11 @@ const STOCK_OUTFITS = [
   { name: "Bárbaro", cat: "RPG", items: { top: { id: "regata", color: "#a8693a" }, outer: { id: "colete", color: "#8a5a30" }, bottom: { id: "short", color: "#6b4423" }, shoes: { id: "bota", color: "#6b4423" }, hat: { id: "none", color: "#d9534f" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "espada", color: "#8a8a96" } } },
   { name: "Bardo", cat: "RPG", items: { top: { id: "tunica", color: "#d9534f" }, outer: { id: "colete", color: "#2f4f9a" }, bottom: { id: "calca", color: "#6b8f3a" }, shoes: { id: "bota", color: "#6b4423" }, hat: { id: "chapeu", color: "#6b8f3a" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "bolsa", color: "#a8693a" } } },
   { name: "Piloto estelar", cat: "Ficção", items: { top: { id: "traje", color: "#ff9f6b" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "malha", color: "#ff9f6b" }, shoes: { id: "bota", color: "#3b3b46" }, hat: { id: "capacete", color: "#f2f2f2" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "mochila", color: "#8a8a96" } } },
-  { name: "Soldado do futuro", cat: "Ficção", items: { top: { id: "armadura", color: "#4a5668" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#2c3340" }, shoes: { id: "bota", color: "#2c3340" }, hat: { id: "capacete", color: "#4a5668" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "mochila", color: "#2c3340" } } }
+  { name: "Soldado do futuro", cat: "Ficção", items: { top: { id: "armadura", color: "#4a5668" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#2c3340" }, shoes: { id: "bota", color: "#2c3340" }, hat: { id: "capacete", color: "#4a5668" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "mochila", color: "#2c3340" } } },
+  { name: "Papai Noel", cat: "Natal", items: { top: { id: "camisa", color: "#f2f2f2" }, outer: { id: "casaco", color: "#c9302c" }, bottom: { id: "calca", color: "#c9302c" }, shoes: { id: "bota", color: "#26242d" }, hat: { id: "natal", color: "#c9302c" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "none", color: "#a8693a" } } },
+  { name: "Mamãe Noel", cat: "Natal", items: { top: { id: "vestido", color: "#c9302c" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#f2f2f2" }, shoes: { id: "bota", color: "#26242d" }, hat: { id: "natal", color: "#c9302c" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "cachecol", color: "#f2f2f2" } } },
+  { name: "Elfo do Papai Noel", cat: "Natal", items: { top: { id: "tunica", color: "#3f9a52" }, outer: { id: "colete", color: "#c9302c" }, bottom: { id: "calca", color: "#2f7a45" }, shoes: { id: "bota", color: "#d6b24a" }, hat: { id: "natal", color: "#2f8446" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "none", color: "#a8693a" } } },
+  { name: "Suéter de Natal", cat: "Natal", items: { top: { id: "moletom", color: "#2f7a45" }, outer: { id: "none", color: "#8a8a96" }, bottom: { id: "calca", color: "#3b3b46" }, shoes: { id: "bota", color: "#6b4423" }, hat: { id: "natal", color: "#c9302c" }, glasses: { id: "none", color: "#2b1b3a" }, acc: { id: "cachecol", color: "#c9302c" } } }
 ];
 const DEFAULT_LOOK = {
   body: "reto", skin: SKIN_TONES[1], hair: { id: "curto", color: HAIR_COLORS[0] }, eyes: { color: EYE_COLORS[0], lashes: false },

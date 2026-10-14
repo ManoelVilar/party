@@ -105,6 +105,7 @@ const DEF = {
     box(x, y, .15, .1, .45, .5, 72, 80, "#e8d9b8"); box(x, y, .55, .1, .85, .5, 72, 78, "#d9534f");
   }},
   estante: { solid: true, draw(o) {
+    if (NATAL && o.y === 9 && (o.x === 14 || o.x === 15)) return drawFireplace(o);             // tema de Natal: lareira
     const x = o.x, y = o.y, cols = ["#d9534f", "#5bc0de", "#f0ad4e", "#5cb85c", "#9b59b6", "#e8e8e8", "#e9a23b"];
     box(x, y, .06, .1, .94, .62, 0, 76, "#7a5230"); faceY(x, y, .12, .88, .62, 5, 71, "#4b321d");
     [6, 28, 50].forEach((z, r) => {
@@ -118,6 +119,7 @@ const DEF = {
     box(x, y, .4, .45, .6, .6, 16, 19, "#222"); box(x, y, .1, .42, .9, .54, 19, 50, "#12141b"); faceY(x, y, .14, .86, .54, 22, 47, "#3a8fe0"); faceY(x, y, .14, .5, .54, 36, 47, "#7ec0f5");
   }},
   planta: { solid: true, draw(o) {
+    if (NATAL) return drawPlantAsTree(o);                                                      // tema de Natal: árvore
     const x = o.x, y = o.y;
     box(x, y, .3, .3, .7, .7, 0, 14, "#b5653c"); box(x, y, .26, .26, .74, .74, 14, 18, "#c9784a");
     ball(x + .5, y + .5, 34, -9, 12, "#2f8446"); ball(x + .5, y + .5, 32, 9, 11, "#3f9a52"); ball(x + .5, y + .5, 28, 0, 11, "#2c7a40");
@@ -127,10 +129,10 @@ const DEF = {
     const x = o.x, y = o.y; glow(x + .5, y + .5, 60, 60, "rgba(255,225,120,.38)");
     box(x, y, .35, .35, .65, .65, 0, 3, "#444"); box(x, y, .47, .47, .53, .53, 3, 56, "#777"); box(x, y, .3, .3, .7, .7, 52, 70, "#f5d36b");
   }},
-  tapete: { solid: false, flat: true, draw(o) { rugDraw(o, "#7b5ea7", "#9b7fc7"); } },
-  tapete2: { solid: false, flat: true, draw(o) { rugDraw(o, "#2f9a86", "#58c2ae"); } },
-  tapete3: { solid: false, flat: true, draw(o) { rugDraw(o, "#6a1f33", "#8a2f45"); } },
-  tapete4: { solid: false, flat: true, draw(o) { rugDraw(o, "#3a5f9a", "#4f7bc0"); } },
+  tapete: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#a8262c", "#cf4a4f") : rugDraw(o, "#7b5ea7", "#9b7fc7"); } },
+  tapete2: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#2f7a45", "#4aa064") : rugDraw(o, "#2f9a86", "#58c2ae"); } },
+  tapete3: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#7a1c24", "#a2303a") : rugDraw(o, "#6a1f33", "#8a2f45"); } },
+  tapete4: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#2f6a52", "#3f8a6a") : rugDraw(o, "#3a5f9a", "#4f7bc0"); } },
   criado: { solid: true, draw(o) {
     const x = o.x, y = o.y; glow(x + .5, y + .5, 30, 30, "rgba(255,225,120,.3)");
     box(x, y, .14, .14, .86, .86, 0, 18, "#8a5a30"); box(x, y, .1, .1, .9, .9, 18, 21, "#b98550"); faceY(x, y, .2, .8, .86, 4, 16, "#9a6a40"); faceY(x, y, .44, .56, .865, 9, 11, "#e8d9b8");
@@ -280,8 +282,9 @@ function wslab(x, y, x0, y0, x1, y1, H, topC, cS, cE) {
   poly([P(ax, ay, H), P(bx, ay, H), P(bx, by, H), P(ax, by, H)], topC);               // topo
 }
 function drawWall(w) {
-  const x = w.x, y = w.y, H = w.H, top = w.tall ? "#f1eef7" : "#e4e0ee";
-  const cS = shade(w.cL || "#8d7fa8", .95), cE = shade(w.cR || "#8d7fa8", .78), bS = shade(w.cL || "#8d7fa8", .7), bE = shade(w.cR || "#8d7fa8", .55);
+  const x = w.x, y = w.y, H = w.H, top = NATAL ? (w.tall ? "#f6f9ff" : "#ffffff") : (w.tall ? "#f1eef7" : "#e4e0ee");
+  const oc = NATAL ? "#aebbd2" : "#8d7fa8";                                                  // face de fora das paredes (no Natal: azul-gelo)
+  const cS = shade(w.cL || oc, .95), cE = shade(w.cR || oc, .78), bS = shade(w.cL || oc, .7), bE = shade(w.cR || oc, .55);
   const fr = roomOf(x, y + 1) || roomOf(x + 1, y) || roomOf(x, y - 1) || roomOf(x - 1, y);
   if (fr) poly([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], ROOMBY[fr].floor[(x + y) % 2 ? 0 : 1]);
   const segs = [];
@@ -313,6 +316,7 @@ function drawWall(w) {
   if (w.tall && w.cL && y === 0 && [3, 4, 11, 12, 19, 20, 26, 27].includes(x)) windowY(x, y + WT1);
   if (w.tall && w.cL && y === 0 && x === 14) frameY(x, y + WT1);
   if (w.tall && w.cR && x === 0 && [3, 4, 10, 11, 16, 17].includes(y)) windowX(x + WT1, y);
+  if (NATAL) natalWall(w);
 }
 const WZ0 = 44, WZ1 = 82;                                         // janela (altura do parapeito / topo)
 function windowY(x, y) {
@@ -321,6 +325,7 @@ function windowY(x, y) {
   poly([P(x + .08, y, WZ1), P(x + .92, y, WZ1), P(x + .92, y, m + 8), P(x + .08, y, m + 8)], "#e6f4ff");
   poly([P(x + .48, y, WZ1), P(x + .52, y, WZ1), P(x + .52, y, WZ0), P(x + .48, y, WZ0)], "#fff");
   poly([P(x + .08, y, m), P(x + .92, y, m), P(x + .92, y, m - 2), P(x + .08, y, m - 2)], "#fff");
+  if (NATAL) natalWindowSnow(P(x + .06, y, WZ0 + 1), P(x + .94, y, WZ0 + 1));
 }
 function windowX(x, y) {
   const m = (WZ0 + WZ1) / 2;
@@ -328,6 +333,7 @@ function windowX(x, y) {
   poly([P(x, y + .08, WZ1), P(x, y + .92, WZ1), P(x, y + .92, m + 8), P(x, y + .08, m + 8)], "#d6edfc");
   poly([P(x, y + .48, WZ1), P(x, y + .52, WZ1), P(x, y + .52, WZ0), P(x, y + .48, WZ0)], "#fff");
   poly([P(x, y + .08, m), P(x, y + .92, m), P(x, y + .92, m - 2), P(x, y + .08, m - 2)], "#fff");
+  if (NATAL) natalWindowSnow(P(x, y + .06, WZ0 + 1), P(x, y + .94, WZ0 + 1));
 }
 function frameY(x, y) {
   poly([P(x + .1, y, 80), P(x + .9, y, 80), P(x + .9, y, 50), P(x + .1, y, 50)], "#6b4423");
@@ -344,6 +350,7 @@ function drawDoor(d) {
     box(x, y, .1, WT0 + .04, .9, WT1 - .04, 0, DOOR_H - 8, "#8a5a30");
     faceY(x, y, .17, .83, WT1 - .04, 5, 32, "#9a6a40"); faceY(x, y, .17, .83, WT1 - .04, 38, DOOR_H - 13, "#9a6a40");
     ball(x + .78, y + WT1 - .04, 34, 0, 2.2, "#e8d9a8");
+    if (NATAL) natalDoor(d);
   }
 }
 
