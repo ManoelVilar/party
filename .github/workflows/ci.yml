@@ -1,0 +1,27 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: index.html está em dia com src/
+        run: npm run check
+      - name: Lint (ESLint)
+        run: npm run lint
+      - name: Regras do Firebase
+        run: |
+          node tests/rules/rules.test.cjs
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Testes de navegador + replay do cliente contra as regras
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+          bash tests/run.sh

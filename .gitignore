@@ -1,0 +1,10 @@
+node_modules/
+.cache/
+tests/e2e/*.png
+tests/e2e/*.webm
+tests/rules/ops.json
+.DS_Store
+*.log
+.env
+.firebase/
+.netlify/
