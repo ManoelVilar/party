@@ -98,7 +98,7 @@ Os testes de navegador **não usam o Firebase real nem rede real**: `tests/e2e/f
 ## Créditos e licenças de terceiros
 
 - Código do Party: [MIT](LICENSE).
-- Fonte **Pixelify Sans** (Google Fonts) — SIL Open Font License 1.1.
+- Fonte **Pixelify Sans** — SIL Open Font License 1.1, embutida no `index.html` (cópia em `src/fonts/`, licença em `src/fonts/OFL-PixelifySans.txt`); o jogo não consulta o Google Fonts.
 - **Firebase JS SDK** (Google) — Apache 2.0, carregado do CDN oficial.
 - **PDF.js** (Mozilla) — Apache 2.0, carregado do cdnjs apenas quando alguém usa slides em PDF.
 - **YouTube IFrame Player API** — sujeito aos [Termos do YouTube](https://www.youtube.com/t/terms); o vídeo é incorporado com o player oficial.

@@ -12,7 +12,9 @@ import { tmpdir } from "node:os";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = p => readFileSync(join(root, p), "utf8");
 const jsParts = readdirSync(join(root, "src/js")).filter(f => f.endsWith(".js")).sort();
-const html = read("src/head.html") + jsParts.map(f => read("src/js/" + f)).join("") + read("src/tail.html");
+// a fonte Pixelify Sans (latin, variável, OFL) vai embutida em base64 no lugar do marcador FONT:arquivo (nenhum pedido ao Google Fonts)
+const withFonts = t => t.replace(/\/\*FONT:([\w.-]+)\*\//g, (_, f) => "data:font/woff2;base64," + readFileSync(join(root, "src/fonts/" + f)).toString("base64"));
+const html = withFonts(read("src/head.html")) + jsParts.map(f => read("src/js/" + f)).join("") + read("src/tail.html");
 
 /* confere a sintaxe do script embutido antes de gravar */
 const m = html.lastIndexOf("<script>"), n = html.lastIndexOf("</script>");

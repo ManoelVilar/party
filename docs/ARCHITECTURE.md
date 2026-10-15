@@ -34,6 +34,7 @@
 | `07b_games.js` | Jogos nas TVs da sala: lugares do sofá (`TV_SETS`), painel do jogo, jogo da velha, placar da dupla e ranking da sala; imagem do tabuleiro na TV (`tvGameView`) |
 | `07c_sinuca.js` | Sinuca (bola 8): física determinística (`snTick`/`snRun`), regras (`snEvalShot`), codificação das bolas (`snEnc`/`snDec`), mesa em canvas, mira, força e animação das jogadas |
 | `08_loop.js` | Laço de renderização (`frame`/`loop`), desenho de sujeira, câmera, zoom |
+| `09_privacy.js` | Janela da política de privacidade (texto em `src/head.html`) |
 
 ## Dados no Firebase
 

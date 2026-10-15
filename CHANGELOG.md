@@ -2,6 +2,20 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.4.1] — 2026-10-15
+
+### Adicionado
+- **Política de privacidade** dentro do jogo (janela aberta pelo link no login ou por `#privacidade`), explicando o que fica no aparelho, o que vai para o Firebase, como funcionam voz e vídeo (WebRTC, STUN/TURN) e como pedir exclusão dos dados.
+- Aviso curto no login: sem cookies de rastreamento; nome, personagem e preferências ficam só no aparelho.
+
+### Alterado
+- A fonte **Pixelify Sans** (SIL OFL 1.1) agora vai **embutida** no `index.html` (`src/fonts/`, inserida pelo `scripts/build.mjs`). O jogo não consulta mais o Google Fonts, e o `netlify.toml` deixou de liberar `fonts.googleapis.com` e `fonts.gstatic.com` no CSP.
+- Ligaduras de letras desativadas (o "fi" da fonte ficava confuso).
+
+### Notas
+- O texto da política é um modelo de boa-fé e **não substitui revisão jurídica**. Confira se o canal de contato (issues do GitHub) serve para você; se preferir um e-mail, edite `src/head.html`.
+- O YouTube está desativado (`YT_ENABLED = false`). Se for reativado, atualize a política: o player do YouTube pode definir cookies.
+
 ## [0.4.0] — 2026-10-14
 
 ### Adicionado
