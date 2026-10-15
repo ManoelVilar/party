@@ -52,7 +52,7 @@ Os testes automatizados usam Firebase e mídia simulados. **Este checklist cobre
 ## Segurança e privacidade
 - [ ] No console do Firebase, tentar ler `rooms/` sem login → negado (Simulador de regras)
 - [ ] Abrir o site, F12 → sem avisos `[Report Only]` de CSP em uso normal; então ativar a CSP
-- [ ] Política de privacidade publicada e linkada
+- [x] Política de privacidade publicada e linkada (janela no login; revise o texto e o canal de contato)
 
 ## Resultado
 Data: ____ · Responsável: ____ · Bloqueadores encontrados: ____

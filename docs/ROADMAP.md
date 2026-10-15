@@ -5,7 +5,7 @@ Itens pós-MVP, por prioridade sugerida. Nada aqui está comprometido com data.
 ## Próxima versão (0.2)
 - **Credenciais TURN temporárias** por sessão (função serverless) em vez de fixas no código
 - **Moderação básica:** anfitrião da sala, expulsar/silenciar, trancar a sala
-- **Política de privacidade e termos** dentro do jogo (link no login)
+- **Termos de uso** (a política de privacidade já está no jogo desde a 0.4.1)
 - **SRI** nas bibliotecas de CDN e CSP em modo de bloqueio
 - **Limpeza automática** de salas antigas (Cloud Function agendada)
 - Teste em iOS/Firefox e correções de compatibilidade

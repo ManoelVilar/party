@@ -5,14 +5,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Party</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Pixelify Sans (SIL OFL 1.1, veja src/fonts/OFL-PixelifySans.txt), embutida: o navegador não consulta o Google Fonts */
+  @font-face { font-family:"Pixelify Sans"; font-style:normal; font-weight:400 700; font-display:swap;
+    src:url(/*FONT:pixelify-sans-latin.woff2*/) format("woff2");
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
   :root { --bg:#1a1026; --panel:#3d2b5a; --panel2:#4b366e; --hi:#6a4f95; --lo:#2a1b40; --ink:#fff6d8; --muted:#b9a8d6;
           --accent:#ffd166; --good:#5ad1b4; --bad:#ff6b6b; --line:#120a1c; }
   * { box-sizing:border-box; }
-  html, body { margin:0; min-height:100%; background:var(--bg); color:var(--ink); font-family:"Pixelify Sans", ui-monospace, monospace; font-size:16px; }
+  html, body { margin:0; min-height:100%; background:var(--bg); color:var(--ink); font-family:"Pixelify Sans", ui-monospace, monospace; font-size:16px; font-variant-ligatures:none; font-feature-settings:"liga" 0, "clig" 0; }
   body { padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
          background-image: linear-gradient(45deg,#20142f 25%,transparent 25%,transparent 75%,#20142f 75%), linear-gradient(45deg,#20142f 25%,transparent 25%,transparent 75%,#20142f 75%);
          background-size:16px 16px; background-position:0 0,8px 8px; }
@@ -273,6 +274,14 @@
   .gp-table { display:grid; grid-template-columns:1fr 28px 28px 28px; gap:2px 6px; font-size:.82rem; }
   .gp-th { color:var(--accent); text-align:center; } .gp-th:first-child { text-align:left; } .gp-n { text-align:center; } .gp-nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .gp-table .me { color:#ffd166; }
 
+  /* política de privacidade */
+  .privback { position:fixed; inset:0; background:rgba(18,10,28,.85); display:grid; place-items:center; z-index:60; padding:10px; }
+  .privbox { width:min(720px,100%); max-height:92vh; max-height:92dvh; overflow:auto; display:grid; gap:10px; line-height:1.45; }
+  .privbox h2 { margin:0; color:var(--accent); font-size:1.2rem; } .privbox h3 { margin:6px 0 0; color:var(--accent); font-size:1rem; }
+  .privbox p, .privbox ul { margin:0; } .privbox ul { padding-left:20px; display:grid; gap:4px; }
+  .privbox a, .privnote a { color:var(--good); }
+  .privnote { font-size:.82rem; text-align:center; }
+
   #modal { position:fixed; inset:0; background:rgba(18,10,28,.8); display:grid; place-items:center; z-index:50; padding:10px; }
   .mbox { width:min(980px,100%); max-height:94vh; overflow:auto; display:grid; gap:10px; }
   .mhead { display:flex; align-items:center; gap:8px; } .mhead b { color:var(--accent); font-size:1.15rem; }
@@ -301,6 +310,7 @@
     </div>
     <button class="gold" id="btnEnter">ENTRAR NA PARTY</button>
     <div id="err"></div>
+    <p class="muted privnote">Sem cookies de rastreamento: seu nome, personagem e preferências ficam salvos só neste aparelho para o jogo funcionar. Câmera e microfone só ligam se você permitir. <a href="#privacidade" id="lnkPriv">Política de privacidade</a></p>
   </div>
 </section>
 
@@ -342,6 +352,53 @@
     </form>
   </div>
 </section>
+
+<div id="privModal" class="privback" role="dialog" aria-modal="true" aria-labelledby="privTitle" hidden>
+  <div class="privbox panel">
+    <h2 id="privTitle">Política de privacidade</h2>
+    <p class="muted">Atualizada em 15/10/2026. O Party é um projeto aberto, feito para jogar e conversar com amigos. Aqui está, sem juridiquês, o que acontece com os seus dados.</p>
+
+    <h3>O que fica no seu aparelho</h3>
+    <ul>
+      <li>Nome, código da sala, personagem, roupas salvas, zoom e a escolha do tema de Natal, no armazenamento local do navegador (<code>localStorage</code>).</li>
+      <li>Um identificador anônimo criado pelo Firebase (login anônimo), no armazenamento do navegador. Não pedimos e-mail, telefone nem senha.</li>
+      <li>O jogo <b>não define cookies</b> e não usa publicidade nem estatísticas de acesso. Para apagar tudo, limpe os dados do site no navegador.</li>
+    </ul>
+
+    <h3>O que vai para o servidor</h3>
+    <ul>
+      <li>Dentro do código da sala, no Firebase Realtime Database (Google): nome, aparência, posição no mapa, se o microfone e a câmera estão ligados, o que você diz, mensagens do chat (nome, cor, texto e hora), partidas e placar dos jogos, estado dos gatos e do cinema.</li>
+      <li>Quem tem o código da sala vê esses dados. Por isso, não compartilhe o código com quem você não quer na sala.</li>
+      <li>Sua presença some quando você sai, mas mensagens, placar e outros registros da sala <b>ficam gravados</b>. Ainda não existe limpeza automática; a pessoa responsável pelo projeto pode apagar uma sala quando você pedir.</li>
+    </ul>
+
+    <h3>Voz, vídeo e tela</h3>
+    <ul>
+      <li>Câmera, microfone e compartilhamento de tela só ligam se você permitir no navegador. A imagem e o som vão <b>direto entre os participantes</b> (WebRTC); o Party não grava nem guarda isso.</li>
+      <li>Para conectar, o jogo usa servidores de apoio: STUN do Google e, quando a conexão direta falha, um servidor público de retransmissão (Open Relay, da Metered). Eles veem seu endereço IP e podem retransmitir a conversa, que segue criptografada. Os outros participantes também podem ver o seu IP.</li>
+    </ul>
+
+    <h3>Serviços de terceiros que recebem seu IP</h3>
+    <ul>
+      <li>Google (scripts e banco do Firebase) e quem hospeda o site (Netlify ou GitHub), que mantêm registros de acesso.</li>
+      <li>Cloudflare (cdnjs), apenas quando alguém usa slides em PDF.</li>
+      <li>A fonte do jogo está embutida no site: não consultamos o Google Fonts.</li>
+    </ul>
+
+    <h3>Para que usamos</h3>
+    <p>Só para o jogo funcionar. Não vendemos dados, não fazemos perfis e não enviamos nada para publicidade.</p>
+
+    <h3>Seus direitos</h3>
+    <p>Você pode pedir acesso, correção ou exclusão dos seus dados (LGPD, art. 18). Abra uma conversa em <a href="https://github.com/ManoelVilar/party/issues" target="_blank" rel="noopener noreferrer">github.com/ManoelVilar/party/issues</a> informando o <b>código da sala</b> e o <b>nome</b> que você usou, porque não há conta para localizar você de outro jeito. Não coloque senhas nem dados pessoais sensíveis nesse pedido.</p>
+
+    <h3>Crianças</h3>
+    <p>O Party não foi feito para crianças. Menores de idade devem usá-lo com a supervisão de um responsável.</p>
+
+    <h3>Mudanças</h3>
+    <p>Se o jogo passar a tratar dados de outro jeito, esta página será atualizada e a data acima muda.</p>
+    <div class="mfoot"><button type="button" id="privClose" class="primary">Fechar</button></div>
+  </div>
+</div>
 
 <div id="modal" hidden>
   <div class="mbox panel">

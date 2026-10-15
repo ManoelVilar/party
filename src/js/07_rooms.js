@@ -2,7 +2,7 @@
    CINEMA E SALA DE REUNIÕES (painel, YouTube sincronizado, apresentações, chat)
    ========================================================= */
 let cinema = {}, rpBuilt = false, rpRoom = null, viewPref = null;
-const YT_ENABLED = false;                                    // YouTube desativado por enquanto (código mantido para reativar depois)
+const YT_ENABLED = false;                                    // YouTube desativado por enquanto (código mantido para reativar depois). Ao reativar, atualize a política de privacidade em src/head.html: o player do YouTube pode definir cookies
 let yt = null, ytReady = false, ytId = null, ytLoading = false, ytStuck = 0, ytAutoMuted = false;
 const meetMsgs = [];
 
