@@ -115,5 +115,20 @@ check("não soma duas vitórias de uma vez", me(A, withScore).write(R + "/scores
 check("campo desconhecido no placar é recusado", me(A).write(R + "/scores/ana", { ...score, vip: true }), false);
 check("qualquer logado lê o placar", me(B, withScore).read(R + "/scores"), true);
 
+/* sinuca */
+const RACK = "250250" + "700250".repeat(15);
+const sinuca = { kind: "sinuca", st: "play", p0: "ana", p1: "beto", n0: "Ana", n1: "Beto", t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: NOW, end: 0, upd: NOW, rev: 0, bl: RACK, bp: RACK, gr: -1, vx: 0, vy: 0, sh: 0, bih: 0, msg: "Ana quebra!" };
+check("inicia sinuca", me(A).write(R + "/games/tv1", sinuca), true);
+check("sinuca com posições inválidas é recusada", me(A).write(R + "/games/tv1", { ...sinuca, bl: "x".repeat(96) }), false);
+check("sinuca com bolas encaçapadas ('pppppp') é aceita", me(A).write(R + "/games/tv1", { ...sinuca, bl: "250250" + "pppppp".repeat(15) }), true);
+check("sinuca sem as posições das bolas é recusada", me(A).write(R + "/games/tv1", { kind: "sinuca", st: "play", p0: "ana", p1: "beto", n0: "Ana", n1: "Beto", t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: NOW, upd: NOW, rev: 0 }), false);
+check("grupo inválido é recusado", me(A).write(R + "/games/tv1", { ...sinuca, gr: 2 }), false);
+check("velocidade absurda é recusada", me(A).write(R + "/games/tv1", { ...sinuca, vx: 99999 }), false);
+check("mensagem da sinuca longa demais é recusada", me(A).write(R + "/games/tv1", { ...sinuca, msg: "x".repeat(101) }), false);
+const sPlaying = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { games: { tv1: sinuca } } } }, NOW);
+check("jogador grava a tacada (posições, vez e grupo)", me(B, sPlaying).update(R + "/games/tv1", { bp: RACK, bl: "250250" + "pppppp".repeat(3) + "700250".repeat(12), vx: 300, vy: -40, sh: 1, t: 1, gr: 0, bih: 1, msg: "Beto encaçapou 3", rev: 1, upd: NOW }), true);
+check("terceiro não grava tacada em partida ativa", me({ uid: "caio" }, sPlaying).update(R + "/games/tv1", { bl: RACK, sh: 1, t: 1 }), false);
+check("kind desconhecido é recusado", me(A).write(R + "/games/tv1", { ...sinuca, kind: "xadrez" }), false);
+
 console.log(`\n${passed} passaram, ${failed} falharam.`);
 process.exit(failed ? 1 : 0);

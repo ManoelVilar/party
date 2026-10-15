@@ -2,6 +2,20 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.4.0] — 2026-10-14
+
+### Adicionado
+- **Sinuca (bola 8)** nas TVs da sala, para dois jogadores sentados no sofá. Ao sentar, quem joga escolhe entre **Jogo da velha** e **Sinuca**.
+- Mesa no painel, com mira (toque ou mouse), barra de **força**, linha de mira até a primeira bola e animação da jogada para todos que estão no sofá.
+- Regras da bola 8: mesa aberta até a primeira bola encaçapada, depois lisas (1–7) ou listradas (9–15); a vez continua enquanto você encaçapa bola do seu grupo; **falta** (branca encaçapada, nenhuma bola tocada ou bola errada primeiro) dá **bola na mão** ao adversário; a bola 8 só vence depois de limpar o seu grupo, e antes disso (ou com falta) faz perder.
+- As TVs da sala mostram a mesa com as bolas no mapa durante a partida.
+- O **placar da dupla** (continua nas revanches) e o **ranking da sala** valem para os dois jogos.
+
+### Notas
+- A física é determinística (só soma, multiplicação, divisão e raiz quadrada), então todos veem a mesma jogada. Quem taca grava o resultado; um cliente adulterado poderia forjar o próprio resultado. Como o jogo é entre amigos, isso é aceito e documentado.
+- Em celular deitado, o painel da mesa pode precisar de rolagem para chegar aos controles de força e ao botão "Tacar".
+- Para esta versão é preciso **publicar de novo as regras** do Firebase (`database.rules.json`).
+
 ## [0.3.0] — 2026-10-14
 
 ### Adicionado

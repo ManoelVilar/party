@@ -31,7 +31,7 @@
             },
             "csid":   { ".validate": "newData.isString() && newData.val().length <= 64" },
             "bsid":   { ".validate": "newData.isString() && newData.val().length <= 64" },
-            "blabel": { ".validate": "newData.isString() && newData.val().length <= 60" },
+            "blabel": { ".validate": "newData.isString() && newData.val().length <= 100" },
             "say":    { ".validate": "newData.isString() && newData.val().length <= 120" },
             "sayTs":  { ".validate": "newData.isNumber()" },
             "hand": {
@@ -161,9 +161,9 @@
         "games": {
           ".read": "auth != null",
           "$tv": {
-            ".validate": "$tv.matches(/^tv[0-2]$/) && newData.hasChildren(['kind', 'st', 'p0', 'p1', 'n0', 'n1', 'b', 't', 'w', 's0', 's1', 'dr', 'gid', 'upd', 'rev'])",
+            ".validate": "$tv.matches(/^tv[0-2]$/) && newData.hasChildren(['kind', 'st', 'p0', 'p1', 'n0', 'n1', 't', 'w', 's0', 's1', 'dr', 'gid', 'upd', 'rev']) && (newData.child('kind').val() === 'velha' ? newData.child('b').exists() : newData.hasChildren(['bl', 'bp', 'gr', 'vx', 'vy', 'sh', 'bih']))",
             ".write": "auth != null && (!data.exists() || data.child('st').val() === 'over' || data.child('p0').val() === auth.uid || data.child('p1').val() === auth.uid || now > data.child('upd').val() + 120000) && (!newData.exists() || newData.child('p0').val() === auth.uid || newData.child('p1').val() === auth.uid)",
-            "kind": { ".validate": "newData.isString() && newData.val() === 'velha'" },
+            "kind": { ".validate": "newData.isString() && newData.val().matches(/^(velha|sinuca)$/)" },
             "st":   { ".validate": "newData.isString() && newData.val().matches(/^(play|over)$/)" },
             "p0":   { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 64" },
             "p1":   { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 64 && newData.val() !== newData.parent().child('p0').val()" },
@@ -178,7 +178,15 @@
             "gid":  { ".validate": "newData.isNumber()" },
             "end":  { ".validate": "newData.isNumber()" },
             "upd":  { ".validate": "newData.isNumber()" },
-            "rev":  { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 20" },
+            "rev":  { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999" },
+            "bl":   { ".validate": "newData.isString() && newData.val().matches(/^([0-9]{6}|p{6}){16}$/)" },
+            "bp":   { ".validate": "newData.isString() && newData.val().matches(/^([0-9]{6}|p{6}){16}$/)" },
+            "gr":   { ".validate": "newData.isNumber() && newData.val() >= -1 && newData.val() <= 1" },
+            "vx":   { ".validate": "newData.isNumber() && newData.val() >= -9999 && newData.val() <= 9999" },
+            "vy":   { ".validate": "newData.isNumber() && newData.val() >= -9999 && newData.val() <= 9999" },
+            "sh":   { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999" },
+            "bih":  { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1" },
+            "msg":  { ".validate": "newData.isString() && newData.val().length <= 60" },
             "$other": { ".validate": false }
           }
         },

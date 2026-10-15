@@ -28,19 +28,26 @@ const nameOf = id => cleanName((players[id] && players[id].name) || "?");
 
 /* ---------- dados vindos do Firebase (sempre saneados) ---------- */
 function cleanGame(v) {
-  if (!v || typeof v !== "object" || v.kind !== "velha") return null;
+  if (!v || typeof v !== "object" || (v.kind !== "velha" && v.kind !== "sinuca")) return null;
   const num = (x, lo, hi, d) => typeof x === "number" && x >= lo && x <= hi ? x : d;
-  return {
-    kind: "velha", st: v.st === "over" ? "over" : "play", p0: String(v.p0 || "").slice(0, 64), p1: String(v.p1 || "").slice(0, 64),
-    n0: cleanName(v.n0), n1: cleanName(v.n1), b: /^[-XO]{9}$/.test(v.b) ? v.b : "---------", t: v.t === 1 ? 1 : 0,
+  const g = {
+    kind: v.kind, st: v.st === "over" ? "over" : "play", p0: String(v.p0 || "").slice(0, 64), p1: String(v.p1 || "").slice(0, 64),
+    n0: cleanName(v.n0), n1: cleanName(v.n1), t: v.t === 1 ? 1 : 0,
     w: num(v.w, -1, 2, -1), s0: num(v.s0, 0, 999, 0), s1: num(v.s1, 0, 999, 0), dr: num(v.dr, 0, 999, 0),
-    gid: num(v.gid, 0, 9e15, 0), end: num(v.end, 0, 9e15, 0), upd: num(v.upd, 0, 9e15, 0), rev: num(v.rev, 0, 20, 0)
+    gid: num(v.gid, 0, 9e15, 0), end: num(v.end, 0, 9e15, 0), upd: num(v.upd, 0, 9e15, 0), rev: num(v.rev, 0, 999, 0)
   };
+  if (v.kind === "velha") g.b = /^[-XO]{9}$/.test(v.b) ? v.b : "---------";
+  else {
+    g.bl = SN_RE.test(v.bl) ? v.bl : snRackStr(); g.bp = SN_RE.test(v.bp) ? v.bp : g.bl;
+    g.gr = num(v.gr, -1, 1, -1); g.vx = num(v.vx, -9999, 9999, 0); g.vy = num(v.vy, -9999, 9999, 0); g.sh = num(v.sh, 0, 9999, 0);
+    g.bih = v.bih === 1 ? 1 : 0; g.msg = typeof v.msg === "string" ? v.msg.slice(0, 100) : "";
+  }
+  return g;
 }
 function initGames() {
   roomRef.child("games").on("value", s => {
     const v = s.val() || {}; gamesData = {};
-    TV_SETS.forEach(t => { const g = cleanGame(v[t.id]); if (g) gamesData[t.id] = g; });
+    TV_SETS.forEach(t => { const g = cleanGame(v[t.id]); if (g) { gamesData[t.id] = g; snWatch(g); } });
     scoreFinished(); renderGamePanel(true);
   });
   roomRef.child("scores").on("value", s => {
@@ -64,17 +71,19 @@ function velhaResult(b) {
 }
 const velhaLine = b => VELHA_LINES.find(L => b[L[0]] !== "-" && b[L[0]] === b[L[1]] && b[L[0]] === b[L[2]]) || null;
 
-function startVelha(set, swap) {
+function startGameKind(set, kind, swap) {
   const a = sitterAt(set.seats[0][0], set.seats[0][1]), b = sitterAt(set.seats[1][0], set.seats[1][1]);
   if (!a || !b || (uid !== a && uid !== b)) return;
-  const old = gamesData[set.id], same = old && ((old.p0 === a && old.p1 === b) || (old.p0 === b && old.p1 === a));
+  const old = gamesData[set.id], same = old && old.kind === kind && ((old.p0 === a && old.p1 === b) || (old.p0 === b && old.p1 === a));
   let p0 = a, p1 = b; if (swap) { p0 = b; p1 = a; }
-  const g = { kind: "velha", st: "play", p0, p1, n0: nameOf(p0), n1: nameOf(p1), b: "---------", t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: gNow(), end: 0, upd: gNow(), rev: 0 };
+  const g = { kind, st: "play", p0, p1, n0: nameOf(p0), n1: nameOf(p1), t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: gNow(), end: 0, upd: gNow(), rev: 0 };
+  if (kind === "velha") g.b = "---------";
+  else { g.bl = snRackStr(); g.bp = g.bl; g.gr = -1; g.vx = 0; g.vy = 0; g.sh = 0; g.bih = 0; g.msg = (swap ? g.n0 : g.n0) + " quebra!"; }
   if (swap && same && old) { g.s0 = old.p0 === p0 ? old.s0 : old.s1; g.s1 = old.p0 === p0 ? old.s1 : old.s0; g.dr = old.dr; }   // revanche: o placar da dupla continua
   gWrite(roomRef.child("games/" + set.id).set(g));
 }
 function velhaMove(set, i) {
-  const g = gamesData[set.id]; if (!g || g.st !== "play" || g.b[i] !== "-") return;
+  const g = gamesData[set.id]; if (!g || g.kind !== "velha" || g.st !== "play" || g.b[i] !== "-") return;
   if ((g.t === 0 ? g.p0 : g.p1) !== uid) return;
   const b = g.b.slice(0, i) + (g.t === 0 ? "X" : "O") + g.b.slice(i + 1), r = velhaResult(b);
   const upd = { b, t: 1 - g.t, rev: g.rev + 1, upd: gNow() };
@@ -84,7 +93,7 @@ function velhaMove(set, i) {
   }
   gWrite(roomRef.child("games/" + set.id).update(upd));
 }
-function velhaEnd(set, winner) {
+function gameEnd(set, winner) {
   const g = gamesData[set.id]; if (!g || g.st !== "play" || (uid !== g.p0 && uid !== g.p1)) return;
   const upd = { st: "over", end: gNow(), upd: gNow(), w: winner };
   if (winner === 0) upd.s0 = g.s0 + 1; else upd.s1 = g.s1 + 1;
@@ -121,21 +130,53 @@ function tvGameView(o) {
 
 /* ---------- painel ---------- */
 function gpEl(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+function gpHead(box, set, title) {
+  const head = gpEl("div", "gp-head"); head.appendChild(gpEl("b", "", title));
+  const hide = gpEl("button", "", "Esconder"); hide.type = "button"; hide.onclick = () => { gpHidden = set.id; renderGamePanel(true); }; head.appendChild(hide);
+  box.appendChild(head);
+}
+/* botões: desistir / ficar com a vitória (durante a partida); revanche e escolha do jogo (quando não há partida) */
+function gpActions(box, set, g, mineIdx, a, b) {
+  const playing = g && g.st === "play", over = g && g.st === "over", acts = gpEl("div", "gp-acts");
+  const seated2 = id => !!id && set.seats.slice(0, 2).some(t => sitterAt(t[0], t[1]) === id), duo = a && b && (uid === a || uid === b);
+  const mk = (txt, cls, fn) => { const x = gpEl("button", cls, txt); x.type = "button"; x.onclick = fn; acts.appendChild(x); };
+  if (playing && mineIdx >= 0) {
+    const other = mineIdx === 0 ? g.p1 : g.p0;
+    if (!seated2(other)) mk("🏳️ Adversário saiu: ficar com a vitória", "primary", () => gameEnd(set, mineIdx));
+    mk("Desistir", "no", () => gameEnd(set, 1 - mineIdx));
+  } else if (duo) {
+    const rematch = over && mineIdx >= 0;
+    if (rematch) mk("🔁 Revanche", "primary", () => startGameKind(set, g.kind, true));
+    mk(rematch ? "Novo: ⭕ Jogo da velha" : "⭕ Jogo da velha", rematch ? "" : "primary", () => startGameKind(set, "velha", false));
+    mk(rematch ? "Novo: 🎱 Sinuca" : "🎱 Sinuca", rematch ? "" : "primary", () => startGameKind(set, "sinuca", false));
+  }
+  if (acts.childNodes.length) box.appendChild(acts);
+}
+function gpRank(box) {
+  const rk = rankList(), sb = gpEl("div", "gp-rank"); sb.appendChild(gpEl("b", "", "🏆 Placar da sala"));
+  if (!rk.length) sb.appendChild(gpEl("div", "muted gp-small", "Ninguém pontuou ainda. A primeira vitória entra aqui!"));
+  else {
+    const tb = gpEl("div", "gp-table"); ["Jogador", "V", "E", "D"].forEach(h => tb.appendChild(gpEl("span", "gp-th", h)));
+    rk.forEach((r, i) => { const me2 = r.id === uid; [(i + 1) + ". " + r.n + (me2 ? " (você)" : ""), r.w, r.d, r.l].forEach((v, k) => tb.appendChild(gpEl("span", (k ? "gp-n" : "gp-nm") + (me2 ? " me" : ""), String(v)))); });
+    sb.appendChild(tb);
+  }
+  box.appendChild(sb);
+}
 function renderGamePanel(force) {
   const box = $("gamepanel"); if (!box) return;
   const my = meRef ? mySeat() : null;
-  if (!my) { gpHidden = null; if (!box.hidden) { box.hidden = true; gpSig = ""; } return; }
-  if (gpHidden === my.set.id) { if (!box.hidden) box.hidden = true; return; }
+  if (!my) { gpHidden = null; snActive = null; if (!box.hidden) { box.hidden = true; box.classList.remove("gp-wide"); gpSig = ""; } return; }
+  if (gpHidden === my.set.id) { snActive = null; if (!box.hidden) box.hidden = true; return; }
   const set = my.set, g = gamesData[set.id], a = sitterAt(set.seats[0][0], set.seats[0][1]), b = sitterAt(set.seats[1][0], set.seats[1][1]);
-  const sig = JSON.stringify([set.id, my.idx, a, b, g, rankList(), a && nameOf(a), b && nameOf(b)]);
-  if (!force && sig === gpSig && !box.hidden) return; gpSig = sig; box.hidden = false; box.textContent = "";
-
-  const head = gpEl("div", "gp-head"); head.appendChild(gpEl("b", "", "🎮 TV " + (TV_SETS.indexOf(set) + 1) + " · Jogo da velha"));
-  const hide = gpEl("button", "", "Esconder"); hide.type = "button"; hide.onclick = () => { gpHidden = set.id; renderGamePanel(true); }; head.appendChild(hide);
-  box.appendChild(head);
+  const sig = JSON.stringify([set.id, my.idx, a, b, g, rankList(), a && nameOf(a), b && nameOf(b), snBusy(), snPlacing, snPlace]);
+  if (!force && sig === gpSig && !box.hidden) return; gpSig = sig; box.hidden = false;
 
   const playing = g && g.st === "play", over = g && g.st === "over";
   const mineIdx = g ? (g.p0 === uid ? 0 : g.p1 === uid ? 1 : -1) : -1;
+  if (g && g.kind === "sinuca" && (playing || over)) return snRender(box, set, g, mineIdx, a, b);
+  box.classList.remove("gp-wide"); snActive = null; box.textContent = "";
+  gpHead(box, set, "🎮 TV " + (TV_SETS.indexOf(set) + 1) + (g && (playing || over) ? " · Jogo da velha" : " · Escolha um jogo"));
+
   if (g && (playing || over)) {
     const turn = playing ? g.t : -1, line = gpEl("div", "gp-vs");
     [[0, "❌", g.n0, g.s0], [1, "⭕", g.n1, g.s1]].forEach(([i, ic, nm, sc]) => {
@@ -156,31 +197,9 @@ function renderGamePanel(force) {
     box.appendChild(gpEl("div", "gp-msg", msg));
     if (g.dr) box.appendChild(gpEl("div", "muted gp-small", "Empates da dupla: " + g.dr));
   } else {
-    box.appendChild(gpEl("div", "gp-msg", my.idx < 2 ? (a && b ? "Dois jogadores prontos!" : "Chame mais uma pessoa para sentar no sofá.") : "Você está na plateia. Os dois primeiros lugares jogam."));
+    box.appendChild(gpEl("div", "gp-msg", my.idx < 2 ? (a && b ? "Dois jogadores prontos! Escolham o jogo." : "Chame mais uma pessoa para sentar no sofá.") : "Você está na plateia. Os dois primeiros lugares jogam."));
   }
-
-  /* botões */
-  const acts = gpEl("div", "gp-acts"), seated2 = id => !!id && set.seats.slice(0, 2).some(t => sitterAt(t[0], t[1]) === id);
-  const duo = a && b && (uid === a || uid === b), mk = (txt, cls, fn) => { const x = gpEl("button", cls, txt); x.type = "button"; x.onclick = fn; acts.appendChild(x); };
-  if (playing && mineIdx >= 0) {
-    const other = mineIdx === 0 ? g.p1 : g.p0;
-    if (!seated2(other)) mk("🏳️ Adversário saiu: ficar com a vitória", "primary", () => velhaEnd(set, mineIdx));
-    mk("Desistir", "no", () => velhaEnd(set, 1 - mineIdx));
-  } else if (duo) {
-    if (over && mineIdx >= 0) mk("🔁 Revanche", "primary", () => startVelha(set, true));
-    else mk("▶️ Jogar", "primary", () => startVelha(set, false));
-  }
-  if (acts.childNodes.length) box.appendChild(acts);
-
-  /* placar da sala */
-  const rk = rankList(), sb = gpEl("div", "gp-rank"); sb.appendChild(gpEl("b", "", "🏆 Placar da sala"));
-  if (!rk.length) sb.appendChild(gpEl("div", "muted gp-small", "Ninguém pontuou ainda. A primeira vitória entra aqui!"));
-  else {
-    const tb = gpEl("div", "gp-table"); ["Jogador", "V", "E", "D"].forEach(h => tb.appendChild(gpEl("span", "gp-th", h)));
-    rk.forEach((r, i) => { const me2 = r.id === uid; [(i + 1) + ". " + r.n + (me2 ? " (você)" : ""), r.w, r.d, r.l].forEach((v, k) => tb.appendChild(gpEl("span", (k ? "gp-n" : "gp-nm") + (me2 ? " me" : ""), String(v)))); });
-    sb.appendChild(tb);
-  }
-  box.appendChild(sb);
+  gpActions(box, set, g, mineIdx, a, b); gpRank(box);
 }
 
 /* ---------- ação para chegar no sofá (descoberta) ---------- */

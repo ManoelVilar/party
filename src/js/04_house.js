@@ -118,7 +118,10 @@ const DEF = {
     box(x, y, .05, .22, .95, .8, 0, 16, "#4a3b30"); faceY(x, y, .1, .9, .8, 3, 13, "#3a2d24");
     box(x, y, .4, .45, .6, .6, 16, 19, "#222"); box(x, y, .1, .42, .9, .54, 19, 50, "#12141b");
     const gv = tvGameView(o);
-    if (gv) {                                                                                  // jogo em andamento: tabuleiro 3x3 na tela (vermelho = X, azul = O)
+    if (gv && gv.kind === "sinuca") {                                                          // sinuca: mesa verde com as bolas
+      faceY(x, y, .14, .86, .54, 22, 47, "#1f7a3a");
+      snView(gv.bl).forEach((bb, n) => { if (!bb.on) return; const cx = .14 + .72 * bb.x / 1000, cz = 22 + 25 * (1 - bb.y / 500); faceY(x, y, cx - .022, cx + .022, .54, cz - 1.7, cz + 1.7, n === 0 ? "#f4f4f4" : snCol(n)); });
+    } else if (gv) {                                                                           // jogo da velha: tabuleiro 3x3 na tela (vermelho = X, azul = O)
       faceY(x, y, .14, .86, .54, 22, 47, "#0f3a22");
       for (let i = 0; i < 9; i++) { const cx = .16 + (i % 3) * .24, zt = 45 - Math.floor(i / 3) * 8.2, ch = gv.b[i]; faceY(x, y, cx, cx + .2, .54, zt - 6.6, zt, ch === "X" ? "#ff5a5a" : ch === "O" ? "#5ad1ff" : "#1f6b3c"); }
     } else { faceY(x, y, .14, .86, .54, 22, 47, "#3a8fe0"); faceY(x, y, .14, .5, .54, 36, 47, "#7ec0f5"); }
