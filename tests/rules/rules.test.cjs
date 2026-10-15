@@ -82,5 +82,38 @@ check("coloca vídeo no cinema", me(A).update(R + "/cinema", { src: "yt", id: "d
 check("cinema com campo desconhecido é recusado", me(A).update(R + "/cinema", { evil: "x" }), false);
 check("sem login não mexe no cinema", me(null).update(R + "/cinema", { state: "play" }), false);
 
+/* jogos nas TVs da sala + placar */
+const game = { kind: "velha", st: "play", p0: "ana", p1: "beto", n0: "Ana", n1: "Beto", b: "---------", t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: NOW, end: 0, upd: NOW, rev: 0 };
+check("inicia partida com a vaga livre", me(A).write(R + "/games/tv0", game), true);
+check("quem inicia precisa ser um dos jogadores", me({ uid: "caio" }).write(R + "/games/tv0", game), false);
+check("TV inexistente é recusada", me(A).write(R + "/games/tv9", game), false);
+check("jogo desconhecido é recusado", me(A).write(R + "/games/tv0", { ...game, kind: "xadrez" }), false);
+check("tabuleiro inválido é recusado", me(A).write(R + "/games/tv0", { ...game, b: "XXXXXXXXXX" }), false);
+check("jogador contra si mesmo é recusado", me(A).write(R + "/games/tv0", { ...game, p1: "ana" }), false);
+check("campo desconhecido na partida é recusado", me(A).write(R + "/games/tv0", { ...game, extra: 1 }), false);
+const playing = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { games: { tv0: game } } } }, NOW);
+check("jogador faz a jogada", me(A, playing).update(R + "/games/tv0", { b: "X--------", t: 1, rev: 1, upd: NOW }), true);
+check("o adversário também escreve (vez dele)", me(B, playing).update(R + "/games/tv0", { b: "O--------", t: 0, rev: 1, upd: NOW }), true);
+check("terceiro não mexe na partida em andamento", me({ uid: "caio" }, playing).update(R + "/games/tv0", { b: "XXX------", w: 0 }), false);
+check("terceiro não apaga a partida em andamento", me({ uid: "caio" }, playing).write(R + "/games/tv0", null), false);
+check("qualquer logado vê a partida", me({ uid: "caio" }, playing).read(R + "/games/tv0"), true);
+check("sem login não vê a partida", me(null).read(R + "/games/tv0"), false);
+const over = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { games: { tv0: { ...game, st: "over", w: 0, end: NOW } } } } }, NOW);
+check("com a partida encerrada, outra dupla começa", me({ uid: "caio" }).write(R + "/games/tv0", { ...game, p0: "caio", p1: "dani" }), true);
+check("com a partida encerrada, outra dupla começa (banco já com jogo)", me({ uid: "caio" }, over).write(R + "/games/tv0", { ...game, p0: "caio", p1: "dani" }), true);
+const stale = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { games: { tv0: { ...game, upd: NOW - 130000 } } } } }, NOW);
+check("partida parada há mais de 2 min pode ser retomada por outra dupla", me({ uid: "caio" }, stale).write(R + "/games/tv0", { ...game, p0: "caio", p1: "dani" }), true);
+
+const score = { n: "Ana", w: 1, l: 0, d: 0, g: NOW };
+check("registra a própria vitória no placar", me(A).write(R + "/scores/ana", score), true);
+check("não grava o placar de outro jogador", me(B).write(R + "/scores/ana", score), false);
+check("placar com nome longo é recusado", me(A).write(R + "/scores/ana", { ...score, n: "x".repeat(15) }), false);
+check("primeira gravação não pode começar com 5 vitórias", me(A).write(R + "/scores/ana", { ...score, w: 5 }), false);
+const withScore = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { scores: { ana: { n: "Ana", w: 3, l: 1, d: 0, g: NOW } } } } }, NOW);
+check("soma uma vitória", me(A, withScore).write(R + "/scores/ana", { n: "Ana", w: 4, l: 1, d: 0, g: NOW + 1 }), true);
+check("não soma duas vitórias de uma vez", me(A, withScore).write(R + "/scores/ana", { n: "Ana", w: 5, l: 1, d: 0, g: NOW + 1 }), false);
+check("campo desconhecido no placar é recusado", me(A).write(R + "/scores/ana", { ...score, vip: true }), false);
+check("qualquer logado lê o placar", me(B, withScore).read(R + "/scores"), true);
+
 console.log(`\n${passed} passaram, ${failed} falharam.`);
 process.exit(failed ? 1 : 0);

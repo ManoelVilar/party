@@ -16,6 +16,8 @@ Itens pós-MVP, por prioridade sugerida. Nada aqui está comprometido com data.
 - **Acessibilidade:** alternativa em texto para o mundo, navegação por teclado completa nos painéis, modo de alto contraste, legendas
 - Persistência de salas e personagens por conta (login com e-mail/Google)
 - Editor de mapa / decoração da sala
-- Mais animais e jogos; emotes e reações
+- **Sinuca** (bola 8) multiplayer por turnos nas TVs/mesa; outros jogos para o sofá (damas, quiz, corrida)
+- **Emulador de consoles clássicos** (SNES/PS1) nas TVs, sempre com o arquivo do jogo carregado pela própria pessoa (o Party não distribui jogos nem BIOS) e transmissão para a sala
+- Mais animais; emotes e reações
 - Internacionalização (EN/ES)
 - Testes de carga e métricas de desempenho em celulares de entrada

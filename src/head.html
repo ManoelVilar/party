@@ -230,6 +230,8 @@
     .cc .acts button { padding:8px 10px; font-size:.85rem; min-height:38px; }
     body.full #chatpanel { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); bottom:auto; width:auto; }
     body.full #log { height:110px; }
+    body.full #gamepanel { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
+    .gp-cell { width:58px; height:58px; } .gp-board { grid-template-columns:repeat(3,58px); }
     body.full #roompanel, body.full #roompanel.rpcompact { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
     body.theater #videos { width:104px; padding:6px; gap:6px; top:0; }
     body.theater #videos .vt { width:100%; height:auto; }
@@ -240,10 +242,31 @@
     body.full #actions button { flex:0 1 auto; }
     body.full #chatpanel { right:auto; width:min(380px,52vw); }
     body.full #log { height:64px; }
+    body.full #gamepanel { left:auto; width:min(320px,46vw); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); }
     body.full #catpanel { left:auto; width:min(560px,62vw); right:calc(8px + env(safe-area-inset-right)); bottom:calc(8px + env(safe-area-inset-bottom)); max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
     body.full .vt { width:80px; height:60px; }
     body.full #prompts { top:calc(92px + env(safe-area-inset-top)); }
   }
+
+  /* jogos nas TVs da sala */
+  #gamepanel { display:grid; gap:8px; }
+  body.full #gamepanel { position:fixed; right:8px; top:56px; z-index:23; width:min(330px,calc(100vw - 16px)); max-height:calc(100vh - 70px); overflow:auto; }
+  .gp-head { display:flex; align-items:center; justify-content:space-between; gap:8px; } .gp-head b { color:var(--accent); }
+  .gp-head button { padding:4px 8px; font-size:.8rem; }
+  .gp-vs { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .gp-pl { display:flex; justify-content:space-between; align-items:center; gap:6px; padding:6px 8px; border:2px solid var(--line); background:rgba(0,0,0,.25); font-size:.85rem; min-width:0; }
+  .gp-pl span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gp-pl.turn { border-color:var(--accent); } .gp-pl.won { background:rgba(80,200,120,.25); border-color:#58c88a; }
+  .gp-sc { font-size:1.2rem; }
+  .gp-board { display:grid; grid-template-columns:repeat(3,64px); gap:4px; justify-content:center; }
+  .gp-cell { width:64px; height:64px; padding:0; font-size:2rem; line-height:1; font-weight:700; }
+  .gp-cell.x { color:#ff6b6b; } .gp-cell.o { color:#6bd6ff; } .gp-cell.win { background:rgba(80,200,120,.35); }
+  .gp-cell:disabled { opacity:1; cursor:default; }
+  .gp-msg { text-align:center; font-size:.95rem; } .gp-small { font-size:.8rem; text-align:center; }
+  .gp-acts { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; } .gp-acts button { flex:1 1 auto; }
+  .gp-rank { display:grid; gap:4px; border-top:2px solid var(--line); padding-top:8px; } .gp-rank b { color:var(--accent); font-size:.9rem; }
+  .gp-table { display:grid; grid-template-columns:1fr 28px 28px 28px; gap:2px 6px; font-size:.82rem; }
+  .gp-th { color:var(--accent); text-align:center; } .gp-th:first-child { text-align:left; } .gp-n { text-align:center; } .gp-nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .gp-table .me { color:#ffd166; }
 
   #modal { position:fixed; inset:0; background:rgba(18,10,28,.8); display:grid; place-items:center; z-index:50; padding:10px; }
   .mbox { width:min(980px,100%); max-height:94vh; overflow:auto; display:grid; gap:10px; }
@@ -305,6 +328,7 @@
   </div>
   <div id="catpanel" class="panel"></div>
   <div id="roompanel" class="panel" hidden></div>
+  <div id="gamepanel" class="panel" hidden></div>
   <div class="panel" id="chatpanel">
     <div id="log"></div>
     <form class="say" id="sayForm">
