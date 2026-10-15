@@ -158,6 +158,45 @@
           }
         },
 
+        "games": {
+          ".read": "auth != null",
+          "$tv": {
+            ".validate": "$tv.matches(/^tv[0-2]$/) && newData.hasChildren(['kind', 'st', 'p0', 'p1', 'n0', 'n1', 'b', 't', 'w', 's0', 's1', 'dr', 'gid', 'upd', 'rev'])",
+            ".write": "auth != null && (!data.exists() || data.child('st').val() === 'over' || data.child('p0').val() === auth.uid || data.child('p1').val() === auth.uid || now > data.child('upd').val() + 120000) && (!newData.exists() || newData.child('p0').val() === auth.uid || newData.child('p1').val() === auth.uid)",
+            "kind": { ".validate": "newData.isString() && newData.val() === 'velha'" },
+            "st":   { ".validate": "newData.isString() && newData.val().matches(/^(play|over)$/)" },
+            "p0":   { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 64" },
+            "p1":   { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 64 && newData.val() !== newData.parent().child('p0').val()" },
+            "n0":   { ".validate": "newData.isString() && newData.val().length <= 14" },
+            "n1":   { ".validate": "newData.isString() && newData.val().length <= 14" },
+            "b":    { ".validate": "newData.isString() && newData.val().matches(/^[-XO]{9}$/)" },
+            "t":    { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1" },
+            "w":    { ".validate": "newData.isNumber() && newData.val() >= -1 && newData.val() <= 2" },
+            "s0":   { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999" },
+            "s1":   { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999" },
+            "dr":   { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999" },
+            "gid":  { ".validate": "newData.isNumber()" },
+            "end":  { ".validate": "newData.isNumber()" },
+            "upd":  { ".validate": "newData.isNumber()" },
+            "rev":  { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 20" },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "scores": {
+          ".read": "auth != null",
+          "$u": {
+            ".write": "auth != null && $u === auth.uid",
+            ".validate": "newData.hasChildren(['n', 'w', 'l', 'd', 'g'])",
+            "n":  { ".validate": "newData.isString() && newData.val().length <= 14" },
+            "w":  { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999 && newData.val() <= (data.exists() ? data.val() : 0) + 1" },
+            "l":  { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999 && newData.val() <= (data.exists() ? data.val() : 0) + 1" },
+            "d":  { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999 && newData.val() <= (data.exists() ? data.val() : 0) + 1" },
+            "g":  { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        },
+
         "$other": { ".validate": false }
       }
     }

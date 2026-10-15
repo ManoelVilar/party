@@ -116,7 +116,12 @@ const DEF = {
   tv: { solid: true, draw(o) {
     const x = o.x, y = o.y;
     box(x, y, .05, .22, .95, .8, 0, 16, "#4a3b30"); faceY(x, y, .1, .9, .8, 3, 13, "#3a2d24");
-    box(x, y, .4, .45, .6, .6, 16, 19, "#222"); box(x, y, .1, .42, .9, .54, 19, 50, "#12141b"); faceY(x, y, .14, .86, .54, 22, 47, "#3a8fe0"); faceY(x, y, .14, .5, .54, 36, 47, "#7ec0f5");
+    box(x, y, .4, .45, .6, .6, 16, 19, "#222"); box(x, y, .1, .42, .9, .54, 19, 50, "#12141b");
+    const gv = tvGameView(o);
+    if (gv) {                                                                                  // jogo em andamento: tabuleiro 3x3 na tela (vermelho = X, azul = O)
+      faceY(x, y, .14, .86, .54, 22, 47, "#0f3a22");
+      for (let i = 0; i < 9; i++) { const cx = .16 + (i % 3) * .24, zt = 45 - Math.floor(i / 3) * 8.2, ch = gv.b[i]; faceY(x, y, cx, cx + .2, .54, zt - 6.6, zt, ch === "X" ? "#ff5a5a" : ch === "O" ? "#5ad1ff" : "#1f6b3c"); }
+    } else { faceY(x, y, .14, .86, .54, 22, 47, "#3a8fe0"); faceY(x, y, .14, .5, .54, 36, 47, "#7ec0f5"); }
   }},
   planta: { solid: true, draw(o) {
     if (NATAL) return drawPlantAsTree(o);                                                      // tema de Natal: árvore

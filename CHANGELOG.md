@@ -2,6 +2,19 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.3.0] — 2026-10-14
+
+### Adicionado
+- **Jogos nas TVs da sala:** cada TV tem um sofá de 3 lugares. Sentar abre o painel do jogo: os dois primeiros lugares jogam e o terceiro assiste. A ação "🛋️ Sentar e jogar" leva você até o sofá.
+- **Jogo da velha** multiplayer, com revanche (os lados se invertem), desistência e a opção de ficar com a vitória quando o adversário levanta do sofá.
+- **Placar:** da dupla (continua nas revanches) e **ranking da sala** com vitórias, empates e derrotas. Cada jogador soma o próprio resultado, uma vez por partida.
+- A TV da sala mostra o tabuleiro no mapa (vermelho = X, azul = O) para quem está por perto.
+- Regras do Firebase para `games` e `scores`, com testes (partida só por quem joga, TV e tabuleiro válidos, placar sobe no máximo 1 por gravação).
+
+### Notas
+- Os jogos são feitos para o Party. O projeto **não** distribui jogos comerciais, BIOS nem emuladores com jogos; consoles clássicos ficam no [roadmap](docs/ROADMAP.md) com a regra de que cada pessoa carrega o próprio arquivo.
+- O placar é de brincadeira entre amigos: um cliente adulterado consegue alterar o próprio placar (limitado a +1 por gravação).
+
 ## [0.2.0] — 2026-10-14
 
 ### Adicionado

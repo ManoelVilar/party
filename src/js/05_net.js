@@ -163,7 +163,7 @@ function startGame(name, room) {
     pass = s.val() || {};
     DOORS.forEach(d => { const has = !!(pass[d.office] && pass[d.office][uid]); if (has && !lastPassMine[d.office]) setStatus("✅ Pode entrar " + inO(d.office) + "! A porta abriu.", 6000); lastPassMine[d.office] = has; });
   });
-  initRooms();
+  initRooms(); initGames();
   renderCatPanel("rebuild");
   setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); requestAnimationFrame(loop);
 }
@@ -325,6 +325,7 @@ $("btnWard").onclick = () => { if (near(o => o.t === "guarda")) openWardrobe(); 
 function currentActions() {
   const a = [];
   if (me.act) { if (me.act.type === "sleep") a.push({ k: "wake", l: "☀️ Acordar", fn: wake }); return a; }
+  const sf = sofaAction(); if (sf) a.push(sf);
   if (near(o => o.t === "cama")) a.push({ k: "sleep", l: "😴 Dormir", fn: sleep });
   if (near(o => o.t === "chuveiro")) a.push({ k: "shower", l: "🚿 Tomar banho", fn: shower });
   if (near(o => DEF[o.t].food && (o.t !== "mesa" || o.plate))) a.push({ k: "eat", l: "🍽️ Comer", fn: eat });
@@ -353,7 +354,7 @@ let actSig = "";
 function refreshActions() {
   const a = currentActions(), sig = a.map(x => x.k + x.l).join("|"); if (sig === actSig) return; actSig = sig;
   const box2 = $("actions"); box2.innerHTML = "";
-  if (!a.length) { const h = document.createElement("span"); h.className = "hint"; h.textContent = "Chegue perto de camas, chuveiro, geladeira, guarda-roupa, painéis, potes, caixas de areia, sujeira, gatos ou portas para interagir (tecla E)."; box2.appendChild(h); return; }
+  if (!a.length) { const h = document.createElement("span"); h.className = "hint"; h.textContent = "Chegue perto de camas, chuveiro, geladeira, guarda-roupa, painéis, potes, caixas de areia, sujeira, gatos, portas ou do sofá da TV para interagir (tecla E)."; box2.appendChild(h); return; }
   a.forEach(x => { const b = document.createElement("button"); b.className = "primary"; b.textContent = x.l; b.onclick = x.fn; box2.appendChild(b); });
 }
 
@@ -435,5 +436,5 @@ function tick() {
     if (mine && mine.status === "pending" && (knockAge(mine) > 60000 || (!inside && Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) > 3))) roomRef.child("knocks/" + o + "/" + uid).remove();   // demorou ou se afastou
   });
   const r = roomOf(me.x, me.y); $("roomLabel").textContent = r ? ROOMBY[r].name : ""; $("roomtag").textContent = r ? ROOMBY[r].name : "";
-  renderPrompts(); updateTiles(); renderCatPanel(); catAlerts(now); updateRoomPanel();
+  renderPrompts(); updateTiles(); renderCatPanel(); catAlerts(now); updateRoomPanel(); renderGamePanel();
 }

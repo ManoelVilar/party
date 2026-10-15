@@ -31,6 +31,7 @@ firebase deploy --only database
 - `signals/{uid}`: só o dono lê; o remetente (`from`) não pode ser forjado; não sobrescreve sinais existentes.
 - Chat e chat da reunião: mensagens só são **criadas** (não editadas/apagadas), com tamanho, cor e hora válidos; no chat da reunião o `uid` tem de ser o seu.
 - Gatos, cuidados, sujeiras, cinema, portas: apenas formatos e valores previstos.
+- Jogos das TVs (`games`): só quem joga escreve na partida (ou qualquer um quando a vaga está livre, a partida acabou ou ficou parada por 2 minutos); o placar (`scores`) só é gravado pelo próprio dono, somando no máximo 1 por gravação.
 
 ### O que as regras **não** garantem (limites)
 - Qualquer pessoa logada **na mesma sala** pode mexer em gatos, cinema, sujeiras e passes (o jogo é colaborativo). Um cliente adulterado poderia, por exemplo, conceder passe a si mesmo — as portas são cortesia social.

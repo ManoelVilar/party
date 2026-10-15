@@ -31,6 +31,7 @@
 | `05_net.js` | Layout (`resizeView`, tela cheia), login e código do espaço, `startGame` (todos os *listeners* do Firebase), movimento e colisão, pathfinding (`bfs`), portas com permissão, guarda-roupa, ações contextuais, chat, ciclo lento (`tick`) |
 | `06_rtc.js` | WebRTC: criação de conexões, sinalização, mídia da câmera/mic, **transmissão** (tela/vídeo/slides), qualidade adaptativa, tiles de vídeo |
 | `07_rooms.js` | Cinema e sala de reuniões: YouTube sincronizado, slides/PDF, painel da sala, mão levantada, chat da reunião, **modo sentado** (teatro) |
+| `07b_games.js` | Jogos nas TVs da sala: lugares do sofá (`TV_SETS`), painel do jogo, jogo da velha, placar da dupla e ranking da sala; imagem do tabuleiro na TV (`tvGameView`) |
 | `08_loop.js` | Laço de renderização (`frame`/`loop`), desenho de sujeira, câmera, zoom |
 
 ## Dados no Firebase
@@ -46,6 +47,8 @@ Tudo fica sob `rooms/{codigo}/` (o código é a "chave" da sala):
 | `care/res`, `care/sup` | ração/água/caixas, estoque | qualquer logado |
 | `messes/{id}` | sujeiras | qualquer logado |
 | `cinema` | fonte (`yt`), id do vídeo, estado, posição, `by`, `at` | qualquer logado |
+| `games/{tv0..tv2}` | partida na TV da sala: `kind`, `st` (`play`/`over`), jogadores `p0`/`p1` e nomes, tabuleiro `b`, vez `t`, vencedor `w`, placar da dupla `s0`/`s1`/`dr`, `gid`, `end`, `upd`, `rev` | quem joga; qualquer um se a vaga está livre, a partida acabou ou ficou parada 2 min |
+| `scores/{uid}` | placar da sala: nome `n`, vitórias `w`, derrotas `l`, empates `d`, última partida contada `g` | só o dono; cada gravação soma no máximo 1 |
 | `knocks/{sala}/{uid}` | pedido para entrar (`pending`/`denied`) | quem bate; quem está dentro nega |
 | `pass/{sala}/{uid}` | passe de entrada (`true`) | quem está dentro concede |
 
