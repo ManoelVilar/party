@@ -49,10 +49,13 @@ with sync_playwright() as p:
     for pg, seat in ((A, 0), (B, 1)):
         pg.evaluate(f"(() => {{ const s = TV_SETS[0].seats[{seat}]; path = []; me.x = s[0]; me.y = s[1]; meRef.update({{ x: s[0], y: s[1] }}); }})()")
     A.wait_for_timeout(600)
-    A.click('#gamepanel button:has-text("Jogar")'); A.wait_for_timeout(500)
+    A.click('#gamepanel button:has-text("Jogo da velha")'); A.wait_for_timeout(500)
     for pg, i in ((A, 0), (B, 4), (A, 1), (B, 5), (A, 2)):
         pg.click(f"#gamepanel .gp-cell >> nth={i}"); pg.wait_for_timeout(350)
     A.wait_for_timeout(500); B.click('#gamepanel button:has-text("Revanche")'); B.wait_for_timeout(500); B.click('#gamepanel button:has-text("Desistir")'); B.wait_for_timeout(700)
+    A.click('#gamepanel button:has-text("Sinuca")'); A.wait_for_timeout(500)                      # sinuca: Ana quebra, o resultado vai inteiro para o banco
+    A.evaluate("snAim = 0; snPower = 100"); A.click('#gamepanel button:has-text("Tacar")'); A.wait_for_timeout(3500)
+    B.evaluate("snAim = 0.2; snPower = 60"); B.click('#gamepanel button:has-text("Tacar")'); B.wait_for_timeout(3500)
     A.wait_for_timeout(6000)                              # a IA dos gatos escreve sozinha
     B.evaluate("document.querySelector('#btnMic').click()"); A.evaluate("document.querySelector('#btnMic').click()"); A.wait_for_timeout(800)
     ops = rec.evaluate("window.__ops")

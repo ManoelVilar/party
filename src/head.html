@@ -230,7 +230,7 @@
     .cc .acts button { padding:8px 10px; font-size:.85rem; min-height:38px; }
     body.full #chatpanel { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); bottom:auto; width:auto; }
     body.full #log { height:110px; }
-    body.full #gamepanel { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
+    body.full #gamepanel, body.full #gamepanel.gp-wide { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
     .gp-cell { width:58px; height:58px; } .gp-board { grid-template-columns:repeat(3,58px); }
     body.full #roompanel, body.full #roompanel.rpcompact { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
     body.theater #videos { width:104px; padding:6px; gap:6px; top:0; }
@@ -242,7 +242,8 @@
     body.full #actions button { flex:0 1 auto; }
     body.full #chatpanel { right:auto; width:min(380px,52vw); }
     body.full #log { height:64px; }
-    body.full #gamepanel { left:auto; width:min(320px,46vw); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); }
+    body.full #gamepanel, body.full #gamepanel.gp-wide { left:auto; width:min(420px,54vw); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); }
+    body.full .gp-table-cv { width:min(100%, calc(42vh * 1.893)); width:min(100%, calc(42dvh * 1.893)); margin:0 auto; }
     body.full #catpanel { left:auto; width:min(560px,62vw); right:calc(8px + env(safe-area-inset-right)); bottom:calc(8px + env(safe-area-inset-bottom)); max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
     body.full .vt { width:80px; height:60px; }
     body.full #prompts { top:calc(92px + env(safe-area-inset-top)); }
@@ -253,6 +254,10 @@
   body.full #gamepanel { position:fixed; right:8px; top:56px; z-index:23; width:min(330px,calc(100vw - 16px)); max-height:calc(100vh - 70px); overflow:auto; }
   .gp-head { display:flex; align-items:center; justify-content:space-between; gap:8px; } .gp-head b { color:var(--accent); }
   .gp-head button { padding:4px 8px; font-size:.8rem; }
+  body.full #gamepanel.gp-wide { width:min(540px,calc(100vw - 16px)); }
+  .gp-table-cv { width:100%; height:auto; aspect-ratio:1060 / 560; display:block; touch-action:none; border:2px solid var(--line); cursor:crosshair; background:#1f7a3a; }
+  .gp-power { display:flex; align-items:center; gap:8px; font-size:.85rem; } .gp-power input { flex:1; min-width:0; } .gp-power b { min-width:3ch; text-align:right; }
+  .gp-grp { display:block; font-size:.72rem; color:var(--muted, #b7a9cf); }
   .gp-vs { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
   .gp-pl { display:flex; justify-content:space-between; align-items:center; gap:6px; padding:6px 8px; border:2px solid var(--line); background:rgba(0,0,0,.25); font-size:.85rem; min-width:0; }
   .gp-pl span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
