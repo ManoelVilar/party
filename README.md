@@ -2,6 +2,8 @@
 
 Espaço virtual em **pixel art isométrica** para festas, encontros com amigos e reuniões — no estilo do Gather. Você cria seu personagem, entra num espaço com um código e conversa por **voz e vídeo quando chega perto de alguém**. Tem cinema, sala de reuniões com porta, escritórios, cozinha, quartos e dois gatos para cuidar.
 
+**▶ Jogar agora:** https://manoelvilar.github.io/party/
+
 > **Versão:** 0.1.0 (MVP) · **Idioma da interface:** português (Brasil) · **Licença:** MIT
 
 ## O que tem
