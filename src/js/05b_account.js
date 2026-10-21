@@ -70,14 +70,36 @@ async function acctRun(fn, okMsg) {
 }
 const mailPass = () => ({ mail: $("inMail").value.trim(), pass: $("inPass").value });
 function checkPass(p) { if (p.length < 8) throw { code: "auth/weak-password" }; }
+/* o formulário tem três telas: entrar, criar conta (senha duas vezes) e recuperar a senha (só o e-mail) */
+const ACCT_MODES = {
+  in:    { title: "Entrar na sua conta", lead: "Com uma conta você ganha uma sala permanente só sua, que continua existindo mesmo vazia e que só entra quem você convidar.", pass: true, pass2: false, google: true, main: "btnMailIn", links: ["goNew", "btnMailReset"], autoc: "current-password", hint: "" },
+  new:   { title: "Criar sua conta", lead: "Escreva o e-mail e escolha uma senha. Vamos enviar um e-mail para você confirmar o endereço.", pass: true, pass2: true, google: true, main: "btnMailNew", links: ["goIn"], autoc: "new-password", hint: "(mínimo 8 caracteres)" },
+  reset: { title: "Recuperar a senha", lead: "Escreva o e-mail da sua conta. Se ele existir, enviamos um link para você criar uma senha nova.", pass: false, pass2: false, google: false, main: "btnMailSend", links: ["goIn"], autoc: "current-password", hint: "" }
+};
+function acctMode(m, focus) {
+  const c = ACCT_MODES[m]; $("acctOut").dataset.mode = m; acctNote("");
+  $("acctTitle").textContent = c.title; $("acctLead").textContent = c.lead;
+  $("btnGoogle").hidden = !c.google; $("rowPass").hidden = !c.pass; $("rowPass2").hidden = !c.pass2;
+  $("inPass").autocomplete = c.autoc; $("passHint").textContent = c.hint; $("inPass").value = ""; $("inPass2").value = "";
+  ["btnMailIn", "btnMailNew", "btnMailSend"].forEach(id => { $(id).hidden = id !== c.main; });
+  ["goNew", "btnMailReset", "goIn"].forEach(id => { $(id).hidden = !c.links.includes(id); });
+  if (focus !== false) { const t = m === "reset" || !$("inMail").value ? $("inMail") : $("inPass"); try { t.focus({ preventScroll: true }); } catch (e) { /* sem foco */ } }
+}
+$("goNew").onclick = () => acctMode("new"); $("btnMailReset").onclick = () => acctMode("reset"); $("goIn").onclick = () => acctMode("in");
 $("btnMailIn").onclick = () => acctRun(async () => { const x = mailPass(); await firebase.auth().signInWithEmailAndPassword(x.mail, x.pass); $("inPass").value = ""; });
 $("btnMailNew").onclick = () => acctRun(async () => {
-  const x = mailPass(); checkPass(x.pass);
-  const c = await firebase.auth().createUserWithEmailAndPassword(x.mail, x.pass); $("inPass").value = "";
+  const x = mailPass(); if (!x.mail) throw { code: "auth/missing-email" };
+  checkPass(x.pass); if (x.pass !== $("inPass2").value) throw { message: "As duas senhas precisam ser iguais." };
+  const c = await firebase.auth().createUserWithEmailAndPassword(x.mail, x.pass); $("inPass").value = ""; $("inPass2").value = "";
   await c.user.sendEmailVerification();
 }, "Conta criada! Enviamos um e-mail de confirmação: abra o link e depois volte aqui.");
-$("btnMailReset").onclick = () => acctRun(async () => { const x = mailPass(); if (!x.mail) throw { code: "auth/missing-email" }; await firebase.auth().sendPasswordResetEmail(x.mail); },
-  "Se esse e-mail tiver conta, enviamos o link para criar uma nova senha.");
+$("btnMailSend").onclick = () => acctRun(async () => { const x = mailPass(); if (!x.mail) throw { code: "auth/missing-email" }; await firebase.auth().sendPasswordResetEmail(x.mail); },
+  "Se esse e-mail tiver conta, enviamos o link para criar uma nova senha. Confira também o spam.");
+/* Enter envia a tela atual */
+["inMail", "inPass", "inPass2"].forEach(id => $(id).addEventListener("keydown", e => {
+  if (e.key !== "Enter") return; e.preventDefault();
+  const m = $("acctOut").dataset.mode; $(ACCT_MODES[m].main).click();
+}));
 $("btnGoogle").onclick = () => acctRun(async () => {
   const prov = new firebase.auth.GoogleAuthProvider();
   try { await firebase.auth().signInWithPopup(prov); }
@@ -88,7 +110,7 @@ $("btnMailCheck").onclick = () => acctRun(async () => {
   await fbUser.reload(); await fbUser.getIdToken(true); renderAcct();
   if (!fbUser.emailVerified) throw { message: "Ainda não confirmado. Abra o link do e-mail e tente de novo." };
 }, "E-mail confirmado!");
-$("btnOut").onclick = () => acctRun(async () => { await firebase.auth().signOut(); selectTab("temp"); });
+$("btnOut").onclick = () => acctRun(async () => { await firebase.auth().signOut(); acctMode("in", false); selectTab("temp"); });
 
 /* ---------- link de convite: #sala=<sala>&convite=<token> (o token fica no fragmento, que não vai para o servidor do site) ---------- */
 (() => {
