@@ -219,9 +219,10 @@ function renderHostPanel() {
 
   /* mesas */
   hostUI.desks.textContent = ""; const ud = gpEl("ul");
-  LAYOUT.desks.forEach((d, i) => {
-    const r = deskLive(deskKey(d)), li = gpEl("li");
-    li.appendChild(gpEl("span", "", ROOMBY[d.office].name + " · mesa " + (i % 7 + 1)));
+  const nOf = {};
+  LAYOUT.desks.forEach(d => {
+    const r = deskLive(deskKey(d)), li = gpEl("li"); nOf[d.office] = (nOf[d.office] || 0) + 1;
+    li.appendChild(gpEl("span", "", ROOMBY[d.office].name + " · lugar " + nOf[d.office]));
     li.appendChild(r ? badge((r.k === "agent" ? "🤖 " : "") + r.name, r.k === "agent" ? "agent" : "") : badge("livre"));
     ud.appendChild(li);
   });

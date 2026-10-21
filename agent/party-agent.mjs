@@ -59,7 +59,7 @@ export class PartyAgent {
       while (this.me.y !== ty) await this._move(this.me.x, this.me.y + Math.sign(ty - this.me.y), ty > this.me.y ? "d" : "u");
     }
   }
-  /* escolhe a mesa livre n (1..7) do primeiro escritório do escopo (ou a primeira livre), registra o lugar e senta */
+  /* escolhe o lugar livre n (1..12) do primeiro escritório do escopo (ou a primeira livre), registra o lugar e senta */
   async sitAtDesk(n) {
     const { io, room } = this;
     const mine = LAYOUT.desks.filter(d => this.offices.includes(d.office));
@@ -70,20 +70,19 @@ export class PartyAgent {
     if (!target) throw new Error("Mesa inexistente neste escritório.");
     if (!free(target)) throw new Error("A mesa " + n + " está ocupada.");
     const key = target.x + "_" + target.y, door = LAYOUT.doors[target.office];
-    const exit = [target.x, target.y + 1], inX = door[0];
-    const route = [[door[0], door[1]], [inX, door[1] - 1]];                                          // porta e primeiro tile de dentro
-    if (target.y >= 6) route.push([exit[0], exit[1]]); else route.push([inX, 4], [exit[0], 4], [exit[0], exit[1]]);
+    const exit = target.ex || [target.x, target.y + 1], inX = door[0];
+    const route = [[door[0], door[1]], [inX, door[1] - 1], [inX, exit[1]], [exit[0], exit[1]]];       // porta, primeiro tile de dentro, corredor do meio até a faixa livre e até a cadeira
     await this._walk(route);
     await io.keepOnDisconnect(room + "/desks/" + key);
     await io.set(room + "/desks/" + key, { uid: this.uid, name: this.acl.name, k: "agent", ts: io.serverTime() });   // 1º o registro da mesa...
-    await this._move(target.x, target.y, "d");                                                       // 2º a posição na cadeira (as regras exigem esta ordem)
+    await this._move(target.x, target.y, target.f || "d");                                                     // 2º a posição na cadeira (as regras exigem esta ordem)
     this.desk = { key, d: target };
     return target;
   }
   async leaveDesk() {
     if (!this.desk) return;
     const { key, d } = this.desk; this.desk = null;
-    await this._move(d.x, d.y + 1, "d");
+    const ex = d.ex || [d.x, d.y + 1]; await this._move(ex[0], ex[1], d.f === "u" ? "d" : "u");
     await this.io.cancelDisconnect(this.room + "/desks/" + key);
     await this.io.remove(this.room + "/desks/" + key);
   }

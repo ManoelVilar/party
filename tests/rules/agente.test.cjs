@@ -65,7 +65,7 @@ const dono = pwd("dono"), conv = anon("conv");
   const desk = box.db.as(dono).read(`/rooms/${T}/desks/${d.x}_${d.y}`).data.val();
   check("agente senta numa mesa do escritório do escopo (registro k=agent)", desk && desk.uid === "bot1" && desk.k === "agent");
   check("a posição do agente é a da cadeira", pl().bot1.x === d.x && pl().bot1.y === d.y);
-  const inside = { x: 3, y: 4 };
+  const inside = { x: 4, y: 6 };
   const upd = (who, id, v) => { const r = box.db.as(who).update(`/rooms/${T}/players/${id}`, v, { now: box.now }); return r.allowed; };
   check("COM AGENTE TRABALHANDO o convidado não entra no escritório", !upd(conv, "conv", inside));
   check("o dono entra", upd(dono, "dono", inside));
@@ -87,7 +87,7 @@ const dono = pwd("dono"), conv = anon("conv");
   const agC = new PartyAgent(cred(tokC), rulesIO(box, anon("bot4")), { stepMs: 0 }); await agC.connect();
   err = null; try { await agC.sitAtDesk(0); } catch (e) { err = e; }
   check("agente sem escritório no escopo não senta", !!err && /não liberou/.test(err.message));
-  const forca = box.db.as(anon("bot4")).update(`/rooms/${T}/players/bot4`, { x: 3, y: 4 }, { now: box.now });
+  const forca = box.db.as(anon("bot4")).update(`/rooms/${T}/players/bot4`, { x: 4, y: 6 }, { now: box.now });
   check("e o servidor recusa se ele tentar entrar no escritório mesmo assim", !forca.allowed);
 
   /* o que o agente nunca consegue */
@@ -102,7 +102,7 @@ const dono = pwd("dono"), conv = anon("conv");
   /* sair */
   await ag.close();
   check("ao fechar, o agente some da sala e solta a mesa", !pl().bot1 && !box.db.as(dono).read(`/rooms/${T}/desks`).data.exists());
-  check("sem agente trabalhando, o convidado entra no escritório de novo", upd(conv, "conv", { x: 3, y: 4 }));
+  check("sem agente trabalhando, o convidado entra no escritório de novo", upd(conv, "conv", { x: 4, y: 6 }));
 
   /* acesso vencido */
   box.now = NOW + 2 * DAY;

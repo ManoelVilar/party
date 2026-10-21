@@ -68,12 +68,14 @@ const playerValidate = [
   `(newData.child('acct').exists() ? newData.child('acct').val() === (${IS_AGENT} ? 'agent' : (${REAL_USER} ? 'user' : 'guest')) : !(${IS_AGENT}))`
 ].join(" && ");
 
-const deskNode = (d) => {
-  const o = d.office;
+/* um único nó "$desk" para todas as cadeiras (as chaves válidas vêm do layout; o escritório da cadeira decide quem pode sentar) */
+const deskRe = o => "^(" + desksOf(o).map(deskKey).join("|") + ")$";
+const deskNode = () => {
   const stale = `!root.child('rooms/'+$room+'/players/'+data.child('uid').val()).exists()`;
+  const okOffice = "(" + OFFICES.filter(o => desksOf(o).length).map(o => `($desk.matches(/${deskRe(o)}/) && ${ENTRY_OK(o)})`).join(" || ") + ")";
   return {
-    ".write": `auth != null && ((!newData.exists() && (data.child('uid').val() === auth.uid || ${stale} || ${IS_HOST})) || (${MEMBER} && ${ENTRY_OK(o)} && newData.exists() && newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid || ${stale})))`,
-    ".validate": `newData.hasChildren(['uid', 'name', 'k', 'ts']) && newData.child('k').val() === (${IS_AGENT} ? 'agent' : 'user')`,
+    ".write": `auth != null && ((!newData.exists() && (data.child('uid').val() === auth.uid || ${stale} || ${IS_HOST})) || (${MEMBER} && ${okOffice} && newData.exists() && newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid || ${stale})))`,
+    ".validate": `$desk.matches(/^(${layout.desks.map(deskKey).join("|")})$/) && newData.hasChildren(['uid', 'name', 'k', 'ts']) && newData.child('k').val() === (${IS_AGENT} ? 'agent' : 'user')`,
     uid: { ".validate": "newData.isString() && newData.val() === auth.uid" },
     name: { ".validate": str(1, 14) },
     k: { ".validate": "newData.isString() && newData.val().matches(/^(user|agent)$/)" },
@@ -296,8 +298,7 @@ const rules = {
         /* mesas dos escritórios (uma pessoa ou agente por lugar) e escritórios reservados */
         desks: {
           ...readM,
-          ...Object.fromEntries(layout.desks.map(d => [deskKey(d), deskNode(d)])),
-          "$other": { ".validate": false }
+          "$desk": deskNode()
         },
         offices: {
           ...readM,

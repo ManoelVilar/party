@@ -26,7 +26,7 @@ Janela **🔑 Sala** (dono): gere um link `#sala=<código>&convite=<token>`. O t
 - Convidado não abre nem libera; agente não deixa ninguém entrar nem muda permissões. A checagem é das **regras do banco**, em cada posição gravada, não só da tela.
 
 ## Mesas
-Cada escritório tem 7 cadeiras (mesas), a sala de reuniões tem as suas. Sentar grava `desks/<x>_<y>`; só uma pessoa (ou agente) por cadeira. Se a pessoa cai ou sai, o registro some (`onDisconnect`) e o lugar volta a ficar livre; registros de quem não está mais na sala também são ignorados pelas regras e varridos pela limpeza.
+Cada escritório é uma "software house": duas mesas compridas com 6 lugares cada (12 por escritório), cadeiras dos dois lados e notebooks que acendem quando alguém senta. Sentar grava `desks/<x>_<y>`; só uma pessoa (ou agente) por cadeira. Se a pessoa cai ou sai, o registro some (`onDisconnect`) e o lugar volta a ficar livre; registros de quem não está mais na sala também são ignorados pelas regras e varridos pela limpeza.
 
 ## Verificação em duas etapas (2FA)
 - **Login com Google:** vale a verificação em duas etapas da própria conta Google.
