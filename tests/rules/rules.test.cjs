@@ -58,7 +58,7 @@ check("envia mensagem de chat", me(A).write(R + "/chat/m1", msg), true);
 check("mensagem longa é recusada", me(A).write(R + "/chat/m1", { ...msg, text: "x".repeat(121) }), false);
 check("mensagem com cor inválida é recusada", me(A).write(R + "/chat/m1", { ...msg, color: "red" }), false);
 check("mensagem com data absurda é recusada", me(A).write(R + "/chat/m1", { ...msg, ts: NOW + 10_000_000 }), false);
-const withChat = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { chat: { m1: msg } } } }, NOW);
+const withChat = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { chat: { m1: msg }, players: { ana: validPlayer } } } }, NOW);
 check("não edita mensagem existente", me(A, withChat).write(R + "/chat/m1", { ...msg, text: "editado" }), false);
 check("não apaga mensagem existente", me(A, withChat).write(R + "/chat/m1", null), false);
 check("chat da reunião exige uid próprio", me(A).write(R + "/meetchat/m1", { name: "Ana", uid: "beto", text: "oi", ts: NOW }), false);
@@ -68,8 +68,10 @@ check("chat da reunião válido", me(A).write(R + "/meetchat/m1", { name: "Ana",
 check("bate na porta da sala de reuniões", me(A).write(R + "/knocks/reu/ana", { name: "Ana", ts: NOW, status: "pending" }), true);
 check("porta inexistente é recusada", me(A).write(R + "/knocks/porao/ana", { name: "Ana", ts: NOW, status: "pending" }), false);
 check("status inválido é recusado", me(A).write(R + "/knocks/reu/ana", { name: "Ana", ts: NOW, status: "ok" }), false);
-check("dá passe", me(B).write(R + "/pass/reu/ana", true), true);
-check("passe só aceita true", me(B).write(R + "/pass/reu/ana", "sim"), false);
+const inReu = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { players: { beto: { ...validPlayer, name: "Beto", x: 35, y: 15 } } } } }, NOW);
+check("quem está dentro da sala de reuniões dá passe", me(B, inReu).write(R + "/pass/reu/ana", true), true);
+check("quem está fora não dá passe a si mesmo", me(A, inReu).write(R + "/pass/reu/ana", true), false);
+check("passe só aceita true", me(B, inReu).write(R + "/pass/reu/ana", "sim"), false);
 
 /* gatos, cuidados, cinema */
 check("atualiza gato", me(A).update(R + "/cats/sombra", { x: 5, y: 6, st: "sit", hunger: 30, ts: NOW }), true);
@@ -83,18 +85,19 @@ check("cinema com campo desconhecido é recusado", me(A).update(R + "/cinema", {
 check("sem login não mexe no cinema", me(null).update(R + "/cinema", { state: "play" }), false);
 
 /* jogos nas TVs da sala + placar */
-const game = { kind: "velha", st: "play", p0: "ana", p1: "beto", n0: "Ana", n1: "Beto", b: "---------", t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: NOW, end: 0, upd: NOW, rev: 0 };
+const RACK = "250250" + "700250".repeat(15);
+const game = { kind: "sinuca", st: "play", p0: "ana", p1: "beto", n0: "Ana", n1: "Beto", t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: NOW, end: 0, upd: NOW, rev: 0, bl: RACK, bp: RACK, gr: -1, vx: 0, vy: 0, sh: 0, bih: 0, msg: "Ana quebra!" };
 check("inicia partida com a vaga livre", me(A).write(R + "/games/tv0", game), true);
 check("quem inicia precisa ser um dos jogadores", me({ uid: "caio" }).write(R + "/games/tv0", game), false);
 check("TV inexistente é recusada", me(A).write(R + "/games/tv9", game), false);
 check("jogo desconhecido é recusado", me(A).write(R + "/games/tv0", { ...game, kind: "xadrez" }), false);
-check("tabuleiro inválido é recusado", me(A).write(R + "/games/tv0", { ...game, b: "XXXXXXXXXX" }), false);
+check("o jogo da velha foi removido: kind velha é recusado", me(A).write(R + "/games/tv0", { ...game, kind: "velha", b: "---------" }), false);
 check("jogador contra si mesmo é recusado", me(A).write(R + "/games/tv0", { ...game, p1: "ana" }), false);
 check("campo desconhecido na partida é recusado", me(A).write(R + "/games/tv0", { ...game, extra: 1 }), false);
-const playing = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { games: { tv0: game } } } }, NOW);
-check("jogador faz a jogada", me(A, playing).update(R + "/games/tv0", { b: "X--------", t: 1, rev: 1, upd: NOW }), true);
-check("o adversário também escreve (vez dele)", me(B, playing).update(R + "/games/tv0", { b: "O--------", t: 0, rev: 1, upd: NOW }), true);
-check("terceiro não mexe na partida em andamento", me({ uid: "caio" }, playing).update(R + "/games/tv0", { b: "XXX------", w: 0 }), false);
+const playing = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { games: { tv0: game }, players: { ana: validPlayer } } } }, NOW);
+check("jogador faz a jogada", me(A, playing).update(R + "/games/tv0", { t: 1, rev: 1, sh: 1, upd: NOW }), true);
+check("o adversário também escreve (vez dele)", me(B, playing).update(R + "/games/tv0", { t: 0, rev: 1, sh: 1, upd: NOW }), true);
+check("terceiro não mexe na partida em andamento", me({ uid: "caio" }, playing).update(R + "/games/tv0", { w: 0, st: "over" }), false);
 check("terceiro não apaga a partida em andamento", me({ uid: "caio" }, playing).write(R + "/games/tv0", null), false);
 check("qualquer logado vê a partida", me({ uid: "caio" }, playing).read(R + "/games/tv0"), true);
 check("sem login não vê a partida", me(null).read(R + "/games/tv0"), false);
@@ -116,7 +119,6 @@ check("campo desconhecido no placar é recusado", me(A).write(R + "/scores/ana",
 check("qualquer logado lê o placar", me(B, withScore).read(R + "/scores"), true);
 
 /* sinuca */
-const RACK = "250250" + "700250".repeat(15);
 const sinuca = { kind: "sinuca", st: "play", p0: "ana", p1: "beto", n0: "Ana", n1: "Beto", t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: NOW, end: 0, upd: NOW, rev: 0, bl: RACK, bp: RACK, gr: -1, vx: 0, vy: 0, sh: 0, bih: 0, msg: "Ana quebra!" };
 check("inicia sinuca", me(A).write(R + "/games/tv1", sinuca), true);
 check("sinuca com posições inválidas é recusada", me(A).write(R + "/games/tv1", { ...sinuca, bl: "x".repeat(96) }), false);

@@ -1,0 +1,38 @@
+name: Limpeza das salas
+# Apaga do Firebase as salas TEMPORÁRIAS vazias ou abandonadas (nunca as permanentes) e faz a faxina leve das demais.
+# Roda no servidor do GitHub, sem depender de nenhum navegador aberto. Configuração única: docs/LIMPEZA.md
+# (segredos FIREBASE_SERVICE_ACCOUNT e FIREBASE_DATABASE_URL). Sem eles, o job só avisa e termina sem erro.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      simular:
+        description: "Só mostrar o que seria apagado (nada é alterado)"
+        type: boolean
+        default: true
+      antigas:
+        description: "Também apagar salas antigas (de antes das contas) vazias e paradas há 30 dias"
+        type: boolean
+        default: false
+
+concurrency: { group: limpeza-salas, cancel-in-progress: false }
+permissions: { contents: read }
+
+jobs:
+  limpar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Instala o firebase-admin (só aqui no servidor; o site não usa)
+        run: npm install --no-save --no-audit --no-fund firebase-admin@12
+      - name: Limpa
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL || 'https://casa-f7583-default-rtdb.firebaseio.com' }}
+          LIMPAR_SALAS_ANTIGAS: ${{ inputs.antigas && 'sim' || 'nao' }}
+          SIMULAR: ${{ github.event_name == 'workflow_dispatch' && inputs.simular && '--simular' || '' }}
+        run: node scripts/limpa-salas.mjs $SIMULAR

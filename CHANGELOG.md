@@ -2,6 +2,28 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.5.0] — 2026-10-21
+
+### Adicionado
+- **Contas** (e-mail/senha e Google) e **sala permanente por conta**: fixa, privada, volta sempre ao mesmo lugar e nunca é apagada. Salas temporárias continuam sem login.
+- **Convites** com papel e validade (`#sala=...&convite=...`), co-anfitriões, convidados, revogação e janela **🔑 Sala** (pessoas, escritórios, mesas, agentes).
+- **Agentes de IA** externos com credencial de uso único e permissões limitadas (`agent/`), marcados na sala; não concedem permissões.
+- **Escritórios reservados**: o anfitrião reserva; com agente trabalhando só o anfitrião entra. Validado no servidor (regras) em cada posição.
+- **Mais mesas**: 7 por escritório, ocupação individual (uma pessoa ou agente por cadeira), liberada ao sair ou cair.
+- **Limpeza no servidor** (GitHub Actions + firebase-admin, plano gratuito): salas temporárias vazias/abandonadas são apagadas; permanentes nunca; chat aparado; convites vencidos removidos.
+- Regras do banco **geradas** de `src/layout.json`; novos testes (`acesso`, `agente`, `limpeza`, e2e `contas`).
+
+### Alterado
+- Sala de estar: só **sinuca** (jogo da velha removido). A opção de jogar só aparece com a pessoa **sentada** no sofá; ao levantar, o painel e o estado local somem e a partida em andamento termina por desistência após 8 s (ou o adversário assume a vitória se sumir por 20 s).
+- Política de privacidade atualizada (contas, convites, agentes, limpeza).
+
+### Corrigido
+- Sala temporária podia ser recriada vazia ao sair; escritas de presença depois de sair; registro de mesa solto por chave errada.
+
+### Notas
+- **2FA por aplicativo (TOTP) não está disponível** para contas com senha: exige Identity Platform (plano pago). Com Google vale o 2FA do Google. Ver [docs/CONTAS.md](docs/CONTAS.md).
+- Publique as novas regras e ative os provedores antes do deploy ([docs/FIREBASE.md](docs/FIREBASE.md)).
+
 ## [0.4.1] — 2026-10-15
 
 ### Adicionado

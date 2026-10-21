@@ -1,18 +1,21 @@
 {
   "name": "party",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Espa\u00e7o virtual em pixel art (isom\u00e9trico) para festas, encontros e reuni\u00f5es, com voz e v\u00eddeo por proximidade.",
   "private": true,
   "type": "module",
   "license": "MIT",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node scripts/build.mjs --check",
+    "check": "node scripts/build.mjs --check && node scripts/gera-regras.mjs --check",
+    "regras": "node scripts/gera-regras.mjs",
+    "limpeza": "node scripts/limpa-salas.mjs --simular",
     "lint": "node scripts/lint.mjs",
     "serve": "python3 -m http.server 8765",
     "test": "bash tests/run.sh",
-    "test:rules": "node tests/rules/rules.test.cjs",
-    "test:all": "npm run check && npm run lint && npm run test:rules && npm test"
+    "test:rules": "node tests/rules/rules.test.cjs && node tests/rules/acesso.test.cjs && node tests/rules/agente.test.cjs",
+    "test:limpeza": "node tests/limpeza.test.mjs",
+    "test:all": "npm run check && npm run lint && npm run test:rules && npm run test:limpeza && npm test"
   },
   "engines": {
     "node": ">=18"

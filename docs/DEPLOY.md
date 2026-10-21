@@ -3,6 +3,9 @@
 O jogo é estático: basta servir o `index.html` por **HTTPS** (obrigatório para câmera, microfone e compartilhamento de tela).
 
 ## Checklist antes de publicar
+- [ ] Authentication: **Anônimo, E-mail/senha e Google** ativados; domínio do site em **Domínios autorizados**.
+- [ ] Regras novas (`database.rules.json`) **publicadas** antes de abrir o site novo (o cliente 0.5 exige).
+- [ ] Segredos `FIREBASE_SERVICE_ACCOUNT` e `FIREBASE_DATABASE_URL` no GitHub e uma execução da limpeza em simulação ([LIMPEZA.md](LIMPEZA.md)).
 - [ ] `firebaseConfig` é do **seu** projeto ([FIREBASE.md](FIREBASE.md))
 - [ ] Regras do Firebase publicadas e testadas
 - [ ] Chave de API restrita ao seu domínio ([SECURITY.md](../SECURITY.md))

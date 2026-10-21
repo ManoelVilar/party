@@ -31,7 +31,8 @@
 | `05_net.js` | Layout (`resizeView`, tela cheia), login e código do espaço, `startGame` (todos os *listeners* do Firebase), movimento e colisão, pathfinding (`bfs`), portas com permissão, guarda-roupa, ações contextuais, chat, ciclo lento (`tick`) |
 | `06_rtc.js` | WebRTC: criação de conexões, sinalização, mídia da câmera/mic, **transmissão** (tela/vídeo/slides), qualidade adaptativa, tiles de vídeo |
 | `07_rooms.js` | Cinema e sala de reuniões: YouTube sincronizado, slides/PDF, painel da sala, mão levantada, chat da reunião, **modo sentado** (teatro) |
-| `07b_games.js` | Jogos nas TVs da sala: lugares do sofá (`TV_SETS`), painel do jogo, jogo da velha, placar da dupla e ranking da sala; imagem do tabuleiro na TV (`tvGameView`) |
+| `05b_account.js` · `05c_access.js` · `05d_desks.js` | Contas e entrada · papéis, trava de escritório, janela Sala, sair · mesas |
+| `07b_games.js` | Jogos nas TVs da sala: lugares do sofá (`TV_SETS`), painel da sinuca (só sentado), placar da dupla e ranking da sala; imagem do tabuleiro na TV (`tvGameView`) |
 | `07c_sinuca.js` | Sinuca (bola 8): física determinística (`snTick`/`snRun`), regras (`snEvalShot`), codificação das bolas (`snEnc`/`snDec`), mesa em canvas, mira, força e animação das jogadas |
 | `08_loop.js` | Laço de renderização (`frame`/`loop`), desenho de sujeira, câmera, zoom |
 | `09_privacy.js` | Janela da política de privacidade (texto em `src/head.html`) |
@@ -55,6 +56,19 @@ Tudo fica sob `rooms/{codigo}/` (o código é a "chave" da sala):
 | `pass/{sala}/{uid}` | passe de entrada (`true`) | quem está dentro concede |
 
 Cada jogador registra `onDisconnect().remove()` na própria presença; ao reconectar (`.info/connected`) a presença é recriada.
+
+### Contas, acesso e mesas (0.5)
+```
+users/<uid>/room                  sala permanente da conta (imutável)
+rooms/<sala>/meta                 {kind: temp|perm, owner, created, seen}
+rooms/<sala>/acl/<uid>            {role, name, exp?, off?, chat?, tok}   quem entrou por convite
+rooms/<sala>/invites/<token>      {role, exp, acc, by, once?, usedBy?, ...}
+rooms/<sala>/offices/<id>         {hostOnly, by, ts}                      escritório reservado
+rooms/<sala>/desks/<x>_<y>        {uid, name, k: user|agent, ts}          cadeira ocupada
+rooms/<sala>/players/<uid>.acct   user | guest | agent
+```
+Módulos novos: `05b_account.js` (login, convite, entrada), `05c_access.js` (papéis, trava, janela Sala, sair), `05d_desks.js` (mesas). `src/layout.json` é a fonte única de portas, escritórios e cadeiras: o mapa e `database.rules.json` (via `scripts/gera-regras.mjs`) saem dele.
+O cliente deriva a interface dos mesmos dados, mas **quem decide é o servidor** (regras). Limpeza: `scripts/limpa-salas.mjs` ([LIMPEZA.md](LIMPEZA.md)). Agentes: `agent/` ([AGENTES.md](AGENTES.md)).
 
 ## WebRTC
 

@@ -42,6 +42,10 @@
   #err { color:var(--bad); min-height:1.2em; font-size:.9rem; }
   .chips { display:flex; flex-wrap:wrap; gap:6px; }
   .chips span { background:var(--panel2); border:3px solid var(--line); padding:3px 10px; font-size:.85rem; box-shadow: inset -2px -2px 0 var(--lo), inset 2px 2px 0 var(--hi); }
+  .acctbox, .invitebox { display:grid; gap:8px; padding:10px; background:var(--panel2); border:3px solid var(--line); }
+  .invitebox b { color:var(--accent); }
+  #acctMsg { min-height:1.2em; font-size:.85rem; } #acctMsg.ok { color:var(--good); } #acctMsg.bad { color:var(--bad); }
+  #modeTemp, #modeAcct { display:grid; gap:10px; }
   .codebox { display:grid; gap:6px; }
   .codebox label { margin:0; }
   .coderow { display:flex; gap:6px; }
@@ -281,6 +285,15 @@
   .privbox p, .privbox ul { margin:0; } .privbox ul { padding-left:20px; display:grid; gap:4px; }
   .privbox a, .privnote a { color:var(--good); }
   .privnote { font-size:.82rem; text-align:center; }
+  .hostbox { width:min(760px,100%); max-height:94vh; overflow:auto; display:grid; gap:10px; }
+  .hostbox section { display:grid; gap:6px; border-top:2px solid var(--line); padding-top:8px; } .hostbox h3 { margin:0; }
+  .hostbox .row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; } .hostbox .row > * { flex:0 1 auto; }
+  .hostbox .row select, .hostbox .row input[type=text] { width:auto; min-width:0; flex:1 1 130px; }
+  .hostbox code, .hostbox textarea { font-family:ui-monospace,monospace; font-size:.78rem; }
+  .hostbox textarea { width:100%; min-height:90px; background:#1f1430; color:inherit; border:3px solid var(--line); padding:6px; }
+  .hostbox ul { margin:0; padding:0; list-style:none; display:grid; gap:4px; }
+  .hostbox li { display:flex; gap:6px; align-items:center; flex-wrap:wrap; background:var(--panel2); border:2px solid var(--line); padding:4px 8px; } .hostbox li > span { margin-right:auto; }
+  .badge { display:inline-block; padding:0 6px; border:2px solid var(--line); font-size:.74rem; background:#3a2a5a; } .badge.agent { background:#5a2f8a; } .badge.host { background:#8a6a1c; } .badge.lock { background:#8a2f45; }
 
   #modal { position:fixed; inset:0; background:rgba(18,10,28,.8); display:grid; place-items:center; z-index:50; padding:10px; }
   .mbox { width:min(980px,100%); max-height:94vh; overflow:auto; display:grid; gap:10px; }
@@ -299,16 +312,55 @@
       <input id="inName" maxlength="14" autocomplete="off">
     </label>
     <div id="creator"></div>
-    <div class="codebox">
-      <label for="inRoom">Código do espaço (todo mundo usa o mesmo)</label>
-      <div class="coderow">
-        <input id="inRoom" maxlength="30" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ex: party-sol-lua-4821">
-        <button type="button" id="btnGen" class="gold" title="Cria um código aleatório e difícil de adivinhar">🎲 Gerar</button>
-        <button type="button" id="btnCopyCode" title="Copiar o código">Copiar</button>
-      </div>
-      <div class="muted" id="codeMsg">Primeira vez? Toque em Gerar e mande o código para quem vai entrar com você. Só quem tem o código entra no espaço.</div>
+    <div id="inviteBox" class="invitebox" hidden>
+      <b>🎟️ Você recebeu um convite</b>
+      <div class="muted" id="inviteInfo"></div>
+      <button class="gold" id="btnEnterInvite">ENTRAR COM O CONVITE</button>
     </div>
-    <button class="gold" id="btnEnter">ENTRAR NA PARTY</button>
+    <div class="tabs" id="modeTabs" role="tablist">
+      <button type="button" id="tabTemp" class="sel" role="tab" aria-selected="true">Sala temporária (sem login)</button>
+      <button type="button" id="tabAcct" role="tab" aria-selected="false">Minha conta e sala permanente</button>
+    </div>
+    <div id="modeTemp">
+      <div class="codebox">
+        <label for="inRoom">Código do espaço (todo mundo usa o mesmo)</label>
+        <div class="coderow">
+          <input id="inRoom" maxlength="30" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ex: party-sol-lua-4821">
+          <button type="button" id="btnGen" class="gold" title="Cria um código aleatório e difícil de adivinhar">🎲 Gerar</button>
+          <button type="button" id="btnCopyCode" title="Copiar o código">Copiar</button>
+        </div>
+        <div class="muted" id="codeMsg">Primeira vez? Toque em Gerar e mande o código para quem vai entrar com você. Sala temporária: some sozinha quando todo mundo sai.</div>
+      </div>
+      <button class="gold" id="btnEnter">ENTRAR NA PARTY</button>
+    </div>
+    <div id="modeAcct" hidden>
+      <div id="acctOut" class="acctbox">
+        <b>Entrar na sua conta</b>
+        <div class="muted">Com uma conta você ganha uma sala permanente só sua, que continua existindo mesmo vazia e que só entra quem você convidar.</div>
+        <button type="button" id="btnGoogle">Entrar com Google</button>
+        <label>E-mail <input id="inMail" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email"></label>
+        <label>Senha (mínimo 8 caracteres) <input id="inPass" type="password" autocomplete="current-password"></label>
+        <div class="coderow">
+          <button type="button" id="btnMailIn" class="primary">Entrar</button>
+          <button type="button" id="btnMailNew">Criar conta</button>
+          <button type="button" id="btnMailReset" title="Enviar e-mail para criar nova senha">Esqueci a senha</button>
+        </div>
+      </div>
+      <div id="acctIn" class="acctbox" hidden>
+        <b id="acctWho"></b>
+        <div class="muted" id="acctState"></div>
+        <div class="coderow">
+          <button type="button" id="btnEnterPerm" class="gold">ENTRAR NA MINHA SALA</button>
+        </div>
+        <div class="coderow">
+          <button type="button" id="btnMailVerify" hidden>Reenviar e-mail de confirmação</button>
+          <button type="button" id="btnMailCheck" hidden>Já confirmei</button>
+          <button type="button" id="btnOut">Sair da conta</button>
+        </div>
+        <div class="muted" id="acctSec"></div>
+      </div>
+      <div id="acctMsg" class="muted"></div>
+    </div>
     <div id="err"></div>
     <p class="muted privnote">Sem cookies de rastreamento: seu nome, personagem e preferências ficam salvos só neste aparelho para o jogo funcionar. Câmera e microfone só ligam se você permitir. <a href="#privacidade" id="lnkPriv">Política de privacidade</a></p>
   </div>
@@ -325,6 +377,8 @@
     <button id="btnChatT">Chat</button>
     <button id="btnNatal" title="Ligar/desligar o tema de Natal" aria-pressed="false">🎄 Natal</button>
     <button id="btnFull" title="Tela cheia (F)">Tela cheia</button>
+    <button id="btnRoom" title="Sala: convites, agentes de IA, escritórios e mesas">🔑 Sala</button>
+    <button id="btnLeave" class="no" title="Sair da sala">Sair</button>
   </div>
   <div id="videos"><div id="vhint">Ative mic e câmera e chegue perto de alguém para conversar.</div></div>
   <div id="status" hidden></div>
@@ -356,20 +410,35 @@
 <div id="privModal" class="privback" role="dialog" aria-modal="true" aria-labelledby="privTitle" hidden>
   <div class="privbox panel">
     <h2 id="privTitle">Política de privacidade</h2>
-    <p class="muted">Atualizada em 15/10/2026. O Party é um projeto aberto, feito para jogar e conversar com amigos. Aqui está, sem juridiquês, o que acontece com os seus dados.</p>
+    <p class="muted">Atualizada em 21/10/2026. O Party é um projeto aberto, feito para jogar e conversar com amigos. Aqui está, sem juridiquês, o que acontece com os seus dados.</p>
 
     <h3>O que fica no seu aparelho</h3>
     <ul>
       <li>Nome, código da sala, personagem, roupas salvas, zoom e a escolha do tema de Natal, no armazenamento local do navegador (<code>localStorage</code>).</li>
-      <li>Um identificador anônimo criado pelo Firebase (login anônimo), no armazenamento do navegador. Não pedimos e-mail, telefone nem senha.</li>
+      <li>Um identificador criado pelo Firebase Authentication, no armazenamento do navegador: anônimo em salas temporárias (sem e-mail, telefone nem senha) ou o da sua conta, se você entrar nela.</li>
       <li>O jogo <b>não define cookies</b> e não usa publicidade nem estatísticas de acesso. Para apagar tudo, limpe os dados do site no navegador.</li>
+    </ul>
+
+    <h3>Conta (opcional)</h3>
+    <ul>
+      <li>Salas temporárias não pedem login. Para ter uma <b>sala permanente</b> você pode criar uma conta com e-mail e senha ou entrar com o Google. O Firebase Authentication (Google) guarda seu e-mail e a senha em forma de hash; o Party <b>nunca vê nem guarda sua senha</b>.</li>
+      <li>No banco ficam apenas o identificador da conta e o código da sua sala fixa. Com o login do Google, a verificação em duas etapas é a da sua conta Google.</li>
+      <li>Para apagar a conta e a sala permanente, peça pelo canal de contato abaixo.</li>
     </ul>
 
     <h3>O que vai para o servidor</h3>
     <ul>
       <li>Dentro do código da sala, no Firebase Realtime Database (Google): nome, aparência, posição no mapa, se o microfone e a câmera estão ligados, o que você diz, mensagens do chat (nome, cor, texto e hora), partidas e placar dos jogos, estado dos gatos e do cinema.</li>
       <li>Quem tem o código da sala vê esses dados. Por isso, não compartilhe o código com quem você não quer na sala.</li>
-      <li>Sua presença some quando você sai, mas mensagens, placar e outros registros da sala <b>ficam gravados</b>. Ainda não existe limpeza automática; a pessoa responsável pelo projeto pode apagar uma sala quando você pedir.</li>
+      <li>Também ficam gravados, por sala: quem é o dono, quem recebeu convite (nome e papel), convites ainda válidos, qual mesa de escritório cada pessoa ocupa e se algum escritório está reservado ao anfitrião.</li>
+      <li><b>Salas temporárias</b> (sem login) são apagadas por completo, com chat e placar, quando ficam vazias por alguns minutos ou são abandonadas por cerca de 45 minutos. Uma rotina no servidor faz essa limpeza, sem depender de ninguém ter o site aberto.</li>
+      <li><b>Salas permanentes</b> continuam existindo mesmo vazias. Nelas o chat guarda só as últimas 200 mensagens, e convites e acessos vencidos são removidos.</li>
+    </ul>
+
+    <h3>Convites e agentes de IA</h3>
+    <ul>
+      <li>O dono da sala permanente gera links de convite (com papel e validade) e pode revogar acessos. Quem tem o link entra com o papel do convite.</li>
+      <li>Agentes de IA são programas externos que o dono autoriza com uma credencial de uso único e permissões limitadas. Eles aparecem na sala marcados como “agente” e não podem dar permissões a ninguém. Enquanto um agente trabalha num escritório, só o anfitrião entra nele.</li>
     </ul>
 
     <h3>Voz, vídeo e tela</h3>
@@ -389,7 +458,7 @@
     <p>Só para o jogo funcionar. Não vendemos dados, não fazemos perfis e não enviamos nada para publicidade.</p>
 
     <h3>Seus direitos</h3>
-    <p>Você pode pedir acesso, correção ou exclusão dos seus dados (LGPD, art. 18). Abra uma conversa em <a href="https://github.com/ManoelVilar/party/issues" target="_blank" rel="noopener noreferrer">github.com/ManoelVilar/party/issues</a> informando o <b>código da sala</b> e o <b>nome</b> que você usou, porque não há conta para localizar você de outro jeito. Não coloque senhas nem dados pessoais sensíveis nesse pedido.</p>
+    <p>Você pode pedir acesso, correção ou exclusão dos seus dados (LGPD, art. 18). Abra uma conversa em <a href="https://github.com/ManoelVilar/party/issues" target="_blank" rel="noopener noreferrer">github.com/ManoelVilar/party/issues</a> informando o <b>código da sala</b> e o <b>nome</b> que você usou (ou o e-mail da conta, se tiver uma), porque em salas temporárias não há conta para localizar você de outro jeito. Não coloque senhas nem dados pessoais sensíveis nesse pedido.</p>
 
     <h3>Crianças</h3>
     <p>O Party não foi feito para crianças. Menores de idade devem usá-lo com a supervisão de um responsável.</p>
@@ -397,6 +466,14 @@
     <h3>Mudanças</h3>
     <p>Se o jogo passar a tratar dados de outro jeito, esta página será atualizada e a data acima muda.</p>
     <div class="mfoot"><button type="button" id="privClose" class="primary">Fechar</button></div>
+  </div>
+</div>
+
+<div id="hostModal" class="privback" role="dialog" aria-modal="true" aria-labelledby="hostTitle" hidden>
+  <div class="privbox panel hostbox">
+    <h2 id="hostTitle">Sala</h2>
+    <div id="hostBody"></div>
+    <div class="mfoot"><button type="button" id="hostClose" class="primary">Fechar</button></div>
   </div>
 </div>
 
@@ -1631,23 +1708,28 @@ function catAlerts(now) {
 /* =========================================================
    A CASA (mapa fixo)
    ========================================================= */
+/* geometria dos escritórios e das mesas: src/layout.json (a mesma fonte gera as regras do Firebase) */
+const LAYOUT = {"doors":{"esc1":[4,8],"esc2":[12,8],"reu":[36,13]},"offices":{"esc1":{"x":1,"y":1,"w":7,"h":7},"esc2":{"x":9,"y":1,"w":7,"h":7},"reu":{"x":30,"y":14,"w":14,"h":5}},"desks":[{"id":"esc1-1","office":"esc1","x":1,"y":2,"f":"r"},{"id":"esc1-2","office":"esc1","x":3,"y":3,"f":"u"},{"id":"esc1-3","office":"esc1","x":5,"y":2,"f":"l"},{"id":"esc1-4","office":"esc1","x":2,"y":6,"f":"u"},{"id":"esc1-5","office":"esc1","x":3,"y":6,"f":"u"},{"id":"esc1-6","office":"esc1","x":5,"y":6,"f":"u"},{"id":"esc1-7","office":"esc1","x":6,"y":6,"f":"u"},{"id":"esc2-1","office":"esc2","x":9,"y":2,"f":"r"},{"id":"esc2-2","office":"esc2","x":11,"y":3,"f":"u"},{"id":"esc2-3","office":"esc2","x":13,"y":2,"f":"l"},{"id":"esc2-4","office":"esc2","x":10,"y":6,"f":"u"},{"id":"esc2-5","office":"esc2","x":11,"y":6,"f":"u"},{"id":"esc2-6","office":"esc2","x":13,"y":6,"f":"u"},{"id":"esc2-7","office":"esc2","x":14,"y":6,"f":"u"}]};
+const OFFICE_IDS = Object.keys(LAYOUT.offices);
+const DESK_BY_ID = {}, DESK_AT = {};
+LAYOUT.desks.forEach(d => { DESK_BY_ID[d.id] = d; DESK_AT[d.x + "_" + d.y] = d; });
 const ROOMS = [
-  { id: "esc1", name: "Escritório 1", x: 1,  y: 1,  w: 7,  h: 7,  floor: ["#b9c3d8", "#afb9ce"], wall: "#8fa5c9", talk: "room", pat: "carpet" },
-  { id: "esc2", name: "Escritório 2", x: 9,  y: 1,  w: 7,  h: 7,  floor: ["#bcd0c1", "#b2c7b8"], wall: "#8fb59c", talk: "room", pat: "carpet" },
+  { id: "esc1", name: "Escritório 1", ...LAYOUT.offices.esc1,  floor: ["#b9c3d8", "#afb9ce"], wall: "#8fa5c9", talk: "room", pat: "carpet" },
+  { id: "esc2", name: "Escritório 2", ...LAYOUT.offices.esc2,  floor: ["#bcd0c1", "#b2c7b8"], wall: "#8fb59c", talk: "room", pat: "carpet" },
   { id: "coz",  name: "Cozinha",      x: 17, y: 1,  w: 12, h: 7,  floor: ["#f3f4f6", "#dfe3e8"], wall: "#ecdcb8", talk: "near", pat: "tile" },
   { id: "cin",  name: "Cinema",       x: 30, y: 1,  w: 14, h: 7,  floor: ["#5a2a3a", "#512534"], wall: "#4b2f6e", talk: "room", pat: "carpet" },
   { id: "sala", name: "Sala",         x: 1,  y: 9,  w: 43, h: 4,  floor: ["#cfa771", "#c19a65"], wall: "#b9a6d8", talk: "near", pat: "wood" },
   { id: "q1",   name: "Quarto 1",     x: 1,  y: 14, w: 9,  h: 5,  floor: ["#e5d3e3", "#dcc8da"], wall: "#dba7ba", talk: "room", pat: "carpet" },
   { id: "q2",   name: "Quarto 2",     x: 11, y: 14, w: 9,  h: 5,  floor: ["#d2e0e9", "#c7d7e2"], wall: "#a7cadb", talk: "room", pat: "carpet" },
   { id: "ban",  name: "Banheiro",     x: 21, y: 14, w: 8,  h: 5,  floor: ["#c3e3f0", "#b3d6e6"], wall: "#90d2d2", talk: "room", pat: "tile" },
-  { id: "reu",  name: "Sala de Reuniões", x: 30, y: 14, w: 14, h: 5, floor: ["#c9d3e0", "#bfcad9"], wall: "#8fb0d9", talk: "room", pat: "carpet" }
+  { id: "reu",  name: "Sala de Reuniões", ...LAYOUT.offices.reu, floor: ["#c9d3e0", "#bfcad9"], wall: "#8fb0d9", talk: "room", pat: "carpet" }
 ];
 const ROOMBY = {}; ROOMS.forEach(r => ROOMBY[r.id] = r);
 const rid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 ROOMS.forEach(r => { for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) rid[y][x] = r.id; });
 [[5, 13], [6, 13], [15, 13], [16, 13], [24, 13], [25, 13], [21, 8], [22, 8], [23, 8], [4, 8], [12, 8], [35, 8], [36, 8], [37, 8], [36, 13]].forEach(p => { rid[p[1]][p[0]] = "sala"; });
 /* portas com "bater e permitir": escritórios 1 e 2 e sala de reuniões (um tile de porta cada) */
-const DOORS = [{ office: "esc1", x: 4, y: 8 }, { office: "esc2", x: 12, y: 8 }, { office: "reu", x: 36, y: 13 }];
+const DOORS = Object.keys(LAYOUT.doors).map(o => ({ office: o, x: LAYOUT.doors[o][0], y: LAYOUT.doors[o][1] }));
 const inO = o => (o === "reu" ? "na " : "no ") + ROOMBY[o].name, ofO = o => (o === "reu" ? "da " : "do ") + ROOMBY[o].name;
 const DOORAT = {}; DOORS.forEach(d => DOORAT[d.x + "_" + d.y] = d);
 const roomOf = (x, y) => (y >= 0 && y < ROWS && x >= 0 && x < COLS) ? rid[y][x] : null;
@@ -1673,7 +1755,8 @@ const DEF = {
     box(x, y, L ? 0 : .03, .05, R ? 1 : .97, .95, 22, 27, "#a9825f", !(L || R));
     if (L && R) {
       box(x, y, .38, .38, .62, .58, 27, 30, "#2b2f3a"); box(x, y, .46, .42, .54, .5, 30, 38, "#2b2f3a");
-      box(x, y, .14, .4, .86, .5, 38, 62, "#1d2230"); faceY(x, y, .17, .83, .5, 41, 59, "#58b4ff"); faceY(x, y, .17, .5, .5, 51, 59, "#9ad6ff");
+      const on = deskLit(x, y);                                                              // tela acesa só com alguém sentado
+      box(x, y, .14, .4, .86, .5, 38, 62, "#1d2230"); faceY(x, y, .17, .83, .5, 41, 59, on ? "#58b4ff" : "#26364d"); faceY(x, y, .17, .5, .5, 51, 59, on ? "#9ad6ff" : "#314560");
       box(x, y, .22, .62, .78, .88, 27, 29, "#cfd3da");
     } else if (!L) { box(x, y, .5, .5, .7, .7, 27, 33, "#d9534f"); box(x, y, .12, .2, .4, .5, 27, 28.5, "#f4f1e8"); }
   }},
@@ -1748,12 +1831,9 @@ const DEF = {
     box(x, y, .05, .22, .95, .8, 0, 16, "#4a3b30"); faceY(x, y, .1, .9, .8, 3, 13, "#3a2d24");
     box(x, y, .4, .45, .6, .6, 16, 19, "#222"); box(x, y, .1, .42, .9, .54, 19, 50, "#12141b");
     const gv = tvGameView(o);
-    if (gv && gv.kind === "sinuca") {                                                          // sinuca: mesa verde com as bolas
+    if (gv) {                                                          // sinuca: mesa verde com as bolas
       faceY(x, y, .14, .86, .54, 22, 47, "#1f7a3a");
       snView(gv.bl).forEach((bb, n) => { if (!bb.on) return; const cx = .14 + .72 * bb.x / 1000, cz = 22 + 25 * (1 - bb.y / 500); faceY(x, y, cx - .022, cx + .022, .54, cz - 1.7, cz + 1.7, n === 0 ? "#f4f4f4" : snCol(n)); });
-    } else if (gv) {                                                                           // jogo da velha: tabuleiro 3x3 na tela (vermelho = X, azul = O)
-      faceY(x, y, .14, .86, .54, 22, 47, "#0f3a22");
-      for (let i = 0; i < 9; i++) { const cx = .16 + (i % 3) * .24, zt = 45 - Math.floor(i / 3) * 8.2, ch = gv.b[i]; faceY(x, y, cx, cx + .2, .54, zt - 6.6, zt, ch === "X" ? "#ff5a5a" : ch === "O" ? "#5ad1ff" : "#1f6b3c"); }
     } else { faceY(x, y, .14, .86, .54, 22, 47, "#3a8fe0"); faceY(x, y, .14, .5, .54, 36, 47, "#7ec0f5"); }
   }},
   planta: { solid: true, draw(o) {
@@ -1869,11 +1949,13 @@ function add(t, x, y, o) {
 }
 const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o); };
 (function buildHouse() {
-  /* escritórios */
-  row("escrivaninha", 2, 2, 3); add("cadeira", 3, 3, { f: "u" }); add("cadeira", 5, 2, { f: "l" });
-  row("estante", 6, 1, 2); add("luz", 1, 1); add("planta", 7, 7); add("planta", 1, 7); row("tapete", 2, 5, 4); row("tapete", 2, 6, 4);
-  row("escrivaninha", 10, 2, 3); add("cadeira", 11, 3, { f: "u" }); add("cadeira", 13, 2, { f: "l" });
-  row("estante", 14, 1, 2); add("luz", 9, 1); add("planta", 15, 7); add("planta", 9, 7); row("tapete2", 10, 5, 4); row("tapete2", 10, 6, 4);
+  /* escritórios: 3 mesas de 3 tiles e 7 lugares cada (ids em src/layout.json); o corredor da porta (coluna do meio) fica livre */
+  [1, 9].forEach((b, k) => {
+    row("escrivaninha", b + 1, 2, 3); row("escrivaninha", b, 5, 3); row("escrivaninha", b + 4, 5, 3);
+    LAYOUT.desks.filter(d => d.office === "esc" + (k + 1)).forEach(d => add("cadeira", d.x, d.y, { f: d.f, desk: d.id }));
+    row("estante", b + 5, 1, 2); add("luz", b, 1); add("planta", b + 6, 7); add("planta", b, 7);
+    for (let y = 3; y <= 7; y++) add(k ? "tapete2" : "tapete", b + 3, y);
+  });
   /* cozinha + cuidados dos gatos */
   add("despensa", 17, 1); row("balcao", 18, 1, 2); add("fogao", 20, 1); add("pia", 21, 1); row("balcao", 22, 1, 2); add("geladeira", 24, 1); add("planta", 28, 1);
   for (let x = 21; x <= 24; x++) { add("mesa", x, 4, { plate: true }); add("mesa", x, 5, { plate: true }); add("cadeira", x, 3, { f: "d" }); add("cadeira", x, 6, { f: "u" }); }
@@ -1988,6 +2070,7 @@ function drawDoor(d) {
     box(x, y, .1, WT0 + .04, .9, WT1 - .04, 0, DOOR_H - 8, "#8a5a30");
     faceY(x, y, .17, .83, WT1 - .04, 5, 32, "#9a6a40"); faceY(x, y, .17, .83, WT1 - .04, 38, DOOR_H - 13, "#9a6a40");
     ball(x + .78, y + WT1 - .04, 34, 0, 2.2, "#e8d9a8");
+    if (officeLocked(d.office)) { faceY(x, y, .42, .58, WT1 - .05, 38, 50, "#c43d55"); faceY(x, y, .46, .54, WT1 - .05, 50, 57, "#e8d9a8"); }       // cadeado: reservado ao anfitrião
     if (NATAL) natalDoor(d);
   }
 }
@@ -2292,24 +2375,10 @@ $("btnCopyCode").onclick = async () => {
   if (!c) return codeNote("Escreva ou gere um código primeiro.", false);
   codeNote((await copyText(c)) ? "Código " + c + " copiado!" : "Não consegui copiar. Selecione o texto e copie manualmente.", true);
 };
-$("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Gerar e mande o código para quem vai entrar com você. Só quem tem o código entra no espaço.", false));
+$("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Gerar e mande o código para quem vai entrar com você. Sala temporária: some sozinha quando todo mundo sai.", false));
 
-$("btnEnter").onclick = async () => {
-  const name = $("inName").value.trim();
-  const room = $("inRoom").value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
-  if (!name) return ($("err").textContent = "Escreva seu nome.");
-  if (room.length < 4) return ($("err").textContent = "O código do espaço precisa de 4+ letras ou números.");
-  $("err").textContent = "";
-  myLook = normLook(loginCreator.get());
-  store.set("nc_name", name); store.set("nc_room", room); store.set("nc_look", JSON.stringify(myLook));
-  try {
-    firebase.initializeApp(firebaseConfig);
-    const cred = await firebase.auth().signInAnonymously();
-    uid = cred.user.uid; db = firebase.database();
-  } catch (e) { return ($("err").textContent = "Não conectou: " + (e.message || e)); }
-  loginCreator.destroy(); startGame(name, room);
-};
-
+/* o que o servidor precisa saber de nós (usado ao entrar e ao voltar da queda) */
+function selfState() { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, acct: myAcct(), csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 3 }; }
 function startGame(name, room) {
   myName = name; $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
@@ -2317,17 +2386,19 @@ function startGame(name, room) {
   do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30);
   me.dir = "d"; me.act = null;
   const pp = P(me.x + .5, me.y + .5); camX = pp[0] - LW / K / 2; camY = pp[1] - LH / K / 2;
-  meRef.set({ name, look: myLook, x: me.x, y: me.y, dir: "d", mic: false, cam: false, vis: !document.hidden, ver: 2 });
-  document.addEventListener("visibilitychange", () => { const v = !document.hidden; if (players[uid]) players[uid].vis = v; if (meRef) meRef.update({ vis: v }); });
+  meRef.set({ name, look: myLook, x: me.x, y: me.y, dir: "d", mic: false, cam: false, vis: !document.hidden, ver: 3, acct: myAcct() })
+    .catch(e => { setStatus("⛔ O servidor não deixou você entrar (" + String((e && e.message) || e).slice(0, 90) + "). Confira as regras do Firebase (docs/FIREBASE.md).", 0); });
+  document.addEventListener("visibilitychange", () => { const v = !document.hidden; if (players[uid]) players[uid].vis = v; if (meRef && !leaving && players[uid]) meRef.update({ vis: v }).catch(() => {}); });
   /* presença: ao perder a rede o servidor apaga nossa entrada (onDisconnect); ao voltar, recriamos para não virar "fantasma" invisível */
   let wasConn = false;
-  const selfState = () => { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 2 }; };
   db.ref(".info/connected").on("value", s => {
+    connectedNow = s.val() === true;
     if (s.val() !== true) { if (wasConn) setStatus("⚠️ Sem conexão. Tentando reconectar...", 0); return; }
     meRef.onDisconnect().remove(); roomRef.child("signals/" + uid).onDisconnect().remove();
+    if (myDesk) { try { roomRef.child("desks/" + myDesk).onDisconnect().remove(); } catch (e) {} }
     if (wasConn) {
-      meRef.set(selfState()); setStatus("✅ Reconectado.", 2500);
-      setTimeout(() => { if (!players[uid]) meRef.set(selfState()); }, 1500);      // o servidor pode apagar logo depois: confere de novo
+      restoreSelf(); setStatus("✅ Reconectado.", 2500);
+      setTimeout(() => { if (!players[uid]) restoreSelf(); }, 1500);              // o servidor pode apagar logo depois: confere de novo
     }
     wasConn = true;
   });
@@ -2342,9 +2413,11 @@ function startGame(name, room) {
       const js = JSON.stringify(v[id].look || null); if (p._lj !== js) { p._lj = js; p.lookN = normLook(v[id].look); }
     }
     for (const id in players) if (!v[id]) delete players[id];
+    playersReady = true;
+    for (const id in players) players[id].acct = players[id].acct === "agent" ? "agent" : players[id].acct === "user" ? "user" : "guest";
     const others = Object.keys(v).filter(id => id !== uid).map(id => cleanName(v[id].name));
     $("who").textContent = others.length ? "Aqui também: " + others.join(", ") : "Só você por aqui";
-  }, err => { console.warn(err); setStatus("⛔ Sem permissão no servidor. Confira as regras do Firebase (docs/FIREBASE.md).", 0); });
+  }, err => { console.warn(err); setStatus(isPermRoom() && !isRoomOwner() ? "⛔ Você não tem mais acesso a esta sala." : "⛔ Sem permissão no servidor. Confira as regras do Firebase (docs/FIREBASE.md).", 0); });
   roomRef.child("cats").on("value", s => {
     const v = s.val() || {}, now = Date.now();
     for (const id in CATS) if (v[id]) {
@@ -2377,7 +2450,7 @@ function startGame(name, room) {
     pass = s.val() || {};
     DOORS.forEach(d => { const has = !!(pass[d.office] && pass[d.office][uid]); if (has && !lastPassMine[d.office]) setStatus("✅ Pode entrar " + inO(d.office) + "! A porta abriu.", 6000); lastPassMine[d.office] = has; });
   });
-  initRooms(); initGames();
+  initAccess(); initDesks(); initRooms(); initGames();
   renderCatPanel("rebuild");
   setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); requestAnimationFrame(loop);
 }
@@ -2387,9 +2460,10 @@ const passSeen = {}, passUsed = {};
 const insideOffice = o => roomOf(me.x, me.y) === o;
 const officeOccupied = o => Object.keys(players).some(id => id !== uid && roomOf(players[id].x, players[id].y) === o);
 const hasPass = o => !!(pass[o] && pass[o][uid]);
-const doorOpenFor = d => insideOffice(d.office) || hasPass(d.office) || !officeOccupied(d.office);
+const doorOpenFor = d => canEnterOffice(d.office) && (insideOffice(d.office) || hasPass(d.office) || !officeOccupied(d.office));       // reservado/agentes trabalhando: só o anfitrião (as regras do servidor também exigem)
 /* aparência da porta (igual para todo mundo): fechada enquanto tem alguém dentro, abre quando alguém está no vão ou encostado nela por dentro */
 const doorOpenVisual = d => {
+  if (officeLocked(d.office)) return Object.keys(players).some(id => { const p = players[id]; return Math.max(Math.abs(p.x - d.x), Math.abs(p.y - d.y)) <= 1 && id === (roomMeta && roomMeta.owner); });
   const ids = Object.keys(players); let inside = false;
   for (const id of ids) {
     const p = players[id], r = roomOf(p.x, p.y);
@@ -2402,14 +2476,17 @@ const knockAge = k => Date.now() + serverOffset - (k.ts || 0);
 function tileBlocked(x, y) {
   if (x < 0 || y < 0 || x >= COLS || y >= ROWS || isWall(x, y)) return true;
   const d = DOORAT[x + "_" + y]; if (d && !doorOpenFor(d)) return true;
+  const dk = DESK_AT[x + "_" + y]; if (dk && deskTakenByOther(deskKey(dk))) return true;                 // mesa com outra pessoa
   const it = ITEM[x + "_" + y]; return !!(it && DEF[it.t].solid);
 }
 const dirOf = (dx, dy) => dx > 0 ? "r" : dx < 0 ? "l" : dy > 0 ? "d" : "u";
 function stepTo(nx, ny, vec, now) {
   const dir = dirOf(vec[0], vec[1]);
   if (tileBlocked(nx, ny)) { if (dir !== me.dir) { me.dir = dir; meRef.update({ dir }); } return false; }
+  const dk = deskAtTile(nx, ny);
+  if (dk && deskKey(dk) !== myDesk) return seatAtDesk(dk, nx, ny, dir, now);                      // mesa: grava o registro antes de andar
   if (me.act && me.act.type === "eat") { me.act = null; meRef.update({ act: null }); }
-  me.x = nx; me.y = ny; me.dir = dir; meRef.update({ x: nx, y: ny, dir }); lastStep = now; return true;
+  me.x = nx; me.y = ny; me.dir = dir; meRef.update({ x: nx, y: ny, dir }); lastStep = now; afterMoveDesk(nx, ny); return true;
 }
 function bfs(sx, sy, tx, ty, blocked, maxD) {
   const q = [[sx, sy, 0]], prev = {}; prev[sx + "_" + sy] = null;
@@ -2470,8 +2547,8 @@ cv.addEventListener("pointerdown", e => {
   const cid = nearestCatTo(x, y, 1.2); if (cid) selectCat(cid);
   if (tileBlocked(x, y)) return;
   const ro = roomOf(x, y), dd = DOORS.find(d2 => d2.office === ro);
-  if (dd && !doorOpenFor(dd) && !bfs(me.x, me.y, x, y, tileBlocked)) return setStatus("🚪 A porta " + ofO(ro) + " está fechada. Chegue perto dela e bata (botão ou tecla E).", 4000);
-  const p = bfs(me.x, me.y, x, y, tileBlocked); if (p) path = p;
+  if (dd && !doorOpenFor(dd) && !bfs(me.x, me.y, x, y, tileBlocked)) return setStatus(officeLocked(ro) ? "🔒 " + ROOMBY[ro].name + " está reservado: só o anfitrião entra." : "🚪 A porta " + ofO(ro) + " está fechada. Chegue perto dela e bata (botão ou tecla E).", 4000);
+  const p = bfs(me.x, me.y, x, y, walkBlockedTo(x, y)); if (p) path = p;
 });
 
 /* =========================================================
@@ -2539,7 +2616,7 @@ $("btnWard").onclick = () => { if (near(o => o.t === "guarda")) openWardrobe(); 
 function currentActions() {
   const a = [];
   if (me.act) { if (me.act.type === "sleep") a.push({ k: "wake", l: "☀️ Acordar", fn: wake }); return a; }
-  const sf = sofaAction(); if (sf) a.push(sf);
+  const gm = gameAction(); if (gm) a.push(gm);
   if (near(o => o.t === "cama")) a.push({ k: "sleep", l: "😴 Dormir", fn: sleep });
   if (near(o => o.t === "chuveiro")) a.push({ k: "shower", l: "🚿 Tomar banho", fn: shower });
   if (near(o => DEF[o.t].food && (o.t !== "mesa" || o.plate))) a.push({ k: "eat", l: "🍽️ Comer", fn: eat });
@@ -2558,8 +2635,10 @@ function currentActions() {
     a.push({ k: "play" + id, l: "🧶 Brincar · " + CATS[id].name, fn: () => catAction(id, "play") });
   }
   DOORS.forEach(d => {
-    if (Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) <= 2 && roomOf(me.x, me.y) !== d.office && !doorOpenFor(d))
-      a.push({ k: "knock" + d.office, l: "🚪 Bater na porta · " + ROOMBY[d.office].name, fn: () => knock(d) });
+    if (Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) <= 2 && roomOf(me.x, me.y) !== d.office && !doorOpenFor(d)) {
+      if (officeLocked(d.office)) a.push({ k: "lock" + d.office, l: "🔒 Reservado ao anfitrião · " + ROOMBY[d.office].name, fn: () => setStatus("🔒 " + ROOMBY[d.office].name + ": " + lockReason(d.office) + ". Só o anfitrião entra; pedir para bater não adianta.", 5000) });
+      else a.push({ k: "knock" + d.office, l: "🚪 Bater na porta · " + ROOMBY[d.office].name, fn: () => knock(d) });
+    }
   });
   if (["reu", "cin"].includes(roomOf(me.x, me.y))) a.push({ k: "hand", l: myHand() ? "✋ Abaixar a mão" : "✋ Levantar a mão", fn: toggleHand });
   return a;
@@ -2568,7 +2647,7 @@ let actSig = "";
 function refreshActions() {
   const a = currentActions(), sig = a.map(x => x.k + x.l).join("|"); if (sig === actSig) return; actSig = sig;
   const box2 = $("actions"); box2.innerHTML = "";
-  if (!a.length) { const h = document.createElement("span"); h.className = "hint"; h.textContent = "Chegue perto de camas, chuveiro, geladeira, guarda-roupa, painéis, potes, caixas de areia, sujeira, gatos, portas ou do sofá da TV para interagir (tecla E)."; box2.appendChild(h); return; }
+  if (!a.length) { const h = document.createElement("span"); h.className = "hint"; h.textContent = "Chegue perto de camas, chuveiro, geladeira, guarda-roupa, painéis, potes, caixas de areia, sujeira, gatos, portas ou da TV (sente no sofá para jogar sinuca) para interagir (tecla E)."; box2.appendChild(h); return; }
   a.forEach(x => { const b = document.createElement("button"); b.className = "primary"; b.textContent = x.l; b.onclick = x.fn; box2.appendChild(b); });
 }
 
@@ -2628,7 +2707,7 @@ function tick() {
   if (!meRef) return;
   const now = Date.now();
   for (const id in players) {
-    if (id === uid) continue;
+    if (id === uid || players[id].acct === "agent") continue;                     // agentes de IA não têm voz/vídeo: não abrimos chamada com eles
     const rec = peers[id], ok = canTalk(id, !!rec);
     if (!rec && ok && uid < id && now > (retryAt[id] || 0)) callPeer(id).catch(console.warn);
     if (rec && !ok) closePeer(id, true);
@@ -2649,9 +2728,533 @@ function tick() {
     const mine = knocks[o] && knocks[o][uid];
     if (mine && mine.status === "pending" && (knockAge(mine) > 60000 || (!inside && Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) > 3))) roomRef.child("knocks/" + o + "/" + uid).remove();   // demorou ou se afastou
   });
+  healPresence(now);
+  if (myDesk) { const dd2 = DESK_AT[myDesk]; if (!dd2 || me.x !== dd2.x || me.y !== dd2.y) releaseDeskLocal(); }       // dormiu/foi levado: solta a mesa
+  if (myAcl && myAcl.exp && myAcl.exp <= gNow() && !isRoomOwner()) kicked("O seu acesso à sala expirou.");
+  enforceLock();
   const r = roomOf(me.x, me.y); $("roomLabel").textContent = r ? ROOMBY[r].name : ""; $("roomtag").textContent = r ? ROOMBY[r].name : "";
   renderPrompts(); updateTiles(); renderCatPanel(); catAlerts(now); updateRoomPanel(); renderGamePanel();
 }
+/* =========================================================
+   CONTAS, SALAS E CONVITES (tela de entrada)
+   Três jeitos de entrar:
+   - sala TEMPORÁRIA: sem login (Firebase anônimo). Quem tem o código entra como convidado; a sala some quando fica vazia.
+   - sala PERMANENTE: conta (e-mail/senha confirmado ou Google). Uma sala fixa por conta (users/<uid>/room), que continua existindo vazia.
+   - CONVITE: link com um token secreto (#sala=...&convite=...) que o dono gera; vira uma entrada em rooms/<sala>/acl/<uid>.
+   Quem manda é o servidor: o que está aqui só monta as chamadas; as regras do Firebase (database.rules.json) decidem. Nenhuma senha é guardada pelo jogo.
+   ========================================================= */
+const PERM_RE = /^perm-[a-z0-9]{12,24}$/;
+const TOK_RE = /^[A-Za-z0-9]{20,40}$/;
+let fbUser = null, fbReady = false, roomMeta = null, myAcl = null, inviteIn = null, entering = false;
+const SVT = () => firebase.database.ServerValue.TIMESTAMP;
+const errBox = t => { $("err").textContent = t || ""; };
+function acctNote(t, cls) { const m = $("acctMsg"); m.textContent = t || ""; m.className = "muted " + (cls || ""); }
+const randStr = (n, abc) => { let s = ""; for (let i = 0; i < n; i++) s += abc[rnd(abc.length)]; return s; };
+const genPermId = () => "perm-" + randStr(16, "abcdefghijklmnopqrstuvwxyz0123456789");
+const genToken = () => randStr(28, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+
+function fbInit() {
+  if (fbReady) return true;
+  if (typeof firebase === "undefined" || !firebase.auth || !firebase.database) return false;
+  try { firebase.initializeApp(firebaseConfig); } catch (e) { if (!/already exists/i.test(String(e && e.message))) return false; }
+  fbReady = true; db = firebase.database();
+  firebase.auth().onAuthStateChanged(u => { fbUser = u || null; renderAcct(); });
+  return true;
+}
+function authMsg(e) {
+  const c = String((e && e.code) || ""), m = {
+    "auth/invalid-email": "E-mail inválido.", "auth/missing-email": "Escreva o e-mail.", "auth/missing-password": "Escreva a senha.",
+    "auth/user-not-found": "E-mail ou senha incorretos.", "auth/wrong-password": "E-mail ou senha incorretos.", "auth/invalid-credential": "E-mail ou senha incorretos.",
+    "auth/email-already-in-use": "Já existe uma conta com esse e-mail. Use “Entrar”.", "auth/weak-password": "Senha fraca: use 8 ou mais caracteres.",
+    "auth/too-many-requests": "Muitas tentativas. Espere alguns minutos e tente de novo.", "auth/network-request-failed": "Sem conexão com a internet.",
+    "auth/popup-closed-by-user": "A janela foi fechada antes de terminar.", "auth/cancelled-popup-request": "Já existe uma janela de login aberta.",
+    "auth/operation-not-allowed": "Esse jeito de entrar ainda não foi ativado no Firebase (veja docs/CONTAS.md).",
+    "auth/unauthorized-domain": "Este endereço não está autorizado no Firebase (Authentication › Settings › Authorized domains).",
+    "auth/user-disabled": "Esta conta foi desativada.", "auth/requires-recent-login": "Entre de novo para continuar."
+  };
+  return m[c] || ((e && e.message) ? String(e.message).replace(/^Firebase: /, "").slice(0, 160) : "Não deu certo.");
+}
+
+/* ---------- abas e estado da conta ---------- */
+function selectTab(which) {
+  const acct = which === "acct";
+  $("modeTemp").hidden = acct; $("modeAcct").hidden = !acct;
+  $("tabTemp").classList.toggle("sel", !acct); $("tabAcct").classList.toggle("sel", acct);
+  $("tabTemp").setAttribute("aria-selected", String(!acct)); $("tabAcct").setAttribute("aria-selected", String(acct));
+  errBox("");
+}
+$("tabTemp").onclick = () => selectTab("temp"); $("tabAcct").onclick = () => selectTab("acct");
+const isRealUser = u => !!u && !u.isAnonymous;
+const isGoogle = u => !!u && (u.providerData || []).some(p => p && p.providerId === "google.com");
+let firstAuth = true;
+function renderAcct() {
+  const u = isRealUser(fbUser) ? fbUser : null;
+  $("acctOut").hidden = !!u; $("acctIn").hidden = !u;
+  if (firstAuth) { firstAuth = false; if (u && !inviteIn) selectTab("acct"); }
+  if (!u) return;
+  $("acctWho").textContent = "Conectado como " + (u.displayName || u.email || "sua conta");
+  const ok = !!u.emailVerified;
+  $("acctState").textContent = ok ? "Conta confirmada. Sua sala permanente fica guardada nesta conta: você volta a ela quando quiser, de qualquer aparelho."
+    : "Falta confirmar o e-mail: abra a mensagem que enviamos, toque no link e depois em “Já confirmei”.";
+  $("btnEnterPerm").disabled = !ok; $("btnMailVerify").hidden = ok; $("btnMailCheck").hidden = ok;
+  $("acctSec").textContent = isGoogle(u) ? "Seu acesso é protegido pela verificação em duas etapas da sua conta Google (configure em myaccount.google.com/security)."
+    : "Use uma senha longa e só sua. A verificação em duas etapas por aplicativo autenticador ainda não está disponível para contas com senha.";
+}
+async function acctRun(fn, okMsg) {
+  acctNote("");
+  if (!fbInit()) return acctNote("O Firebase não carregou. Confira a conexão e recarregue.", "bad");
+  try { await fn(); if (okMsg) acctNote(okMsg, "ok"); } catch (e) { acctNote(authMsg(e), "bad"); }
+}
+const mailPass = () => ({ mail: $("inMail").value.trim(), pass: $("inPass").value });
+function checkPass(p) { if (p.length < 8) throw { code: "auth/weak-password" }; }
+$("btnMailIn").onclick = () => acctRun(async () => { const x = mailPass(); await firebase.auth().signInWithEmailAndPassword(x.mail, x.pass); $("inPass").value = ""; });
+$("btnMailNew").onclick = () => acctRun(async () => {
+  const x = mailPass(); checkPass(x.pass);
+  const c = await firebase.auth().createUserWithEmailAndPassword(x.mail, x.pass); $("inPass").value = "";
+  await c.user.sendEmailVerification();
+}, "Conta criada! Enviamos um e-mail de confirmação: abra o link e depois volte aqui.");
+$("btnMailReset").onclick = () => acctRun(async () => { const x = mailPass(); if (!x.mail) throw { code: "auth/missing-email" }; await firebase.auth().sendPasswordResetEmail(x.mail); },
+  "Se esse e-mail tiver conta, enviamos o link para criar uma nova senha.");
+$("btnGoogle").onclick = () => acctRun(async () => {
+  const prov = new firebase.auth.GoogleAuthProvider();
+  try { await firebase.auth().signInWithPopup(prov); }
+  catch (e) { if (e && (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment")) return firebase.auth().signInWithRedirect(prov); throw e; }
+});
+$("btnMailVerify").onclick = () => acctRun(async () => { await fbUser.sendEmailVerification(); }, "E-mail de confirmação enviado.");
+$("btnMailCheck").onclick = () => acctRun(async () => {
+  await fbUser.reload(); await fbUser.getIdToken(true); renderAcct();
+  if (!fbUser.emailVerified) throw { message: "Ainda não confirmado. Abra o link do e-mail e tente de novo." };
+}, "E-mail confirmado!");
+$("btnOut").onclick = () => acctRun(async () => { await firebase.auth().signOut(); selectTab("temp"); });
+
+/* ---------- link de convite: #sala=<sala>&convite=<token> (o token fica no fragmento, que não vai para o servidor do site) ---------- */
+(() => {
+  try {
+    const h = new URLSearchParams(location.hash.replace(/^#/, "")), r = (h.get("sala") || "").toLowerCase(), t = h.get("convite") || "";
+    if (/^[a-z0-9-]{4,40}$/.test(r) && TOK_RE.test(t)) {
+      inviteIn = { room: r, tok: t };
+      $("inviteBox").hidden = false; $("modeTabs").hidden = true; $("modeTemp").hidden = true; $("modeAcct").hidden = true;
+      $("inviteInfo").textContent = "Convite para a sala " + r + ". Escreva seu nome, monte o personagem e entre. Quem tem o link entra com as permissões que o dono escolheu.";
+    }
+  } catch (e) {}
+})();
+
+/* ---------- entrada ---------- */
+const cleanRoom = v => String(v || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+async function ensureAnon() {
+  if (!fbInit()) throw new Error("O Firebase não carregou. Confira a conexão e recarregue a página.");
+  const a = firebase.auth(); if (a.currentUser) return a.currentUser;
+  return (await a.signInAnonymously()).user;
+}
+async function ensurePermRoom() {
+  const u = fbUser;
+  if (!isRealUser(u)) throw new Error("Entre na sua conta primeiro.");
+  if (!u.emailVerified) throw new Error("Confirme o e-mail da conta para criar sua sala permanente.");
+  await u.getIdToken(true);                                                         // pega a confirmação de e-mail mais recente
+  const ur = db.ref("users/" + u.uid + "/room");
+  let room = (await ur.once("value")).val();
+  if (!room) { room = genPermId(); await ur.set(room); }
+  const rr = db.ref("rooms/" + room);
+  if (!(await rr.child("meta").once("value")).val()) await rr.child("meta").set({ kind: "perm", owner: u.uid, created: SVT(), seen: SVT() });
+  return room;
+}
+async function claimInvite(rr, tok, name) {
+  const iv = (await rr.child("invites/" + tok).once("value")).val();
+  if (!iv || typeof iv !== "object") throw new Error("Este convite não existe mais ou foi cancelado. Peça um novo ao dono da sala.");
+  if (typeof iv.exp !== "number" || iv.exp <= Date.now() - 120000) throw new Error("Este convite expirou. Peça um novo ao dono da sala.");
+  if (iv.role === "agent") throw new Error("Este convite é de um agente de IA (programa externo), não de uma pessoa.");
+  if ((iv.role === "member" || iv.role === "cohost") && !isRealUser(fbUser)) throw new Error("Este convite exige uma conta. Entre na aba “Minha conta” e abra o link de novo.");
+  if (iv.once && iv.usedBy) throw new Error("Este convite já foi usado.");
+  const entry = { role: iv.role, name: cleanName(name), tok };
+  if (typeof iv.acc === "number") entry.exp = iv.acc;
+  const upd = {}; upd["acl/" + uid] = entry; if (iv.once) upd["invites/" + tok + "/usedBy"] = uid;
+  await rr.update(upd);
+  return entry;
+}
+/* abre (ou cria) a sala e descobre o papel de quem entra; qualquer recusa vem das regras do servidor */
+async function prepareRoom(room, mode, name) {
+  const rr = db.ref("rooms/" + room);
+  let meta = (await rr.child("meta").once("value")).val();
+  if (!meta) {
+    if (PERM_RE.test(room)) throw new Error("Sala não encontrada.");
+    try { await rr.child("meta").set({ kind: "temp", owner: uid, created: SVT(), seen: SVT() }); } catch (e) { /* alguém criou no mesmo instante */ }
+    meta = (await rr.child("meta").once("value")).val();
+    if (!meta) throw new Error("Não consegui abrir este espaço. Tente outro código.");
+  }
+  roomMeta = meta; myAcl = null;
+  if (meta.owner === uid) return;
+  let acl = (await rr.child("acl/" + uid).once("value")).val();
+  if (acl && typeof acl.exp === "number" && acl.exp <= Date.now()) throw new Error("O seu acesso a esta sala expirou. Peça um novo convite.");
+  if (!acl && inviteIn && inviteIn.room === room) acl = await claimInvite(rr, inviteIn.tok, name);
+  if (!acl && meta.kind === "perm") throw new Error("Esta sala é privada. Peça um link de convite ao dono.");
+  myAcl = acl || null;
+}
+function enterMsg(e) {
+  const m = String((e && e.message) || e || "");
+  if (/permission_denied/i.test(m)) return "O servidor recusou a entrada. Se a sala for privada, peça um convite; se for nova, confira se as regras do Firebase estão publicadas (docs/FIREBASE.md).";
+  return m.replace(/^Firebase: /, "").slice(0, 200) || "Não conectou.";
+}
+async function enter(mode) {
+  if (entering) return;
+  const name = $("inName").value.trim();
+  if (!name) return errBox("Escreva seu nome.");
+  let room = "";
+  if (mode === "temp") {
+    room = cleanRoom($("inRoom").value);
+    if (room.length < 4) return errBox("O código do espaço precisa de 4+ letras ou números.");
+    if (room.startsWith("perm-")) return errBox("Códigos que começam com “perm-” são das salas permanentes. Use o link de convite ou outro código.");
+  } else if (mode === "invite") room = inviteIn.room;
+  errBox(""); entering = true;
+  myLook = normLook(loginCreator.get()); store.set("nc_name", name); store.set("nc_look", JSON.stringify(myLook)); if (mode === "temp") store.set("nc_room", room);
+  try {
+    if (!fbInit()) throw new Error("O Firebase não carregou. Confira a conexão e recarregue a página.");
+    if (mode === "perm") { await fbUser.getIdToken(); uid = fbUser.uid; room = await ensurePermRoom(); }
+    else { const u = await ensureAnon(); uid = u.uid; }
+    await prepareRoom(room, mode, name);
+  } catch (e) { entering = false; return errBox(enterMsg(e)); }
+  entering = false; loginCreator.destroy(); startGame(name, room);
+}
+$("btnEnter").onclick = () => enter("temp");
+$("btnEnterPerm").onclick = () => enter("perm");
+$("btnEnterInvite").onclick = () => enter("invite");
+fbInit();
+try { const m = sessionStorage.getItem("pt_msg"); if (m) { sessionStorage.removeItem("pt_msg"); errBox(m); } } catch (e) {}
+/* =========================================================
+   ACESSO NA SALA: papéis, escritório reservado, convites, agentes e saída
+   Papéis: dono (rooms/<sala>/meta/owner), co-anfitrião, membro, convidado e agente de IA (rooms/<sala>/acl/<uid>.role).
+   TUDO que dá poder (entrar em escritório reservado, convidar, liberar passe, abrir/fechar) é conferido pelas regras do
+   Firebase com o uid autenticado. As variáveis daqui só decidem o que mostrar: se o cliente mentir, o servidor recusa a escrita.
+   ========================================================= */
+let aclAll = {}, invitesData = {}, officesData = {}, playersReady = false, connectedNow = false, leaving = false, healAt = 0, kickedOnce = false;
+const isRoomOwner = () => !!roomMeta && roomMeta.owner === uid;
+const myRole = () => isRoomOwner() ? "owner" : (myAcl && myAcl.role) || "guest";
+const isHost = () => isRoomOwner() || myRole() === "cohost";
+const myAcct = () => isRealUser(fbUser) ? "user" : "guest";
+const isPermRoom = () => !!roomMeta && roomMeta.kind === "perm";
+const ROLE_LABEL = { owner: "Dono", cohost: "Co-anfitrião", member: "Membro", guest: "Convidado", agent: "Agente de IA" };
+const ACCT_LABEL = { user: "conta", guest: "convidado", agent: "agente de IA" };
+
+/* ---------- escritório reservado ---------- */
+/* há um agente de IA trabalhando numa mesa deste escritório (e ainda conectado)? Mesma conta que as regras fazem no servidor. */
+function officeAgentWork(o) {
+  return LAYOUT.desks.some(d => { if (d.office !== o) return false; const r = desksData[deskKey(d)]; return !!(r && r.k === "agent" && players[r.uid]); });
+}
+const officeHostOnly = o => !!(officesData[o] && officesData[o].hostOnly === true);
+const officeLocked = o => officeHostOnly(o) || officeAgentWork(o);
+const canEnterOffice = o => isHost() || !officeLocked(o);
+function lockReason(o) { return officeHostOnly(o) ? "reservado pelo anfitrião" : "agentes de IA estão trabalhando"; }
+/* quem já estava dentro quando o escritório trancou (e não é anfitrião) é levado para fora: o servidor não aceita mais a posição dele lá dentro */
+function enforceLock() {
+  if (!meRef) return;
+  const o = roomOf(me.x, me.y); if (!o || !DOORS.some(d => d.office === o) || canEnterOffice(o)) return;
+  const d = DOORS.find(d2 => d2.office === o);
+  releaseDeskLocal(); path = [];
+  me.x = d.x; me.y = d.y; meRef.update({ x: me.x, y: me.y, dir: "d" });
+  setStatus("🔒 " + ROOMBY[o].name + " foi reservado (" + lockReason(o) + "). Só o anfitrião entra.", 6000);
+}
+
+/* ---------- escutas ---------- */
+function cleanMeta(v) {
+  if (!v || typeof v !== "object") return null;
+  const n = x => typeof x === "number" ? x : 0;
+  return { kind: v.kind === "perm" ? "perm" : "temp", owner: String(v.owner || "").slice(0, 64), created: n(v.created), seen: n(v.seen) };
+}
+function cleanAcl(v) {
+  if (!v || typeof v !== "object" || !ROLE_LABEL[v.role] || v.role === "owner") return null;
+  return { role: v.role, name: cleanName(v.name), exp: typeof v.exp === "number" ? v.exp : null, off: typeof v.off === "string" ? v.off.slice(0, 40) : "", chat: v.chat === true };
+}
+function kicked(msg) {
+  if (kickedOnce) return; kickedOnce = true;
+  try { sessionStorage.setItem("pt_msg", msg); } catch (e) {}
+  leaveRoom(msg);
+}
+function initAccess() {
+  roomRef.child("meta").on("value", s => {
+    const m = cleanMeta(s.val());
+    if (m) roomMeta = m;
+    else if (playersReady && !leaving && roomMeta && roomMeta.kind !== "perm") ensureMeta();           // sala temporária apagada enquanto estávamos aqui (limpeza): recria
+    if (!$("hostModal").hidden) renderHostPanel();
+  });
+  roomRef.child("acl/" + uid).on("value", s => {
+    const a = cleanAcl(s.val()), had = !!myAcl;
+    myAcl = a;
+    if (!a && had && isPermRoom() && !isRoomOwner()) kicked("O seu acesso à sala foi encerrado pelo dono.");
+    if (!$("hostModal").hidden) renderHostPanel();
+  });
+  roomRef.child("offices").on("value", s => {
+    const v = s.val() || {}; officesData = {};
+    OFFICE_IDS.forEach(o => { if (v[o] && typeof v[o] === "object") officesData[o] = { hostOnly: v[o].hostOnly === true, by: String(v[o].by || "").slice(0, 64) }; });
+    enforceLock(); if (!$("hostModal").hidden) renderHostPanel();
+  });
+  if (isRoomOwner()) {                                                                       // só o dono lê a lista de acessos e de convites
+    roomRef.child("acl").on("value", s => {
+      const v = s.val() || {}; aclAll = {};
+      for (const id in v) { const a = cleanAcl(v[id]); if (a) aclAll[id] = a; }
+      if (!$("hostModal").hidden) renderHostPanel();
+    });
+    roomRef.child("invites").on("value", s => {
+      const v = s.val() || {}; invitesData = {};
+      for (const t in v) { const i = v[t]; if (i && typeof i === "object" && TOK_RE.test(t)) invitesData[t] = { role: String(i.role || ""), exp: +i.exp || 0, acc: typeof i.acc === "number" ? i.acc : null, off: String(i.off || ""), once: i.once === true, usedBy: i.usedBy ? String(i.usedBy) : "", name: cleanName(i.name) }; }
+      if (!$("hostModal").hidden) renderHostPanel();
+    });
+  }
+  /* "visto por último": a limpeza no servidor usa isto para saber se a sala temporária foi abandonada. Uma escrita pequena a cada 4 min por pessoa. */
+  const stamp = () => { if (connectedNow && !document.hidden) roomRef.child("meta/seen").set(SVT()).catch(() => {}); };
+  stamp(); setInterval(stamp, 240000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) stamp(); });
+}
+function ensureMeta() {
+  if (!roomRef || !roomMeta) return;
+  roomRef.child("meta").set({ kind: "temp", owner: roomMeta.owner === uid || !roomMeta.owner ? uid : roomMeta.owner, created: SVT(), seen: SVT() }).catch(() => {});
+}
+
+/* ---------- reconexão: tudo que o servidor apagou ao perder a rede volta ---------- */
+async function restoreSelf() {
+  if (!meRef || leaving) return;
+  if (myDesk) { const ok = await claimDesk(myDesk); if (!ok) { const d = DESK_AT[myDesk]; myDesk = null; if (d) { const e = deskExit(d); me.x = e[0]; me.y = e[1]; } } }
+  try { await meRef.set(selfState()); } catch (e) { setStatus("⛔ O servidor não aceitou sua volta à sala (acesso encerrado ou escritório reservado).", 6000); }
+}
+/* se o nosso registro sumiu e a conexão está de pé (limpeza, queda longa), refazemos */
+function healPresence(now) {
+  if (!meRef || !playersReady || !connectedNow || leaving || players[uid] || now - healAt < 6000) return;
+  healAt = now; restoreSelf();
+}
+
+/* ---------- sair ---------- */
+async function leaveRoom(msg) {
+  if (leaving) return; leaving = true;
+  try {
+    if (myDesk) await releaseDesk();
+    await meRef.remove();
+    if (roomMeta && roomMeta.kind !== "perm") {                                          // sala temporária: quem sai por último apaga tudo (as regras só deixam se não sobrou ninguém)
+      const s = await roomRef.child("players").once("value");
+      if (!s.exists()) await roomRef.remove().catch(() => {});
+    }
+  } catch (e) {}
+  if (msg) { try { sessionStorage.setItem("pt_msg", msg); } catch (e) {} }
+  location.reload();
+}
+$("btnLeave").onclick = () => leaveRoom();
+addEventListener("pagehide", () => { if (meRef && !leaving) { try { meRef.remove(); } catch (e) {} } });
+
+/* ---------- janela "Sala" ---------- */
+const hostEl = $("hostModal"), hostBody = $("hostBody");
+const mkSel = (opts, val) => { const s = document.createElement("select"); opts.forEach(o => { const e = document.createElement("option"); e.value = o[0]; e.textContent = o[1]; s.appendChild(e); }); if (val != null) s.value = val; return s; };
+const mkBtn = (txt, cls, fn) => { const b = gpEl("button", cls || "", txt); b.type = "button"; b.onclick = fn; return b; };
+const badge = (txt, cls) => gpEl("span", "badge " + (cls || ""), txt);
+let hostUI = null, hostBack = null;
+function openHostPanel() {
+  hostBack = document.activeElement; hostEl.hidden = false; buildHostPanel(); renderHostPanel(); $("hostClose").focus({ preventScroll: true });
+}
+function closeHostPanel() { hostEl.hidden = true; hostUI = null; hostBody.textContent = ""; if (hostBack && hostBack.focus) hostBack.focus(); }
+$("btnRoom").onclick = openHostPanel; $("hostClose").onclick = closeHostPanel;
+hostEl.addEventListener("pointerdown", e => { if (e.target === hostEl) closeHostPanel(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !hostEl.hidden) { e.stopPropagation(); closeHostPanel(); } }, true);
+
+const TTL = [["3600000", "1 hora"], ["86400000", "1 dia"], ["604800000", "7 dias"], ["2592000000", "30 dias"]];
+function buildHostPanel() {
+  hostBody.textContent = "";
+  const sec = (title, id) => { const s = gpEl("section"); s.appendChild(gpEl("h3", "", title)); const c = gpEl("div"); c.id = id; s.appendChild(c); hostBody.appendChild(s); return s; };
+  hostUI = { info: gpEl("div") }; hostBody.appendChild(hostUI.info);
+  hostUI.here = sec("Na sala agora", "hpHere").lastChild;
+  hostUI.offices = sec("Escritórios", "hpOff").lastChild;
+  hostUI.desks = sec("Mesas dos escritórios", "hpDesk").lastChild;
+  if (isRoomOwner()) {
+    const s1 = sec("Convidar pessoas", "hpInv"), c1 = s1.lastChild;
+    c1.appendChild(gpEl("div", "muted", isPermRoom() ? "Sua sala permanente é privada: só entra quem tem um link seu. O link vale por um tempo e dá o papel que você escolher." : "Quem tem o código entra como convidado. Use um link para dar papel de membro ou co-anfitrião, ou para limitar o tempo de acesso."));
+    const row = gpEl("div", "row");
+    const role = mkSel([["guest", "Convidado (sem conta)"], ["member", "Membro (precisa de conta)"], ["cohost", "Co-anfitrião (precisa de conta)"]], isPermRoom() ? "guest" : "member");
+    const ttl = mkSel(TTL, "86400000"); const acc = mkSel([["14400000", "Acesso por 4 horas"], ["86400000", "Acesso por 1 dia"], ["604800000", "Acesso por 7 dias"], ["0", "Acesso até eu remover"]], "86400000");
+    const mk = mkBtn("Gerar link", "primary", () => makeInvite(role.value, +ttl.value, +acc.value));
+    row.append(role, gpEl("span", "muted", "Link vale por"), ttl, acc, mk); c1.appendChild(row);
+    hostUI.invOut = gpEl("div"); c1.appendChild(hostUI.invOut);
+    const s2 = sec("Agentes de IA", "hpAg"), c2 = s2.lastChild;
+    c2.appendChild(gpEl("div", "muted", "Cada agente é um programa externo com credencial própria, de uso único e com validade. Ele entra marcado como “agente”, só pode ir aos escritórios que você marcar, e nunca consegue dar permissão, abrir escritório reservado nem convidar ninguém."));
+    const r2 = gpEl("div", "row"), nm = document.createElement("input"); nm.type = "text"; nm.maxLength = 14; nm.placeholder = "Nome do agente"; nm.value = "Agente";
+    const offs = {}; const offBox = gpEl("span", "row");
+    OFFICE_IDS.forEach(o => { const l = document.createElement("label"); l.style.cssText = "display:inline-flex;gap:4px;align-items:center;grid-auto-flow:column"; const c = document.createElement("input"); c.type = "checkbox"; c.checked = o !== "reu"; offs[o] = c; l.append(c, document.createTextNode(ROOMBY[o].name)); offBox.appendChild(l); });
+    const chat = document.createElement("input"); chat.type = "checkbox"; chat.checked = true; const cl = document.createElement("label"); cl.style.cssText = "display:inline-flex;gap:4px;align-items:center;grid-auto-flow:column"; cl.append(chat, document.createTextNode("Pode escrever no chat"));
+    const claim = mkSel([["3600000", "Credencial vale 1 hora"], ["86400000", "Credencial vale 1 dia"]], "3600000");
+    const life = mkSel([["3600000", "Trabalha por 1 hora"], ["28800000", "Trabalha por 8 horas"], ["86400000", "Trabalha por 1 dia"], ["604800000", "Trabalha por 7 dias"], ["2592000000", "Trabalha por 30 dias"]], "28800000");
+    const mk2 = mkBtn("Gerar credencial do agente", "primary", () => makeAgentInvite(nm.value.trim(), OFFICE_IDS.filter(o => offs[o].checked), chat.checked, +claim.value, +life.value));
+    r2.append(nm, offBox, cl, claim, life, mk2); c2.appendChild(r2);
+    hostUI.agOut = gpEl("div"); c2.appendChild(hostUI.agOut);
+    hostUI.people = sec("Pessoas e agentes com acesso", "hpAcl").lastChild;
+  }
+}
+function copyBtn(txt, getText) { return mkBtn(txt, "", async b => { const ok = await copyText(getText()); setStatus(ok ? "Copiado!" : "Não consegui copiar: selecione e copie manualmente.", 2500); }); }
+const randTok = () => { for (;;) { const t = genToken(); if (TOK_RE.test(t)) return t; } };
+function inviteLink(tok) { return location.origin + location.pathname + "#sala=" + roomIdNow() + "&convite=" + tok; }
+const roomIdNow = () => roomRef.key;
+async function makeInvite(role, ttl, acc) {
+  const tok = randTok(), now = gNow(), iv = { role, exp: now + ttl, by: uid };
+  if (acc) iv.acc = now + acc;
+  try { await roomRef.child("invites/" + tok).set(iv); } catch (e) { return setStatus("⛔ O servidor recusou o convite.", 4000); }
+  const out = hostUI && hostUI.invOut; if (!out) return;
+  const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = inviteLink(tok); ta.style.minHeight = "54px";
+  out.textContent = ""; out.append(gpEl("div", "muted", "Link pronto (" + ROLE_LABEL[role] + "). Mande só para quem você quer na sala:"), ta, copyBtn("Copiar link", () => ta.value));
+}
+async function makeAgentInvite(name, offices, chat, claimMs, lifeMs) {
+  if (!name) return setStatus("Dê um nome ao agente.", 3000);
+  const tok = randTok(), now = gNow();
+  const iv = { role: "agent", exp: now + claimMs, acc: now + lifeMs, by: uid, once: true, name: cleanName(name), off: offices.length ? offices.join(",") : "-", chat: !!chat };
+  try { await roomRef.child("invites/" + tok).set(iv); } catch (e) { return setStatus("⛔ O servidor recusou a credencial.", 4000); }
+  const cred = { v: 1, sala: roomIdNow(), token: tok, nome: iv.name, firebase: { apiKey: firebaseConfig.apiKey, authDomain: firebaseConfig.authDomain, databaseURL: firebaseConfig.databaseURL, projectId: firebaseConfig.projectId } };
+  const out = hostUI && hostUI.agOut; if (!out) return;
+  const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = JSON.stringify(cred, null, 2);
+  out.textContent = ""; out.append(gpEl("div", "muted", "Salve como credencial.json e rode: node agent/party-agent.mjs credencial.json (veja docs/AGENTES.md). A credencial é de uso único: depois que o agente conectar, ela não funciona mais."), ta, copyBtn("Copiar credencial", () => ta.value));
+}
+function renderHostPanel() {
+  if (!hostUI) return;
+  const kind = isPermRoom() ? "Sala permanente" : "Sala temporária";
+  hostUI.info.textContent = "";
+  const head = gpEl("div", "row"); head.append(gpEl("b", "", kind), badge(ROLE_LABEL[myRole()] || "Convidado", isHost() ? "host" : ""));
+  if (!isPermRoom()) head.append(gpEl("span", "muted", "Código: " + roomIdNow()), copyBtn("Copiar código", () => roomIdNow()));
+  hostUI.info.appendChild(head);
+  hostUI.info.appendChild(gpEl("div", "muted", isPermRoom()
+    ? "Esta sala fica guardada na conta do dono e continua existindo quando está vazia."
+    : "Sala temporária: some sozinha quando todo mundo sai (e é apagada do servidor se for abandonada)."));
+  if (!isHost()) hostUI.info.appendChild(gpEl("div", "muted", "Só o anfitrião reserva escritórios, libera entrada e convida. Quem tem convite ou o código não ganha esses poderes."));
+
+  /* quem está na sala */
+  hostUI.here.textContent = ""; const ul = gpEl("ul");
+  Object.keys(players).sort().forEach(id => {
+    const p = players[id], li = gpEl("li"); const ac = p.acct === "agent" || p.acct === "user" || p.acct === "guest" ? p.acct : "guest";
+    li.appendChild(gpEl("span", "", cleanName(p.name) + (id === uid ? " (você)" : "")));
+    if (roomMeta && id === roomMeta.owner) li.appendChild(badge("dono", "host"));
+    li.appendChild(badge(ACCT_LABEL[ac], ac === "agent" ? "agent" : ""));
+    if (isHost() && id !== uid && !(roomMeta && id === roomMeta.owner)) li.appendChild(mkBtn("Tirar da sala", "no", () => kick(id)));
+    ul.appendChild(li);
+  });
+  hostUI.here.appendChild(ul);
+
+  /* escritórios reservados */
+  hostUI.offices.textContent = ""; const uo = gpEl("ul");
+  OFFICE_IDS.forEach(o => {
+    const li = gpEl("li"), lk = officeLocked(o); li.appendChild(gpEl("span", "", ROOMBY[o].name));
+    if (officeHostOnly(o)) li.appendChild(badge("🔒 reservado ao anfitrião", "lock")); else if (lk) li.appendChild(badge("🔒 agentes trabalhando: só o anfitrião entra", "lock")); else li.appendChild(badge("livre"));
+    if (isHost()) li.appendChild(mkBtn(officeHostOnly(o) ? "Liberar" : "Reservar ao anfitrião", officeHostOnly(o) ? "" : "primary", () => setOfficeLock(o, !officeHostOnly(o))));
+    uo.appendChild(li);
+  });
+  hostUI.offices.appendChild(uo);
+
+  /* mesas */
+  hostUI.desks.textContent = ""; const ud = gpEl("ul");
+  LAYOUT.desks.forEach((d, i) => {
+    const r = deskLive(deskKey(d)), li = gpEl("li");
+    li.appendChild(gpEl("span", "", ROOMBY[d.office].name + " · mesa " + (i % 7 + 1)));
+    li.appendChild(r ? badge((r.k === "agent" ? "🤖 " : "") + r.name, r.k === "agent" ? "agent" : "") : badge("livre"));
+    ud.appendChild(li);
+  });
+  hostUI.desks.appendChild(ud);
+
+  if (isRoomOwner() && hostUI.people) renderPeople();
+}
+function renderPeople() {
+  hostUI.people.textContent = "";
+  const ul = gpEl("ul"), now = gNow();
+  Object.keys(aclAll).forEach(id => {
+    const a = aclAll[id], li = gpEl("li"); li.appendChild(gpEl("span", "", a.name || "(sem nome)"));
+    li.appendChild(badge(ROLE_LABEL[a.role], a.role === "agent" ? "agent" : a.role === "cohost" ? "host" : ""));
+    if (a.role === "agent") li.appendChild(gpEl("small", "muted", "escritórios: " + (a.off === "-" || !a.off ? "nenhum" : a.off.split(",").map(o => ROOMBY[o] ? ROOMBY[o].name : o).join(", "))));
+    li.appendChild(gpEl("small", "muted", a.exp ? (a.exp > now ? "até " + new Date(a.exp - serverOffset).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "expirado") : "sem prazo"));
+    if (a.role !== "agent") li.appendChild(mkBtn(a.role === "cohost" ? "Tirar co-anfitrião" : "Tornar co-anfitrião", "", () => setRole(id, a.role === "cohost" ? "member" : "cohost")));
+    li.appendChild(mkBtn(a.role === "agent" ? "Desconectar" : "Remover acesso", "no", () => revoke(id)));
+    ul.appendChild(li);
+  });
+  const pend = Object.keys(invitesData);
+  pend.forEach(t => {
+    const i = invitesData[t], li = gpEl("li"), used = !!i.usedBy;
+    li.appendChild(gpEl("span", "", (i.role === "agent" ? "Credencial de agente" : "Link de " + ROLE_LABEL[i.role].toLowerCase()) + (i.name ? " · " + i.name : "")));
+    li.appendChild(badge(used ? "já usado" : i.exp > gNow() ? "aguardando" : "vencido"));
+    li.appendChild(mkBtn("Cancelar", "no", () => roomRef.child("invites/" + t).remove()));
+    ul.appendChild(li);
+  });
+  if (!ul.childNodes.length) ul.appendChild(gpEl("li", "muted", "Ninguém com acesso extra ainda."));
+  hostUI.people.appendChild(ul);
+}
+function setOfficeLock(o, on) {
+  const r = roomRef.child("offices/" + o);
+  (on ? r.set({ hostOnly: true, by: uid, ts: SVT() }) : r.remove()).catch(() => setStatus("⛔ Só o anfitrião pode reservar escritórios.", 4000));
+}
+function setRole(id, role) { roomRef.child("acl/" + id + "/role").set(role).catch(() => setStatus("⛔ O servidor recusou a mudança.", 3500)); }
+function revoke(id) { roomRef.child("acl/" + id).remove().then(() => roomRef.child("players/" + id).remove()).catch(() => {}); }
+function kick(id) { roomRef.child("players/" + id).remove().catch(() => setStatus("⛔ Só o anfitrião pode tirar alguém da sala.", 3500)); }
+/* =========================================================
+   MESAS DOS ESCRITÓRIOS (um ocupante por mesa)
+   Cada lugar tem um registro rooms/<sala>/desks/<x_y> = { uid, name, k: "user" | "agent", ts }.
+   Para sentar: primeiro o registro é gravado (as regras só aceitam se o lugar está livre, é seu, ou o dono antigo já saiu);
+   só depois a posição vai para o lugar. As regras também recusam qualquer posição em cima de um lugar sem registro seu,
+   então duas pessoas nunca ficam na mesma mesa, nem com um cliente alterado.
+   O registro some quando a pessoa levanta, sai ou perde a conexão (onDisconnect).
+   ========================================================= */
+let desksData = {}, myDesk = null, deskBusy = false;
+const deskKey = d => d.x + "_" + d.y;
+const deskExit = d => [d.x, d.y + 1];                                                  // tile livre logo abaixo de cada cadeira (todas têm)
+const deskAtTile = (x, y) => DESK_AT[x + "_" + y] || null;
+
+/* o registro só vale enquanto o dono está na sala (se a pessoa caiu, o lugar volta a ser livre para todos) */
+function deskLive(id) {
+  const r = desksData[id]; if (!r) return null;
+  if (r.uid === uid) return r;
+  return players[r.uid] ? r : null;
+}
+const deskTakenByOther = id => { const r = deskLive(id); return !!r && r.uid !== uid; };
+/* a tela do computador acende quando alguém (pessoa ou agente) está sentado numa das cadeiras daquela mesa */
+const deskLit = (x, y) => LAYOUT.desks.some(d => Math.abs(d.x - x) <= 2 && Math.abs(d.y - y) === 1 || (d.y === y && Math.abs(d.x - x) <= 2) ? !!deskLive(deskKey(d)) : false);
+
+function initDesks() {
+  roomRef.child("desks").on("value", s => {
+    const v = s.val() || {}; desksData = {};
+    for (const k in v) {
+      const r = v[k]; if (!DESK_AT[k] || !r || typeof r !== "object" || typeof r.uid !== "string") continue;
+      desksData[k] = { uid: r.uid.slice(0, 64), name: cleanName(r.name), k: r.k === "agent" ? "agent" : "user" };
+    }
+    if (myDesk && desksData[myDesk] && desksData[myDesk].uid !== uid) { myDesk = null; }       // alguém assumiu (eu tinha caído)
+    if (!$("hostModal").hidden) renderHostPanel();
+    enforceLock();
+  });
+}
+
+/* tenta ficar com o lugar; resolve true se as regras aceitaram */
+function claimDesk(id) {
+  const r = roomRef.child("desks/" + id);
+  return r.set({ uid, name: cleanName(myName), k: myAcct() === "agent" ? "agent" : "user", ts: SVT() }).then(() => {
+    try { r.onDisconnect().remove(); } catch (e) {}
+    return true;
+  }, () => false);
+}
+function releaseDeskLocal() { if (myDesk) { const id = myDesk; myDesk = null; dropDeskRecord(id); } }
+function dropDeskRecord(id) {
+  const r = roomRef.child("desks/" + id);
+  try { r.onDisconnect().cancel(); } catch (e) {}
+  const mine = desksData[id] && desksData[id].uid === uid;
+  if (mine) r.remove().catch(() => {});
+}
+function releaseDesk() { const id = myDesk; myDesk = null; if (!id) return Promise.resolve(); return roomRef.child("desks/" + id).remove().catch(() => {}); }
+
+/* chamado por stepTo ao pisar numa cadeira de mesa: grava o registro e só então anda */
+function seatAtDesk(d, nx, ny, dir, now) {
+  const id = deskKey(d);
+  if (deskBusy) return false;
+  if (deskTakenByOther(id)) { setStatus("💺 Essa mesa já está ocupada por " + (desksData[id] ? desksData[id].name : "alguém") + ".", 3000); return false; }
+  if (!canEnterOffice(d.office)) { setStatus("🔒 " + ROOMBY[d.office].name + " está reservado: só o anfitrião entra.", 3500); return false; }
+  deskBusy = true; lastStep = now;
+  claimDesk(id).then(ok => {
+    deskBusy = false;
+    if (!ok) return setStatus("💺 Não deu para sentar: a mesa foi ocupada agora há pouco.", 3500);
+    const old = myDesk; myDesk = id; if (old && old !== id) dropDeskRecord(old);
+    if (me.act && me.act.type === "eat") { me.act = null; meRef.update({ act: null }); }
+    me.x = nx; me.y = ny; me.dir = dir; meRef.update({ x: nx, y: ny, dir }).catch(() => {});
+  });
+  return false;                                                                         // a posição só muda depois que o servidor aceitar o registro
+}
+/* ao andar para fora do lugar, solta o registro (depois de mover, para a posição nunca ficar num lugar sem registro) */
+function afterMoveDesk(nx, ny) {
+  if (myDesk && !(deskAtTile(nx, ny) && deskKey(deskAtTile(nx, ny)) === myDesk)) releaseDeskLocal();
+}
+/* rotas por clique nunca passam por cima de cadeiras de mesa (senão cada passagem tentaria "sentar") */
+const walkBlockedTo = (tx, ty) => (x, y) => tileBlocked(x, y) || (!!deskAtTile(x, y) && !(x === tx && y === ty));
 /* =========================================================
    VOZ E VÍDEO (WebRTC). Escritórios, quartos, banheiro, cinema e reuniões:
    todos que estão dentro do cômodo se ouvem. Sala e cozinha: só quem está perto.
@@ -3251,10 +3854,10 @@ function updateRoomPanel() {
 }
 function focusRoomPanel() { updateRoomPanel(); const p = $("roompanel"); if (!p.hidden) { $("rpBody").hidden = false; $("rpToggle").textContent = "Recolher"; p.scrollIntoView({ behavior: "smooth", block: "center" }); } }
 /* =========================================================
-   JOGOS NAS TVs DA SALA
-   Cada TV da sala tem um sofá de 3 lugares. Sentar no sofá abre o painel do jogo:
-   os lugares 1 e 2 jogam, o lugar 3 assiste. Estado em rooms/<sala>/games/<tv>, placar da sala em rooms/<sala>/scores/<uid>.
-   O jogo da velha é só o primeiro; outros jogos entram em GAMES (kind).
+   SINUCA NAS TVs DA SALA
+   Cada TV da sala tem um sofá de 3 lugares. O jogo só existe para quem está SENTADO no sofá: os lugares 1 e 2 jogam,
+   o lugar 3 assiste. Ao levantar, o painel some, o estado local é limpo e a partida é encerrada (desistência) depois de uma pequena tolerância.
+   Estado em rooms/<sala>/games/<tv>, placar da sala em rooms/<sala>/scores/<uid>.
    ========================================================= */
 let gamesData = {}, scoresData = {}, scoresReady = false, gpHidden = null, gpSig = "";
 const TV_SETS = OBJS.filter(o => o.t === "tv").sort((a, b) => a.x - b.x).map((tv, i) => {
@@ -3263,7 +3866,6 @@ const TV_SETS = OBJS.filter(o => o.t === "tv").sort((a, b) => a.x - b.x).map((tv
   return { id: "tv" + i, tv, seats };
 });
 const TV_BY_OBJ = new Map(TV_SETS.map(s => [s.tv, s]));
-const VELHA_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 const gNow = () => Date.now() + serverOffset;
 const posOf = id => id === uid ? me : players[id];
 
@@ -3280,7 +3882,7 @@ const nameOf = id => cleanName((players[id] && players[id].name) || "?");
 
 /* ---------- dados vindos do Firebase (sempre saneados) ---------- */
 function cleanGame(v) {
-  if (!v || typeof v !== "object" || (v.kind !== "velha" && v.kind !== "sinuca")) return null;
+  if (!v || typeof v !== "object" || v.kind !== "sinuca") return null;      // registros antigos de outros jogos (jogo da velha) são ignorados
   const num = (x, lo, hi, d) => typeof x === "number" && x >= lo && x <= hi ? x : d;
   const g = {
     kind: v.kind, st: v.st === "over" ? "over" : "play", p0: String(v.p0 || "").slice(0, 64), p1: String(v.p1 || "").slice(0, 64),
@@ -3288,12 +3890,9 @@ function cleanGame(v) {
     w: num(v.w, -1, 2, -1), s0: num(v.s0, 0, 999, 0), s1: num(v.s1, 0, 999, 0), dr: num(v.dr, 0, 999, 0),
     gid: num(v.gid, 0, 9e15, 0), end: num(v.end, 0, 9e15, 0), upd: num(v.upd, 0, 9e15, 0), rev: num(v.rev, 0, 999, 0)
   };
-  if (v.kind === "velha") g.b = /^[-XO]{9}$/.test(v.b) ? v.b : "---------";
-  else {
-    g.bl = SN_RE.test(v.bl) ? v.bl : snRackStr(); g.bp = SN_RE.test(v.bp) ? v.bp : g.bl;
-    g.gr = num(v.gr, -1, 1, -1); g.vx = num(v.vx, -9999, 9999, 0); g.vy = num(v.vy, -9999, 9999, 0); g.sh = num(v.sh, 0, 9999, 0);
-    g.bih = v.bih === 1 ? 1 : 0; g.msg = typeof v.msg === "string" ? v.msg.slice(0, 100) : "";
-  }
+  g.bl = SN_RE.test(v.bl) ? v.bl : snRackStr(); g.bp = SN_RE.test(v.bp) ? v.bp : g.bl;
+  g.gr = num(v.gr, -1, 1, -1); g.vx = num(v.vx, -9999, 9999, 0); g.vy = num(v.vy, -9999, 9999, 0); g.sh = num(v.sh, 0, 9999, 0);
+  g.bih = v.bih === 1 ? 1 : 0; g.msg = typeof v.msg === "string" ? v.msg.slice(0, 100) : "";
   return g;
 }
 function initGames() {
@@ -3316,34 +3915,15 @@ function initGames() {
 /* escrita recusada (ex.: partida anterior ainda ativa): avisa em vez de falhar em silêncio */
 function gWrite(pr) { Promise.resolve(pr).catch(() => setStatus("⛔ Não foi possível jogar agora. A partida anterior ainda está ativa; tente de novo em instantes.", 4500)); }
 
-/* ---------- regras do jogo da velha ---------- */
-function velhaResult(b) {
-  for (const L of VELHA_LINES) if (b[L[0]] !== "-" && b[L[0]] === b[L[1]] && b[L[0]] === b[L[2]]) return b[L[0]];
-  return b.includes("-") ? null : "draw";
-}
-const velhaLine = b => VELHA_LINES.find(L => b[L[0]] !== "-" && b[L[0]] === b[L[1]] && b[L[0]] === b[L[2]]) || null;
-
-function startGameKind(set, kind, swap) {
+function startSinuca(set, swap) {
   const a = sitterAt(set.seats[0][0], set.seats[0][1]), b = sitterAt(set.seats[1][0], set.seats[1][1]);
-  if (!a || !b || (uid !== a && uid !== b)) return;
-  const old = gamesData[set.id], same = old && old.kind === kind && ((old.p0 === a && old.p1 === b) || (old.p0 === b && old.p1 === a));
+  if (!a || !b || (uid !== a && uid !== b) || !mySeat()) return;
+  const old = gamesData[set.id], same = old && ((old.p0 === a && old.p1 === b) || (old.p0 === b && old.p1 === a));
   let p0 = a, p1 = b; if (swap) { p0 = b; p1 = a; }
-  const g = { kind, st: "play", p0, p1, n0: nameOf(p0), n1: nameOf(p1), t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: gNow(), end: 0, upd: gNow(), rev: 0 };
-  if (kind === "velha") g.b = "---------";
-  else { g.bl = snRackStr(); g.bp = g.bl; g.gr = -1; g.vx = 0; g.vy = 0; g.sh = 0; g.bih = 0; g.msg = (swap ? g.n0 : g.n0) + " quebra!"; }
+  const g = { kind: "sinuca", st: "play", p0, p1, n0: nameOf(p0), n1: nameOf(p1), t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: gNow(), end: 0, upd: gNow(), rev: 0 };
+  g.bl = snRackStr(); g.bp = g.bl; g.gr = -1; g.vx = 0; g.vy = 0; g.sh = 0; g.bih = 0; g.msg = g.n0 + " quebra!";
   if (swap && same && old) { g.s0 = old.p0 === p0 ? old.s0 : old.s1; g.s1 = old.p0 === p0 ? old.s1 : old.s0; g.dr = old.dr; }   // revanche: o placar da dupla continua
   gWrite(roomRef.child("games/" + set.id).set(g));
-}
-function velhaMove(set, i) {
-  const g = gamesData[set.id]; if (!g || g.kind !== "velha" || g.st !== "play" || g.b[i] !== "-") return;
-  if ((g.t === 0 ? g.p0 : g.p1) !== uid) return;
-  const b = g.b.slice(0, i) + (g.t === 0 ? "X" : "O") + g.b.slice(i + 1), r = velhaResult(b);
-  const upd = { b, t: 1 - g.t, rev: g.rev + 1, upd: gNow() };
-  if (r) {
-    upd.st = "over"; upd.end = gNow(); upd.w = r === "draw" ? 2 : r === "X" ? 0 : 1;
-    if (upd.w === 0) upd.s0 = g.s0 + 1; else if (upd.w === 1) upd.s1 = g.s1 + 1; else upd.dr = g.dr + 1;
-  }
-  gWrite(roomRef.child("games/" + set.id).update(upd));
 }
 function gameEnd(set, winner) {
   const g = gamesData[set.id]; if (!g || g.st !== "play" || (uid !== g.p0 && uid !== g.p1)) return;
@@ -3398,9 +3978,8 @@ function gpActions(box, set, g, mineIdx, a, b) {
     mk("Desistir", "no", () => gameEnd(set, 1 - mineIdx));
   } else if (duo) {
     const rematch = over && mineIdx >= 0;
-    if (rematch) mk("🔁 Revanche", "primary", () => startGameKind(set, g.kind, true));
-    mk(rematch ? "Novo: ⭕ Jogo da velha" : "⭕ Jogo da velha", rematch ? "" : "primary", () => startGameKind(set, "velha", false));
-    mk(rematch ? "Novo: 🎱 Sinuca" : "🎱 Sinuca", rematch ? "" : "primary", () => startGameKind(set, "sinuca", false));
+    if (rematch) mk("🔁 Revanche", "primary", () => startSinuca(set, true));
+    mk(rematch ? "Novo jogo: 🎱 Sinuca" : "🎱 Jogar sinuca", rematch ? "" : "primary", () => startSinuca(set, false));
   }
   if (acts.childNodes.length) box.appendChild(acts);
 }
@@ -3414,10 +3993,38 @@ function gpRank(box) {
   }
   box.appendChild(sb);
 }
+/* ---------- sentou / levantou ----------
+   O jogo só vale com a pessoa sentada. Ao levantar: painel some, mira/posição/animação locais são descartadas
+   e, se havia partida em andamento, ela termina por desistência depois de 8 s de tolerância (dá tempo de voltar ao lugar). */
+let gpSeatWas = null, gpLeftAt = {};
+const GP_GRACE = 8000, GP_ABSENT = 20000;
+function snReset() { snA = null; snPlace = null; snPlacing = false; snAim = 0; snActive = null; if (snRaf) { cancelAnimationFrame(snRaf); snRaf = 0; } }
+function seatWatch() {
+  const my = meRef ? mySeat() : null, now = Date.now();
+  if (gpSeatWas && !my) { snReset(); gpHidden = null; gpSig = ""; gpLeftAt[gpSeatWas] = now; }
+  gpSeatWas = my ? my.set.id : null;
+  TV_SETS.forEach(set => {
+    const g = gamesData[set.id]; if (!g || g.st !== "play") return;
+    const mineIdx = g.p0 === uid ? 0 : g.p1 === uid ? 1 : -1;
+    const seatedAs = id => set.seats.slice(0, 2).some(t => sitterAt(t[0], t[1]) === id);
+    if (mineIdx >= 0 && seatedAs(uid)) { delete gpLeftAt[set.id]; }
+    else if (mineIdx >= 0) {                                                             // sou jogador e não estou mais sentado: desisto
+      if (!gpLeftAt[set.id]) gpLeftAt[set.id] = now;
+      if (now - gpLeftAt[set.id] > GP_GRACE) { delete gpLeftAt[set.id]; snReset(); setStatus("🛋️ Você saiu do sofá: a partida foi encerrada.", 4000); gameEnd(set, 1 - mineIdx); }
+    }
+    const other = mineIdx === 0 ? g.p1 : g.p0;
+    if (mineIdx >= 0 && seatedAs(uid)) {                                                 // adversário sumiu (fechou a página): fico com a vitória
+      const k = "o" + set.id;
+      if (seatedAs(other)) delete gpLeftAt[k];
+      else { if (!gpLeftAt[k]) gpLeftAt[k] = now; if (now - gpLeftAt[k] > GP_ABSENT) { delete gpLeftAt[k]; gameEnd(set, mineIdx); } }
+    }
+  });
+}
 function renderGamePanel(force) {
   const box = $("gamepanel"); if (!box) return;
+  seatWatch();
   const my = meRef ? mySeat() : null;
-  if (!my) { gpHidden = null; snActive = null; if (!box.hidden) { box.hidden = true; box.classList.remove("gp-wide"); gpSig = ""; } return; }
+  if (!my) { gpHidden = null; snActive = null; if (!box.hidden) { box.hidden = true; box.classList.remove("gp-wide"); box.textContent = ""; gpSig = ""; } return; }
   if (gpHidden === my.set.id) { snActive = null; if (!box.hidden) box.hidden = true; return; }
   const set = my.set, g = gamesData[set.id], a = sitterAt(set.seats[0][0], set.seats[0][1]), b = sitterAt(set.seats[1][0], set.seats[1][1]);
   const sig = JSON.stringify([set.id, my.idx, a, b, g, rankList(), a && nameOf(a), b && nameOf(b), snBusy(), snPlacing, snPlace]);
@@ -3425,44 +4032,17 @@ function renderGamePanel(force) {
 
   const playing = g && g.st === "play", over = g && g.st === "over";
   const mineIdx = g ? (g.p0 === uid ? 0 : g.p1 === uid ? 1 : -1) : -1;
-  if (g && g.kind === "sinuca" && (playing || over)) return snRender(box, set, g, mineIdx, a, b);
+  if (g && (playing || over)) return snRender(box, set, g, mineIdx, a, b);
   box.classList.remove("gp-wide"); snActive = null; box.textContent = "";
-  gpHead(box, set, "🎮 TV " + (TV_SETS.indexOf(set) + 1) + (g && (playing || over) ? " · Jogo da velha" : " · Escolha um jogo"));
-
-  if (g && (playing || over)) {
-    const turn = playing ? g.t : -1, line = gpEl("div", "gp-vs");
-    [[0, "❌", g.n0, g.s0], [1, "⭕", g.n1, g.s1]].forEach(([i, ic, nm, sc]) => {
-      const c = gpEl("div", "gp-pl" + (turn === i ? " turn" : "") + (over && g.w === i ? " won" : ""));
-      c.appendChild(gpEl("span", "", ic + " " + nm + (mineIdx === i ? " (você)" : ""))); c.appendChild(gpEl("b", "gp-sc", String(sc))); line.appendChild(c);
-    });
-    box.appendChild(line);
-    const wl = over ? velhaLine(g.b) : null, bd = gpEl("div", "gp-board");
-    for (let i = 0; i < 9; i++) {
-      const ch = g.b[i], cell = gpEl("button", "gp-cell" + (ch === "X" ? " x" : ch === "O" ? " o" : "") + (wl && wl.includes(i) ? " win" : ""), ch === "X" ? "X" : ch === "O" ? "O" : "");
-      cell.type = "button"; cell.setAttribute("aria-label", "Casa " + (i + 1));
-      const can = playing && mineIdx === g.t && ch === "-"; cell.disabled = !can; cell.onclick = () => velhaMove(set, i); bd.appendChild(cell);
-    }
-    box.appendChild(bd);
-    let msg;
-    if (playing) msg = mineIdx < 0 ? "Vez de " + (g.t === 0 ? g.n0 : g.n1) + "." : mineIdx === g.t ? "✨ Sua vez!" : "Vez de " + (g.t === 0 ? g.n0 : g.n1) + "…";
-    else msg = g.w === 2 ? "🤝 Empate!" : "🏆 " + (g.w === 0 ? g.n0 : g.n1) + " venceu!";
-    box.appendChild(gpEl("div", "gp-msg", msg));
-    if (g.dr) box.appendChild(gpEl("div", "muted gp-small", "Empates da dupla: " + g.dr));
-  } else {
-    box.appendChild(gpEl("div", "gp-msg", my.idx < 2 ? (a && b ? "Dois jogadores prontos! Escolham o jogo." : "Chame mais uma pessoa para sentar no sofá.") : "Você está na plateia. Os dois primeiros lugares jogam."));
-  }
+  gpHead(box, set, "🎱 TV " + (TV_SETS.indexOf(set) + 1) + " · Sinuca");
+  box.appendChild(gpEl("div", "gp-msg", my.idx < 2 ? (a && b ? "Dois jogadores prontos! Vamos jogar sinuca." : "Chame mais uma pessoa para sentar no sofá.") : "Você está na plateia. Os dois primeiros lugares jogam."));
   gpActions(box, set, g, mineIdx, a, b); gpRank(box);
 }
 
-/* ---------- ação para chegar no sofá (descoberta) ---------- */
-function sofaAction() {
-  if (mySeat()) return null;
-  for (const s of TV_SETS) {
-    if (!s.seats.some(t => Math.max(Math.abs(t[0] - me.x), Math.abs(t[1] - me.y)) <= 3)) continue;
-    const free = s.seats.find(t => !sitterAt(t[0], t[1])); if (!free) return null;
-    return { k: "sofa", l: "🛋️ Sentar e jogar", fn: () => { const p = bfs(me.x, me.y, free[0], free[1], tileBlocked); if (p) path = p; else setStatus("Não deu para chegar ao sofá.", 2500); } };
-  }
-  return null;
+/* ---------- ação: reabrir o painel (só aparece quem está sentado e escondeu o jogo) ---------- */
+function gameAction() {
+  const my = mySeat(); if (!my || gpHidden !== my.set.id) return null;
+  return { k: "game", l: "🎱 Abrir a sinuca", fn: () => { gpHidden = null; renderGamePanel(true); } };
 }
 /* =========================================================
    SINUCA (bola 8) NAS TVs DA SALA
@@ -3790,7 +4370,7 @@ function frame() {
   for (const id in players) {
     const p = players[id]; p.rx += (p.x - p.rx) * f; p.ry += (p.y - p.ry) * f;
     const act = (p.act && (!p.act.until || now < p.act.until + 300)) ? p.act : null, L = p.lookN || DEFL;
-    const base = { icon: (p.hand && ["reu", "cin"].includes(roomOf(p.x, p.y))) ? "hand" : null, name: p.name || "?", me: id === uid, linked: !!peers[id], mute: p.mic === false, bc: !!p.bsid, say: (p.say && now - (p.sayTs || 0) < 6000) ? p.say : null };
+    const base = { icon: (p.hand && ["reu", "cin"].includes(roomOf(p.x, p.y))) ? "hand" : null, name: (p.acct === "agent" ? "🤖 " : "") + (p.name || "?"), me: id === uid, linked: !!peers[id], mute: p.mic === false, bc: !!p.bsid, say: (p.say && now - (p.sayTs || 0) < 6000) ? p.say : null };
     const moving = Math.abs(p.x - p.rx) + Math.abs(p.y - p.ry) > .06, seat = SEAT[p.x + "_" + p.y], sit = !!seat && !moving && !act;
     const stk = act && act.type === "sleep" ? "sleep" : (act && act.type === "shower" && !moving) ? "shower" : sit ? "sit" : "x";
     if (p._stk === undefined) { p._stk = stk; p._stT = now - 9000; } else if (p._stk !== stk) { p._stk = stk; p._stT = now; }

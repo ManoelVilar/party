@@ -7,7 +7,7 @@ URL = os.environ.get("PARTY_URL", "http://localhost:8765/index.html")
 STUB = open("fbstub.js").read()
 ROOM = "party-teste-regras-1234"
 
-def mk(ctx):
+def mk(ctx, url=None):
     pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     def route(r):
@@ -16,7 +16,7 @@ def mk(ctx):
         elif "gstatic.com/firebasejs" in u: r.fulfill(body="", content_type="application/javascript")
         elif u.startswith("http://localhost"): r.continue_()
         else: r.abort()
-    pg.route("**/*", route); pg.goto(URL); pg.wait_for_timeout(300); pg.errs = errs
+    pg.route("**/*", route); pg.goto(url or URL); pg.wait_for_timeout(300); pg.errs = errs
     return pg
 
 with sync_playwright() as p:
@@ -45,19 +45,37 @@ with sync_playwright() as p:
     B.wait_for_timeout(400); B.evaluate("knock(DOORS.find(d=>d.office==='reu'))"); A.wait_for_timeout(900)
     A.evaluate("document.querySelector('#prompts .pr button.primary') && document.querySelector('#prompts .pr button.primary').click()"); A.wait_for_timeout(600)
     A.evaluate("document.querySelector('#btnChatT').click()"); A.wait_for_timeout(100)
-    # jogo da velha na TV da sala: A (lugar 1) e B (lugar 2) jogam, A vence, revanche empatada pela desistência
+    # mesas dos escritórios: A senta na mesa 1, B tenta a mesma (o cliente nem escreve) e depois pega a 2; A reserva o escritório e solta a reserva
+    A.evaluate("me.x=4; me.y=8; meRef.update({x:4,y:8})"); B.evaluate("me.x=4; me.y=8; meRef.update({x:4,y:8})"); A.wait_for_timeout(300)
+    A.evaluate("seatAtDesk(DESK_BY_ID['esc1-1'], DESK_BY_ID['esc1-1'].x, DESK_BY_ID['esc1-1'].y, 'd', Date.now())"); A.wait_for_timeout(600)
+    B.evaluate("seatAtDesk(DESK_BY_ID['esc1-1'], DESK_BY_ID['esc1-1'].x, DESK_BY_ID['esc1-1'].y, 'd', Date.now())"); B.wait_for_timeout(500)
+    B.evaluate("seatAtDesk(DESK_BY_ID['esc1-2'], DESK_BY_ID['esc1-2'].x, DESK_BY_ID['esc1-2'].y, 'd', Date.now())"); B.wait_for_timeout(600)
+    A.evaluate("setOfficeLock('esc1', true)"); A.wait_for_timeout(500); A.evaluate("setOfficeLock('esc1', false)"); A.wait_for_timeout(400)
+    A.evaluate("afterMoveDesk(4, 8); me.x=4; me.y=8; meRef.update({x:4,y:8})"); B.evaluate("afterMoveDesk(4, 8); me.x=4; me.y=8; meRef.update({x:4,y:8})"); A.wait_for_timeout(500)
+    # sinuca na TV da sala: A (lugar 1) e B (lugar 2) sentam no sofá e jogam; B levanta no meio da partida
     for pg, seat in ((A, 0), (B, 1)):
         pg.evaluate(f"(() => {{ const s = TV_SETS[0].seats[{seat}]; path = []; me.x = s[0]; me.y = s[1]; meRef.update({{ x: s[0], y: s[1] }}); }})()")
     A.wait_for_timeout(600)
-    A.click('#gamepanel button:has-text("Jogo da velha")'); A.wait_for_timeout(500)
-    for pg, i in ((A, 0), (B, 4), (A, 1), (B, 5), (A, 2)):
-        pg.click(f"#gamepanel .gp-cell >> nth={i}"); pg.wait_for_timeout(350)
-    A.wait_for_timeout(500); B.click('#gamepanel button:has-text("Revanche")'); B.wait_for_timeout(500); B.click('#gamepanel button:has-text("Desistir")'); B.wait_for_timeout(700)
-    A.click('#gamepanel button:has-text("Sinuca")'); A.wait_for_timeout(500)                      # sinuca: Ana quebra, o resultado vai inteiro para o banco
+    A.click('#gamepanel button:has-text("Jogar sinuca")'); A.wait_for_timeout(500)                    # sinuca: Ana quebra, o resultado vai inteiro para o banco
     A.evaluate("snAim = 0; snPower = 100"); A.click('#gamepanel button:has-text("Tacar")'); A.wait_for_timeout(3500)
     B.evaluate("snAim = 0.2; snPower = 60"); B.click('#gamepanel button:has-text("Tacar")'); B.wait_for_timeout(3500)
     A.wait_for_timeout(6000)                              # a IA dos gatos escreve sozinha
     B.evaluate("document.querySelector('#btnMic').click()"); A.evaluate("document.querySelector('#btnMic').click()"); A.wait_for_timeout(800)
+    # ---- conta + sala permanente + convite + agente + saída (outro grupo de páginas) ----
+    C = mk(ctx); C.click("#tabAcct"); C.fill("#inMail", "dona@teste.com"); C.fill("#inPass", "senha-bem-longa-1"); C.click("#btnMailNew"); C.wait_for_timeout(400)
+    C.evaluate("__fbVerify()"); C.click("#btnMailCheck"); C.wait_for_timeout(500)
+    C.fill("#inName", "Dona"); C.click("#btnEnterPerm"); C.wait_for_timeout(1200)
+    perm = C.evaluate("roomIdNow()")
+    C.evaluate("makeInvite('guest', 3600000, 7200000)"); C.wait_for_timeout(500)
+    tok = C.evaluate("Object.keys(invitesData)[0]")
+    D = mk(ctx, URL + f"#sala={perm}&convite={tok}"); D.fill("#inName", "Visita"); D.click("#btnEnterInvite"); D.wait_for_timeout(1200)
+    uD = D.evaluate("uid")
+    C.evaluate("setOfficeLock('reu', true)"); C.wait_for_timeout(500); C.evaluate("setOfficeLock('reu', false)"); C.wait_for_timeout(300)
+    C.evaluate("makeAgentInvite('Robo', ['esc1'], true, 3600000, 7200000)"); C.wait_for_timeout(500)
+    C.evaluate(f"kick('{uD}')"); C.wait_for_timeout(600)
+    C.evaluate(f"revoke('{uD}')"); C.wait_for_timeout(500)
+    # sair: a sala temporária some quando o último sai
+    B.click("#btnLeave"); B.wait_for_timeout(900); A.click("#btnLeave"); A.wait_for_timeout(900)
     ops = rec.evaluate("window.__ops")
     json.dump({"ops": ops, "room": ROOM}, open("../rules/ops.json", "w"))
     print(len(ops), "operações gravadas;", "tipos:", sorted({o["op"] for o in ops}), "| erros JS:", A.errs + B.errs)
