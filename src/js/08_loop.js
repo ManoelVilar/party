@@ -41,20 +41,33 @@ function frame() {
   natalT = now;
   ctx = lctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = NATAL ? NATAL_BG : BG; ctx.fillRect(0, 0, LW, LH);
   ctx.setTransform(K, 0, 0, K, -kx * K, -ky * K);
+  sprFeitos = 0; const sprOK = zoom === zoomT;                       // caches de piso e móveis só com o zoom parado
   if (NATAL) drawSnowGround(kx, ky, vw, vh);
-  drawFloor(kx, ky, vw, vh);
-  OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); });
+  if (!(sprOK && bgDesenha(kx, ky))) { drawFloor(kx, ky, vw, vh); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); }
   const mk = Object.keys(messes);
   mk.forEach(k => drawMess(k, messes[k], Math.max(Math.abs(messes[k].x - me.x), Math.abs(messes[k].y - me.y)) <= 1));
   if (hover && !tileBlocked(hover[0], hover[1])) poly([P(hover[0], hover[1]), P(hover[0] + 1, hover[1]), P(hover[0] + 1, hover[1] + 1), P(hover[0], hover[1] + 1)], "rgba(255,246,216,.22)", "rgba(255,246,216,.9)");
 
   const list = [], labels = [];
   const vis = (x, y, h) => { const s = P(x + .5, y + .5); return s[0] > kx - 100 && s[0] < kx + vw + 100 && s[1] > ky - 80 && s[1] < ky + vh + 150 + (h || 0); };
-  WALLTILES.forEach(w => { if (vis(w.x, w.y, w.H)) list.push({ d: w.x + w.y + 1, run: () => drawWall(w) }); });
+  WALLTILES.forEach(w => {
+    if (!vis(w.x, w.y, w.H)) return;
+    const pisca = NATAL && w.tall;                                                    // guirlandas: o fio vai para o cache, as luzes piscam todo quadro
+    list.push({ d: w.x + w.y + 1, run: () => {
+      let ok = false;
+      if (sprOK) { natalLuzes = pisca ? 1 : 0; try { ok = sprDesenha("w" + w.x + "_" + w.y, "", w.x, w.y, 1, 1, w.H + 10, 10, () => drawWall(w), kx, ky); } finally { natalLuzes = 0; } }
+      if (!ok) drawWall(w); else if (pisca) { natalLuzes = 2; try { natalWall(w); } finally { natalLuzes = 0; } }
+    } });
+  });
   OBJS.forEach(o => {
     if (DEF[o.t].flat || !vis(o.x, o.y, 90)) return;
     const d = (o.x + o.w - 1) + (o.y + o.h - 1) + 1.01;
-    list.push({ d, run: () => DEF[o.t].draw(o) });
+    const st = sprOK ? sprEstado(o) : null;
+    list.push({ d, run: () => {
+      let ok = false;
+      if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
+      if (!ok) DEF[o.t].draw(o); else if (st === "n") { natalLuzes = 2; try { DEF[o.t].draw(o); } finally { natalLuzes = 0; } }
+    } });
     if (o.t === "chuveiro") list.push({ d: d + .08, run: () => {
       poly([P(o.x + .04, o.y + 1.96, 64), P(o.x + .96, o.y + 1.96, 64), P(o.x + .96, o.y + 1.96, 4), P(o.x + .04, o.y + 1.96, 4)], "rgba(190,230,250,.12)", "rgba(255,255,255,.45)");
       poly([P(o.x + .96, o.y + .04, 64), P(o.x + .96, o.y + 1.96, 64), P(o.x + .96, o.y + 1.96, 4), P(o.x + .96, o.y + .04, 4)], "rgba(150,205,235,.14)", "rgba(255,255,255,.45)");

@@ -19,7 +19,7 @@ function deskLive(id) {
 }
 const deskTakenByOther = id => { const r = deskLive(id); return !!r && r.uid !== uid; };
 /* a tela do computador acende quando alguém (pessoa ou agente) está sentado numa das cadeiras daquela mesa */
-const deskLit = (x, y) => [[x, y - 1], [x, y + 1]].some(c => { const d = DESK_AT[c[0] + "_" + c[1]]; return !!d && !!deskLive(deskKey(d)); });
+const deskLit = (x, y) => [[x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]].some(c => { const d = DESK_AT[c[0] + "_" + c[1]]; return !!d && !!deskLive(deskKey(d)); });
 
 function initDesks() {
   roomRef.child("desks").on("value", s => {

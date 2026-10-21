@@ -41,17 +41,17 @@ function glow(gx, gy, z, r, rgba) {
   g.addColorStop(0, rgba); g.addColorStop(1, rgba.replace(/[\d.]+\)$/, "0)")); ctx.fillStyle = g; ctx.fillRect(p[0] - r, p[1] - r, r * 2, r * 2);
 }
 const DEF = {
-  escrivaninha: { solid: true, draw(o) {
-    const x = o.x, y = o.y, L = adj(x - 1, y, "escrivaninha"), R = adj(x + 1, y, "escrivaninha"), lg = "#5c4230";
-    if (!L) { box(x, y, .06, .1, .16, .2, 0, 22, lg); box(x, y, .06, .8, .16, .9, 0, 22, lg); }
-    if (!R) { box(x, y, .84, .1, .94, .2, 0, 22, lg); box(x, y, .84, .8, .94, .9, 0, 22, lg); }
-    box(x, y, L ? 0 : .03, .05, R ? 1 : .97, .95, 22, 27, "#a9825f", !(L || R));
-    if (L && R) {
-      box(x, y, .38, .38, .62, .58, 27, 30, "#2b2f3a"); box(x, y, .46, .42, .54, .5, 30, 38, "#2b2f3a");
-      const on = deskLit(x, y);                                                              // tela acesa só com alguém sentado
-      box(x, y, .14, .4, .86, .5, 38, 62, "#1d2230"); faceY(x, y, .17, .83, .5, 41, 59, on ? "#58b4ff" : "#26364d"); faceY(x, y, .17, .5, .5, 51, 59, on ? "#9ad6ff" : "#314560");
-      box(x, y, .22, .62, .78, .88, 27, 29, "#cfd3da");
-    } else if (!L) { box(x, y, .5, .5, .7, .7, 27, 33, "#d9534f"); box(x, y, .12, .2, .4, .5, 27, 28.5, "#f4f1e8"); }
+  baia: { solid: true, draw(o) {                                                           // mesa de cabine encostada à esquerda, monitor virado para o leste (para a cadeira)
+    const x = o.x, y = o.y, lg = "#5c4230", on = deskLit(x, y);
+    box(x, y, .06, .1, .16, .2, 0, 22, lg); box(x, y, .06, .8, .16, .9, 0, 22, lg); box(x, y, .84, .1, .94, .2, 0, 22, lg); box(x, y, .84, .8, .94, .9, 0, 22, lg);
+    box(x, y, .03, .05, .97, .95, 22, 27, "#a9825f");
+    box(x, y, .22, .38, .4, .62, 27, 30, "#2b2f3a"); box(x, y, .26, .46, .34, .54, 30, 38, "#2b2f3a");
+    box(x, y, .22, .16, .32, .84, 38, 62, "#1d2230"); faceX(x, y, .32, .19, .81, 41, 59, on ? "#58b4ff" : "#26364d"); faceX(x, y, .32, .19, .5, 51, 59, on ? "#9ad6ff" : "#314560");
+    box(x, y, .62, .24, .86, .76, 27, 29, "#cfd3da"); box(x, y, .6, .8, .74, .92, 27, 33, "#f4f1e8");
+  }},
+  divisoria: { solid: true, draw(o) {                                                       // painel baixo entre cabines, liga com o painel vizinho (corre ao longo de x)
+    const x = o.x, y = o.y, L = adj(x - 1, y, "divisoria"), R = adj(x + 1, y, "divisoria");
+    box(x, y, L ? 0 : .04, .4, R ? 1 : .96, .6, 0, 46, "#7a8fb5"); box(x, y, L ? 0 : .02, .38, R ? 1 : .98, .62, 46, 49, "#4d5f82");
   }},
   cadeira: { solid: false, seat: true, draw(o) {
     const x = o.x, y = o.y, f = o.f, dk = "#8a5a30";
@@ -242,14 +242,20 @@ function add(t, x, y, o) {
 }
 const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o); };
 (function buildHouse() {
-  /* escritórios "software house": duas mesas compridas (3 tiles cada) com cadeiras dos dois lados e notebooks, como na sala de reuniões;
-     12 lugares por escritório (ids e saídas em src/layout.json). Corredor da porta (coluna do meio) e as faixas y=1 e y=5 ficam livres. */
+  /* escritórios de setor: 7 CABINES individuais em duas colunas (4 na parede da esquerda e 3 no meio). Cada cabine tem mesa com monitor,
+     cadeira e divisórias; todas as divisórias correm no mesmo sentido (de cima-esquerda para baixo-direita) e todos os monitores ficam
+     virados para quem olha o mapa. Ótimas para deixar um agente de IA. Ids, tipo e saída de cada cadeira em src/layout.json.
+     Livres: as colunas ao lado das cadeiras e a faixa y=7 (corredor da porta), por onde todo mundo entra e sai. */
   [1, 9].forEach((b, k) => {
-    for (let y = 2; y <= 4; y++) row(k ? "tapete2" : "tapete", b, y, 7);
-    [b, b + 4].forEach(x0 => { for (let i = 0; i < 3; i++) add("mesa", x0 + i, 3, { laptop: true, office: true }); });
+    const tp = k ? "tapete2" : "tapete";
+    for (let y = 1; y <= 7; y++) { add(tp, b + 2, y); add(tp, b + 5, y); }
+    add(tp, b + 3, 7); add(tp, b + 4, 7);
+    [[b, [1, 3, 5, 7], [2, 4, 6]], [b + 3, [1, 3, 5], [2, 4]]].forEach(c => {
+      c[1].forEach(y => add("baia", c[0], y));
+      c[2].forEach(y => { add("divisoria", c[0], y); add("divisoria", c[0] + 1, y); });
+    });
     LAYOUT.desks.filter(d => d.office === "esc" + (k + 1)).forEach(d => add("cadeira", d.x, d.y, { f: d.f, desk: d.id }));
-    row("estante", b, 7, 2); add("luz", b + 6, 6); add("planta", b + 6, 7); add("planta", b + 2, 7);
-    for (let y = 5; y <= 7; y++) add(k ? "tapete2" : "tapete", b + 3, y);
+    add("estante", b + 6, 1); add("estante", b + 6, 2); add("planta", b + 6, 5); add("luz", b + 6, 7);
   });
   /* cozinha + cuidados dos gatos */
   add("despensa", 17, 1); row("balcao", 18, 1, 2); add("fogao", 20, 1); add("pia", 21, 1); row("balcao", 22, 1, 2); add("geladeira", 24, 1); add("planta", 28, 1);
