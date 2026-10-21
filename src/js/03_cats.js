@@ -191,6 +191,11 @@ function offlineCatch(c, a, now) {
     stepStats(c, a, dt * .6);                                       // parte do tempo ele dorme
     if (c.hunger >= 55) eatFrom("pote_racao", "hunger", 2.4, ["bowel", .15]);
     if (c.thirst >= 55) eatFrom("pote_agua", "thirst", 4, ["bladder", .5]);
+    ["bladder", "bowel"].forEach(k => {                             // usa a caixa de areia (se houver uma limpa), como faria com a sala cheia
+      if (c[k] < 68) return;
+      const bx = objsOf("caixa_areia").find(q => resOf(q.cid) < 70); if (!bx) return;
+      c[k] = 0; resAdd(bx.cid, k === "bowel" ? 24 : 14);
+    });
   }
   c.bladder = Math.min(c.bladder, 90); c.bowel = Math.min(c.bowel, 90);
 }
@@ -295,6 +300,7 @@ function autoRefill(now) {
   if (!care.auto || now - (autoRefill.t || 0) < 4000) return; autoRefill.t = now;
   objsOf("pote_racao").forEach(o => { if (resOf(o.cid) < POTE_BAIXO && supOf("racao") > 0) supUse("racao", 1, ok => { if (ok) resAdd(o.cid, 50); }); });
   objsOf("pote_agua").forEach(o => { if (resOf(o.cid) < POTE_BAIXO) resSet(o.cid, 100); });
+  objsOf("caixa_areia").forEach(o => { if (resOf(o.cid) >= 60 && supOf("sacos") > 0) supUse("sacos", 1, ok => { if (ok) resSet(o.cid, 0); }); });   // limpa a caixa antes de o gato não ter onde ir
 }
 function runCatAI(now) {
   now = now || Date.now();
@@ -423,7 +429,7 @@ function renderCatPanel(force) {
   const pot = t => { const l = objsOf(t).map(o => Math.round(resOf(o.cid))); return l.length ? Math.min.apply(null, l) : 0; }, pr = pot("pote_racao"), pa = pot("pote_agua");
   $("cpPots").innerHTML = "Pote ração <b style='color:" + sevColor(100 - pr * 1.6) + "'>" + pr + "%</b> · água <b style='color:" + sevColor(100 - pa * 1.6) + "'>" + pa + "%</b>";
   $("cpAuto").textContent = care.auto ? "🤖 Automático: ligado" : "🤖 Automático: desligado"; $("cpAuto").className = care.auto ? "on" : "";
-  $("cpAuto").title = "Enche os potes sozinho quando baixam de " + POTE_BAIXO + "% (a ração sai do estoque da despensa)";
+  $("cpAuto").title = "Enche os potes quando baixam de " + POTE_BAIXO + "% e limpa as caixas de areia sujas (gasta ração e sacos do estoque da despensa)";
   const hy = houseHygiene(); $("cpHyg").innerHTML = "Higiene da casa <b style='color:" + sevColor(100 - hy) + "'>" + hy + "%</b>" + (messCount() ? " · " + messCount() + " sujeira(s)" : "");
   box.querySelectorAll(".cc").forEach(d => {
     const id = d.dataset.id, c = cats[id]; d.classList.toggle("sel", selectedCat === id);
@@ -452,7 +458,10 @@ function catAlerts(now) {
   if (!care.auto) {                                                  // aviso antes de acabar, quando ainda dá tempo
     if (potes("pote_racao").some(r => r < POTE_BAIXO)) al("lowfood", 240000, "🥣 O pote de ração está acabando. Encha antes que os gatos fiquem com fome.");
     if (potes("pote_agua").some(r => r < POTE_BAIXO)) al("lowwater", 240000, "💧 O pote de água está acabando.");
-  } else if (potes("pote_racao").some(r => r < POTE_BAIXO) && supOf("racao") <= 0) { urgente = true; al("nostock", 240000, "📦 A reposição automática parou: acabou a ração do estoque. Pegue mais na despensa da cozinha."); }
+  } else {
+    if (objsOf("caixa_areia").some(o => resOf(o.cid) >= 60) && supOf("sacos") <= 0) { urgente = true; al("nobags", 240000, "🧹 As caixas de areia estão sujas e acabaram os sacos do estoque. Pegue mais na despensa da cozinha."); }
+    if (potes("pote_racao").some(r => r < POTE_BAIXO) && supOf("racao") <= 0) { urgente = true; al("nostock", 240000, "📦 A reposição automática parou: acabou a ração do estoque. Pegue mais na despensa da cozinha."); }
+  }
   if (supOf("racao") <= 1 && supOf("racao") > 0) al("lowstock", 300000, "📦 Resta pouca ração no estoque. Pegue mais na despensa.");
   if (objsOf("caixa_areia").length && objsOf("caixa_areia").every(o => resOf(o.cid) >= 70)) al("litter", 150000, "🧹 Todas as caixas de areia estão sujas! Limpe para os gatos usarem.");
   if (messCount() >= 3) al("mess", 180000, "💩 Tem sujeira de gato espalhada pela casa. Chegue perto e limpe.");
