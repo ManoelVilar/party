@@ -79,6 +79,8 @@ check("gato desconhecido é recusado", me(A).update(R + "/cats/leao", { x: 5 }),
 check("ração do pote", me(A).write(R + "/care/res/racao1", 55), true);
 check("recurso inventado é recusado", me(A).write(R + "/care/res/ouro", 55), false);
 check("estoque absurdo é recusado", me(A).write(R + "/care/sup/racao", 5000), false);
+check("reposição automática liga/desliga", me(A).write(R + "/care/auto", true), true);
+check("reposição automática só aceita booleano", me(A).write(R + "/care/auto", "sim"), false);
 check("registra sujeira", me(A).write(R + "/messes/x1", { x: 3, y: 4, type: "xixi", ts: NOW, cat: "sombra" }), true);
 check("coloca vídeo no cinema", me(A).update(R + "/cinema", { src: "yt", id: "dQw4w9WgXcQ", state: "play", pos: 0, by: "ana", at: NOW }), true);
 check("cinema com campo desconhecido é recusado", me(A).update(R + "/cinema", { evil: "x" }), false);

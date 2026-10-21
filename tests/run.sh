@@ -19,6 +19,7 @@ trap cleanup EXIT
 cd tests/e2e
 python3 smoke.py
 python3 jogos.py
+python3 gatos.py
 python3 contas.py
 # grava as escritas reais do cliente e confere contra as regras do Firebase
 python3 record_ops.py

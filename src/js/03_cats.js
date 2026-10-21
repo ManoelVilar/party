@@ -8,14 +8,19 @@ const CATS = {
 };
 const CAT_STEP = 380;                                                   // ms por casa andada
 const CAT_RATES = { hunger: 3.0, thirst: 4.0, bladder: 3.2, bowel: 2.0, energyDown: 2.0, energyUp: 12 };   // por minuto real
+const CAT_OFFLINE_MAX = 8 * 60;                                         // minutos de "ausência" que o gato vive enquanto ninguém está na sala
+const POTE_BAIXO = 20;                                                  // % do pote em que a reposição automática age e o aviso "acabando" aparece
 const ACC_CD = 5 * 60000;                                               // intervalo mínimo entre "acidentes" de um gato
 const MAX_MESSES = 6;
 const DEF_RES = { racao1: 60, agua1: 80, cx1: 0, cx2: 0 };              // ração/água em %, sujeira das caixas em %
 const DEF_SUP = { racao: 8, sacos: 5 }, SUP_MAX = { racao: 12, sacos: 10 };
-let cats = {}, care = { res: {}, sup: {} }, messes = {}, selectedCat = null;
+let cats = {}, care = { res: {}, sup: {}, auto: false }, messes = {}, selectedCat = null;
 const num = (v, d) => (typeof v === "number" && isFinite(v)) ? v : d;
 const resOf = cid => care.res[cid] != null ? care.res[cid] : (DEF_RES[cid] != null ? DEF_RES[cid] : 0);
 const supOf = k => care.sup[k] != null ? care.sup[k] : DEF_SUP[k];
+/* gato "fraco": fome ou sede extrema. Anda devagar, não brinca; petisco e comida o recuperam */
+const catWeak = c => num(c.hunger, 0) >= 92 || num(c.thirst, 0) >= 92;
+const catStep = c => catWeak(c) ? CAT_STEP * 1.8 : CAT_STEP;
 const messCount = () => Object.keys(messes).length;
 
 /* ---------- sprite do gato (poses: andar, sentar, dormir, comer, beber, caixa de areia, brincar) ---------- */
@@ -126,6 +131,7 @@ function addMess(x, y, type, catId) {
 function wellTarget(c) {
   let t = 100;
   t -= Math.max(0, c.hunger - 60) * 1.1; t -= Math.max(0, c.thirst - 60) * 1.1;
+  t -= Math.max(0, c.hunger - 90) * 2 + Math.max(0, c.thirst - 90) * 2;               // passou do limite: o bem-estar despenca
   t -= Math.max(0, Math.max(c.bladder, c.bowel) - 70) * .9; t -= Math.max(0, 25 - c.energy) * 1.2;
   t -= Math.min(5, messCount()) * 4; t -= OBJS.filter(o => o.t === "caixa_areia" && resOf(o.cid) >= 70).length * 5;
   return clamp(t, 5, 100);
@@ -171,11 +177,27 @@ function freeAdj(id, c, x, y) {
 function seedCat(id, now) {
   const d = CATS[id]; saveCat(id, { x: d.x, y: d.y, dir: "d", st: "sit", sub: null, hunger: 30, thirst: 25, energy: 85, bladder: 15, bowel: 10, well: 85, ts: now });
 }
+/* o tempo passa de verdade: ao voltar, o gato viveu o que daria (até 8 h). Come e bebe do que os potes tinham; sem comida, a fome acumula. Sem acidentes enquanto ninguém olha. */
+function offlineCatch(c, a, now) {
+  let min = Math.min(CAT_OFFLINE_MAX, Math.max(0, (now - (c.ts || now)) / 60000));
+  if (min < 1) return;
+  const eatFrom = (type, k, rate, side) => {
+    const o = objsOf(type).find(q => resOf(q.cid) >= 5); if (!o) return;
+    const take = Math.min(resOf(o.cid), k === "hunger" ? 25 : 15); resAdd(o.cid, -take);
+    c[k] = clamp(c[k] - take * rate); c[side[0]] = clamp(c[side[0]] + take * side[1]);
+  };
+  while (min > 0) {
+    const dt = Math.min(10, min); min -= dt;
+    stepStats(c, a, dt * .6);                                       // parte do tempo ele dorme
+    if (c.hunger >= 55) eatFrom("pote_racao", "hunger", 2.4, ["bowel", .15]);
+    if (c.thirst >= 55) eatFrom("pote_agua", "thirst", 4, ["bladder", .5]);
+  }
+  c.bladder = Math.min(c.bladder, 90); c.bowel = Math.min(c.bowel, 90);
+}
 function initSim(id, c, now) {
   const a = { path: [], next: 0, until: now + 2000, act: null, goal: null, arriveAt: 0, last: now, syncAt: 0, petSeen: c.pet || 0, treatSeen: c.treat || 0, playSeen: c.play || 0, callSeen: (c.call && c.call.t) || 0, accSince: 0, lastAcc: 0, lastPet: 0 };
   c.hunger = num(c.hunger, 30); c.thirst = num(c.thirst, 25); c.energy = num(c.energy, 85); c.bladder = num(c.bladder, 15); c.bowel = num(c.bowel, 10); c.well = num(c.well, 85);
-  const off = Math.min(15, Math.max(0, (now - (c.ts || now)) / 60000)) * .5;        // recuperação offline limitada
-  if (off > 0) { stepStats(c, a, off); }
+  offlineCatch(c, a, now);
   if (c.st === "sleep") a.act = { type: "sleep", end: now + 120000 }; else if (c.st !== "sit") saveCat(id, { st: "sit", sub: null });
   return a;
 }
@@ -268,11 +290,18 @@ function arrive(id, a, c, now) {
     else saveCat(id, { st: soft && Math.random() < .6 ? "sleep" : "sit", sub: null });
   }
 }
+/* reposição automática (liga/desliga no painel dos gatos): a ração sai do estoque, a água é grátis. Só quem roda os gatos age. */
+function autoRefill(now) {
+  if (!care.auto || now - (autoRefill.t || 0) < 4000) return; autoRefill.t = now;
+  objsOf("pote_racao").forEach(o => { if (resOf(o.cid) < POTE_BAIXO && supOf("racao") > 0) supUse("racao", 1, ok => { if (ok) resAdd(o.cid, 50); }); });
+  objsOf("pote_agua").forEach(o => { if (resOf(o.cid) < POTE_BAIXO) resSet(o.cid, 100); });
+}
 function runCatAI(now) {
   now = now || Date.now();
   if (!roomRef) return;
   if (!isOwner()) { runCatAI.was = false; return; }
   if (!runCatAI.was) { runCatAI.was = true; for (const k in catSim) delete catSim[k]; }   // assumiu agora: recomeça do estado salvo
+  autoRefill(now);
   for (const id in CATS) {
     const c = cats[id];
     if (!c || c.x == null) { seedCat(id, now); continue; }
@@ -294,8 +323,8 @@ function runCatAI(now) {
     if (a.act) { if (a.act.type === "sleep" ? (c.energy >= 90 || now >= a.act.end) : now >= a.act.end) finishAct(id, a, c, now); continue; }
     if (a.path.length) {
       if (now >= a.next) {
-        const p = a.path.shift(), dir = dirOf(p[0] - c.x, p[1] - c.y); a.next = now + CAT_STEP;
-        saveCat(id, { x: p[0], y: p[1], dir, st: "walk", sub: null }); if (!a.path.length) a.arriveAt = now + CAT_STEP;
+        const p = a.path.shift(), dir = dirOf(p[0] - c.x, p[1] - c.y), stp = catStep(c); a.next = now + stp;
+        saveCat(id, { x: p[0], y: p[1], dir, st: "walk", sub: null }); if (!a.path.length) a.arriveAt = now + stp;
       }
       continue;
     }
@@ -322,6 +351,7 @@ function catAction(id, type) {
   if (type === "call") return callCat(id);
   if (!catNear(id)) return setStatus(CATS[id].name + " está longe. Toque em Chamar ou chegue mais perto.", 2500);
   const busy = catBusyMsg(id); if (busy) return setStatus(busy, 2500);       // não gasta o tempo de espera à toa
+  if (type === "play" && catWeak(c)) return setStatus("😿 " + CATS[id].name + " está fraco demais para brincar. Dê comida, água ou um petisco.", 3500);
   const key = id + type, cd = { pet: 15000, treat: 30000, play: 30000 }[type], now = Date.now();
   if ((catCooldown[key] || 0) > now) return setStatus(CATS[id].name + " precisa de um tempinho antes de " + { pet: "mais carinho", treat: "outro petisco", play: "brincar de novo" }[type] + ".", 2500);
   catCooldown[key] = now + cd;
@@ -366,7 +396,7 @@ const NEEDS = [["hunger", "fish", "Fome", false], ["thirst", "drop", "Sede", fal
 const sevColor = v => v < 45 ? "#5ad1b4" : v < 72 ? "#ffd166" : "#ff6b6b";
 function catMood(c) {
   if (c.st === "sleep") return "dormindo"; if (c.st === "eat") return "comendo"; if (c.st === "drink") return "bebendo"; if (c.st === "litter") return "na caixa";
-  if (c.st === "play") return "brincando"; if (num(c.hunger, 0) >= 80) return "faminto"; if (num(c.thirst, 0) >= 80) return "com sede";
+  if (c.st === "play") return "brincando"; if (catWeak(c)) return "fraco"; if (num(c.hunger, 0) >= 80) return "faminto"; if (num(c.thirst, 0) >= 80) return "com sede";
   if (Math.max(num(c.bladder, 0), num(c.bowel, 0)) >= 85) return "apertado"; if (num(c.energy, 100) <= 22) return "exausto";
   const w = num(c.well, 80); return w >= 75 ? "feliz" : w >= 45 ? "ok" : "triste";
 }
@@ -376,7 +406,8 @@ function renderCatPanel(force) {
   const box = $("catpanel"); if (!box) return;
   if (!catPanelBuilt || force === "rebuild") {
     catPanelBuilt = true;
-    box.innerHTML = '<div class="head"><b>Gatos</b><span id="cpSup"></span><span id="cpHyg"></span><span class="muted" id="cpHint">Toque num gato para ver as necessidades e interagir.</span></div><div class="cats"></div>';
+    box.innerHTML = '<div class="head"><b>Gatos</b><span id="cpSup"></span><span id="cpPots"></span><button id="cpAuto" type="button"></button><span id="cpHyg"></span><span class="muted" id="cpHint">Toque num gato para ver as necessidades e interagir.</span></div><div class="cats"></div>';
+    $("cpAuto").onclick = () => { care.auto = !care.auto; if (roomRef) roomRef.child("care/auto").set(care.auto); setStatus(care.auto ? "🤖 Reposição automática ligada: os potes enchem sozinhos (a ração sai do estoque)." : "Reposição automática desligada: você enche os potes.", 4000); renderCatPanel(true); };
     const wrap = box.querySelector(".cats");
     Object.keys(CATS).forEach(id => {
       const d = document.createElement("div"); d.className = "cc"; d.dataset.id = id;
@@ -389,6 +420,10 @@ function renderCatPanel(force) {
     });
   }
   $("cpSup").innerHTML = iconImg("fish", 14) + " Ração <b>" + supOf("racao") + "</b> &nbsp; " + iconImg("bag", 14) + " Sacos <b>" + supOf("sacos") + "</b>";
+  const pot = t => { const l = objsOf(t).map(o => Math.round(resOf(o.cid))); return l.length ? Math.min.apply(null, l) : 0; }, pr = pot("pote_racao"), pa = pot("pote_agua");
+  $("cpPots").innerHTML = "Pote ração <b style='color:" + sevColor(100 - pr * 1.6) + "'>" + pr + "%</b> · água <b style='color:" + sevColor(100 - pa * 1.6) + "'>" + pa + "%</b>";
+  $("cpAuto").textContent = care.auto ? "🤖 Automático: ligado" : "🤖 Automático: desligado"; $("cpAuto").className = care.auto ? "on" : "";
+  $("cpAuto").title = "Enche os potes sozinho quando baixam de " + POTE_BAIXO + "% (a ração sai do estoque da despensa)";
   const hy = houseHygiene(); $("cpHyg").innerHTML = "Higiene da casa <b style='color:" + sevColor(100 - hy) + "'>" + hy + "%</b>" + (messCount() ? " · " + messCount() + " sujeira(s)" : "");
   box.querySelectorAll(".cc").forEach(d => {
     const id = d.dataset.id, c = cats[id]; d.classList.toggle("sel", selectedCat === id);
@@ -401,14 +436,26 @@ function renderCatPanel(force) {
   });
 }
 let lastAlert = {};
+const TITULO_BASE = document.title;
 function catAlerts(now) {
   const al = (k, ms, txt) => { if (now - (lastAlert[k] || 0) > ms) { lastAlert[k] = now; setStatus(txt, 7000); } };
+  const potes = t => objsOf(t).map(o => resOf(o.cid)), semRacao = !potes("pote_racao").some(r => r >= 5), semAgua = !potes("pote_agua").some(r => r >= 5);
+  let urgente = false;
   for (const id in cats) {
     const c = cats[id]; if (!CATS[id] || c.hunger == null) continue;
-    if (c.hunger >= 85 && !objsOf("pote_racao").some(o => resOf(o.cid) >= 5)) al("food" + id, 120000, "😿 " + CATS[id].name + " está com muita fome e o pote de ração está vazio! Pegue ração na despensa e encha o pote.");
-    if (c.thirst >= 85 && !objsOf("pote_agua").some(o => resOf(o.cid) >= 5)) al("water" + id, 120000, "💧 " + CATS[id].name + " está com sede e o pote de água está vazio!");
-    if (c.well <= 35) al("well" + id, 180000, "😿 " + CATS[id].name + " está tristinho. Cuide das necessidades dele!");
+    const n = CATS[id].name;
+    if (catWeak(c)) { urgente = true; al("weak" + id, 150000, "😿 " + n + " está fraco de " + (c.hunger >= 92 ? "fome" : "sede") + " e não quer brincar. Dê comida, água ou um petisco!"); }
+    if (c.hunger >= 85 && semRacao) { urgente = true; al("food" + id, 120000, "😿 " + n + " está com muita fome e o pote de ração está vazio! " + (supOf("racao") > 0 ? "Encha o pote (ou ligue o automático no painel dos gatos)." : "Pegue ração na despensa e encha o pote.")); }
+    if (c.thirst >= 85 && semAgua) { urgente = true; al("water" + id, 120000, "💧 " + n + " está com sede e o pote de água está vazio!"); }
+    if (c.well <= 35) { urgente = true; al("well" + id, 180000, "😿 " + n + " está tristinho. Cuide das necessidades dele!"); }
   }
+  if (!care.auto) {                                                  // aviso antes de acabar, quando ainda dá tempo
+    if (potes("pote_racao").some(r => r < POTE_BAIXO)) al("lowfood", 240000, "🥣 O pote de ração está acabando. Encha antes que os gatos fiquem com fome.");
+    if (potes("pote_agua").some(r => r < POTE_BAIXO)) al("lowwater", 240000, "💧 O pote de água está acabando.");
+  } else if (potes("pote_racao").some(r => r < POTE_BAIXO) && supOf("racao") <= 0) { urgente = true; al("nostock", 240000, "📦 A reposição automática parou: acabou a ração do estoque. Pegue mais na despensa da cozinha."); }
+  if (supOf("racao") <= 1 && supOf("racao") > 0) al("lowstock", 300000, "📦 Resta pouca ração no estoque. Pegue mais na despensa.");
   if (objsOf("caixa_areia").length && objsOf("caixa_areia").every(o => resOf(o.cid) >= 70)) al("litter", 150000, "🧹 Todas as caixas de areia estão sujas! Limpe para os gatos usarem.");
   if (messCount() >= 3) al("mess", 180000, "💩 Tem sujeira de gato espalhada pela casa. Chegue perto e limpe.");
+  const b = $("btnCatsT"); if (b) b.classList.toggle("alerta", urgente);       // bolinha vermelha no botão Gatos
+  const t = (urgente && document.hidden ? "😿 " : "") + TITULO_BASE; if (document.title !== t) document.title = t;   // aba em segundo plano: o título avisa
 }

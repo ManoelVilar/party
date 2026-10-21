@@ -241,7 +241,8 @@ const rules = {
         care: {
           ...readM,
           res: { ...writeM, "$k": { ".validate": "$k.matches(/^(racao1|agua1|cx1|cx2)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" } },
-          sup: { ...writeM, "$k": { ".validate": "$k.matches(/^(racao|sacos)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 99" } }
+          sup: { ...writeM, "$k": { ".validate": "$k.matches(/^(racao|sacos)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 99" } },
+          auto: { ...writeM, ".validate": "newData.isBoolean()" }
         },
 
         messes: {

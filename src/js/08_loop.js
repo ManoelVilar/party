@@ -88,7 +88,7 @@ function frame() {
   for (const id in cats) {
     const c = cats[id], info = CATS[id]; if (!info || c.x == null) continue;
     let moving = false;
-    if (c.t0) { const t = Math.min(1, (now - c.t0) / CAT_STEP); c.rx = c.fx + (c.x - c.fx) * t; c.ry = c.fy + (c.y - c.fy) * t; moving = t < 1; } else { c.rx = c.x; c.ry = c.y; }
+    if (c.t0) { const t = Math.min(1, (now - c.t0) / catStep(c)); c.rx = c.fx + (c.x - c.fx) * t; c.ry = c.fy + (c.y - c.fy) * t; moving = t < 1; } else { c.rx = c.x; c.ry = c.y; }
     const it = ITEM[c.x + "_" + c.y], soft = it && (it.t === "cama" ? 22 : (it.t === "sofa" || it.t === "poltrona") ? 12 : it.t === "caixa_areia" ? 10 : 0);
     const z = (c.st === "sleep" || c.st === "sit" || c.st === "litter") && !moving ? (soft || 0) : 0;
     const w = P(c.rx + .5, c.ry + .5, z); let st = c.st || "sit"; if (st === "walk" && !moving) st = "sit"; if (moving) st = "walk";
