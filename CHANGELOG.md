@@ -9,7 +9,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - **Convites** com papel e validade (`#sala=...&convite=...`), co-anfitriões, convidados, revogação e janela **🔑 Sala** (pessoas, escritórios, mesas, agentes).
 - **Agentes de IA** externos com credencial de uso único e permissões limitadas (`agent/`), marcados na sala; não concedem permissões.
 - **Escritórios reservados**: o anfitrião reserva; com agente trabalhando só o anfitrião entra. Validado no servidor (regras) em cada posição.
-- **Escritórios estilo software house**: duas mesas compridas com cadeiras dos dois lados e notebooks (como na sala de reuniões), 12 lugares por escritório, ocupação individual (uma pessoa ou agente por cadeira), liberada ao sair ou cair.
+- **Escritórios com cabines**: 8 cabines individuais por escritório ao redor da sala (mesa, monitor, cadeira e divisórias), centro livre, ocupação individual (uma pessoa ou agente por cadeira), liberada ao sair ou cair. Boas para deixar agentes de IA.
 - **Limpeza no servidor** (GitHub Actions + firebase-admin, plano gratuito): salas temporárias vazias/abandonadas são apagadas; permanentes nunca; chat aparado; convites vencidos removidos.
 - Regras do banco **geradas** de `src/layout.json`; novos testes (`acesso`, `agente`, `limpeza`, e2e `contas`).
 

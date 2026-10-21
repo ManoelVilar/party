@@ -222,7 +222,7 @@ function renderHostPanel() {
   const nOf = {};
   LAYOUT.desks.forEach(d => {
     const r = deskLive(deskKey(d)), li = gpEl("li"); nOf[d.office] = (nOf[d.office] || 0) + 1;
-    li.appendChild(gpEl("span", "", ROOMBY[d.office].name + " · lugar " + nOf[d.office]));
+    li.appendChild(gpEl("span", "", ROOMBY[d.office].name + " · " + "cabine " + nOf[d.office]));
     li.appendChild(r ? badge((r.k === "agent" ? "🤖 " : "") + r.name, r.k === "agent" ? "agent" : "") : badge("livre"));
     ud.appendChild(li);
   });
