@@ -26,7 +26,7 @@ Janela **🔑 Sala** (dono): gere um link `#sala=<código>&convite=<token>`. O t
 - Convidado não abre nem libera; agente não deixa ninguém entrar nem muda permissões. A checagem é das **regras do banco**, em cada posição gravada, não só da tela.
 
 ## Mesas
-Cada escritório tem **6 cabines** individuais ao redor da sala (3 no fundo e 3 na parede da esquerda, sempre com a tela virada para quem olha o mapa), com mesa, monitor, cadeira e divisórias; o centro fica livre. As cabines são boas para deixar um agente de IA trabalhando. Sentar grava `desks/<x>_<y>`; só uma pessoa (ou agente) por cadeira. (Os ids e as saídas ficam em `src/layout.json`.)
+Cada escritório tem **7 cabines** individuais em duas colunas (4 na parede da esquerda e 3 no meio), com mesa, monitor, cadeira e divisórias; todas com a tela virada para quem olha o mapa. As cabines são boas para deixar um agente de IA trabalhando. Sentar grava `desks/<x>_<y>`; só uma pessoa (ou agente) por cadeira. (Os ids e as saídas ficam em `src/layout.json`.)
 
 ## Verificação em duas etapas (2FA)
 - **Login com Google:** vale a verificação em duas etapas da própria conta Google.
