@@ -1,8 +1,8 @@
 /* =========================================================
-   JOGOS NAS TVs DA SALA
-   Cada TV da sala tem um sofá de 3 lugares. Sentar no sofá abre o painel do jogo:
-   os lugares 1 e 2 jogam, o lugar 3 assiste. Estado em rooms/<sala>/games/<tv>, placar da sala em rooms/<sala>/scores/<uid>.
-   O jogo da velha é só o primeiro; outros jogos entram em GAMES (kind).
+   SINUCA NAS TVs DA SALA
+   Cada TV da sala tem um sofá de 3 lugares. O jogo só existe para quem está SENTADO no sofá: os lugares 1 e 2 jogam,
+   o lugar 3 assiste. Ao levantar, o painel some, o estado local é limpo e a partida é encerrada (desistência) depois de uma pequena tolerância.
+   Estado em rooms/<sala>/games/<tv>, placar da sala em rooms/<sala>/scores/<uid>.
    ========================================================= */
 let gamesData = {}, scoresData = {}, scoresReady = false, gpHidden = null, gpSig = "";
 const TV_SETS = OBJS.filter(o => o.t === "tv").sort((a, b) => a.x - b.x).map((tv, i) => {
@@ -11,7 +11,6 @@ const TV_SETS = OBJS.filter(o => o.t === "tv").sort((a, b) => a.x - b.x).map((tv
   return { id: "tv" + i, tv, seats };
 });
 const TV_BY_OBJ = new Map(TV_SETS.map(s => [s.tv, s]));
-const VELHA_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 const gNow = () => Date.now() + serverOffset;
 const posOf = id => id === uid ? me : players[id];
 
@@ -28,7 +27,7 @@ const nameOf = id => cleanName((players[id] && players[id].name) || "?");
 
 /* ---------- dados vindos do Firebase (sempre saneados) ---------- */
 function cleanGame(v) {
-  if (!v || typeof v !== "object" || (v.kind !== "velha" && v.kind !== "sinuca")) return null;
+  if (!v || typeof v !== "object" || v.kind !== "sinuca") return null;      // registros antigos de outros jogos (jogo da velha) são ignorados
   const num = (x, lo, hi, d) => typeof x === "number" && x >= lo && x <= hi ? x : d;
   const g = {
     kind: v.kind, st: v.st === "over" ? "over" : "play", p0: String(v.p0 || "").slice(0, 64), p1: String(v.p1 || "").slice(0, 64),
@@ -36,12 +35,9 @@ function cleanGame(v) {
     w: num(v.w, -1, 2, -1), s0: num(v.s0, 0, 999, 0), s1: num(v.s1, 0, 999, 0), dr: num(v.dr, 0, 999, 0),
     gid: num(v.gid, 0, 9e15, 0), end: num(v.end, 0, 9e15, 0), upd: num(v.upd, 0, 9e15, 0), rev: num(v.rev, 0, 999, 0)
   };
-  if (v.kind === "velha") g.b = /^[-XO]{9}$/.test(v.b) ? v.b : "---------";
-  else {
-    g.bl = SN_RE.test(v.bl) ? v.bl : snRackStr(); g.bp = SN_RE.test(v.bp) ? v.bp : g.bl;
-    g.gr = num(v.gr, -1, 1, -1); g.vx = num(v.vx, -9999, 9999, 0); g.vy = num(v.vy, -9999, 9999, 0); g.sh = num(v.sh, 0, 9999, 0);
-    g.bih = v.bih === 1 ? 1 : 0; g.msg = typeof v.msg === "string" ? v.msg.slice(0, 100) : "";
-  }
+  g.bl = SN_RE.test(v.bl) ? v.bl : snRackStr(); g.bp = SN_RE.test(v.bp) ? v.bp : g.bl;
+  g.gr = num(v.gr, -1, 1, -1); g.vx = num(v.vx, -9999, 9999, 0); g.vy = num(v.vy, -9999, 9999, 0); g.sh = num(v.sh, 0, 9999, 0);
+  g.bih = v.bih === 1 ? 1 : 0; g.msg = typeof v.msg === "string" ? v.msg.slice(0, 100) : "";
   return g;
 }
 function initGames() {
@@ -64,34 +60,15 @@ function initGames() {
 /* escrita recusada (ex.: partida anterior ainda ativa): avisa em vez de falhar em silêncio */
 function gWrite(pr) { Promise.resolve(pr).catch(() => setStatus("⛔ Não foi possível jogar agora. A partida anterior ainda está ativa; tente de novo em instantes.", 4500)); }
 
-/* ---------- regras do jogo da velha ---------- */
-function velhaResult(b) {
-  for (const L of VELHA_LINES) if (b[L[0]] !== "-" && b[L[0]] === b[L[1]] && b[L[0]] === b[L[2]]) return b[L[0]];
-  return b.includes("-") ? null : "draw";
-}
-const velhaLine = b => VELHA_LINES.find(L => b[L[0]] !== "-" && b[L[0]] === b[L[1]] && b[L[0]] === b[L[2]]) || null;
-
-function startGameKind(set, kind, swap) {
+function startSinuca(set, swap) {
   const a = sitterAt(set.seats[0][0], set.seats[0][1]), b = sitterAt(set.seats[1][0], set.seats[1][1]);
-  if (!a || !b || (uid !== a && uid !== b)) return;
-  const old = gamesData[set.id], same = old && old.kind === kind && ((old.p0 === a && old.p1 === b) || (old.p0 === b && old.p1 === a));
+  if (!a || !b || (uid !== a && uid !== b) || !mySeat()) return;
+  const old = gamesData[set.id], same = old && ((old.p0 === a && old.p1 === b) || (old.p0 === b && old.p1 === a));
   let p0 = a, p1 = b; if (swap) { p0 = b; p1 = a; }
-  const g = { kind, st: "play", p0, p1, n0: nameOf(p0), n1: nameOf(p1), t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: gNow(), end: 0, upd: gNow(), rev: 0 };
-  if (kind === "velha") g.b = "---------";
-  else { g.bl = snRackStr(); g.bp = g.bl; g.gr = -1; g.vx = 0; g.vy = 0; g.sh = 0; g.bih = 0; g.msg = (swap ? g.n0 : g.n0) + " quebra!"; }
+  const g = { kind: "sinuca", st: "play", p0, p1, n0: nameOf(p0), n1: nameOf(p1), t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: gNow(), end: 0, upd: gNow(), rev: 0 };
+  g.bl = snRackStr(); g.bp = g.bl; g.gr = -1; g.vx = 0; g.vy = 0; g.sh = 0; g.bih = 0; g.msg = g.n0 + " quebra!";
   if (swap && same && old) { g.s0 = old.p0 === p0 ? old.s0 : old.s1; g.s1 = old.p0 === p0 ? old.s1 : old.s0; g.dr = old.dr; }   // revanche: o placar da dupla continua
   gWrite(roomRef.child("games/" + set.id).set(g));
-}
-function velhaMove(set, i) {
-  const g = gamesData[set.id]; if (!g || g.kind !== "velha" || g.st !== "play" || g.b[i] !== "-") return;
-  if ((g.t === 0 ? g.p0 : g.p1) !== uid) return;
-  const b = g.b.slice(0, i) + (g.t === 0 ? "X" : "O") + g.b.slice(i + 1), r = velhaResult(b);
-  const upd = { b, t: 1 - g.t, rev: g.rev + 1, upd: gNow() };
-  if (r) {
-    upd.st = "over"; upd.end = gNow(); upd.w = r === "draw" ? 2 : r === "X" ? 0 : 1;
-    if (upd.w === 0) upd.s0 = g.s0 + 1; else if (upd.w === 1) upd.s1 = g.s1 + 1; else upd.dr = g.dr + 1;
-  }
-  gWrite(roomRef.child("games/" + set.id).update(upd));
 }
 function gameEnd(set, winner) {
   const g = gamesData[set.id]; if (!g || g.st !== "play" || (uid !== g.p0 && uid !== g.p1)) return;
@@ -146,9 +123,8 @@ function gpActions(box, set, g, mineIdx, a, b) {
     mk("Desistir", "no", () => gameEnd(set, 1 - mineIdx));
   } else if (duo) {
     const rematch = over && mineIdx >= 0;
-    if (rematch) mk("🔁 Revanche", "primary", () => startGameKind(set, g.kind, true));
-    mk(rematch ? "Novo: ⭕ Jogo da velha" : "⭕ Jogo da velha", rematch ? "" : "primary", () => startGameKind(set, "velha", false));
-    mk(rematch ? "Novo: 🎱 Sinuca" : "🎱 Sinuca", rematch ? "" : "primary", () => startGameKind(set, "sinuca", false));
+    if (rematch) mk("🔁 Revanche", "primary", () => startSinuca(set, true));
+    mk(rematch ? "Novo jogo: 🎱 Sinuca" : "🎱 Jogar sinuca", rematch ? "" : "primary", () => startSinuca(set, false));
   }
   if (acts.childNodes.length) box.appendChild(acts);
 }
@@ -162,10 +138,38 @@ function gpRank(box) {
   }
   box.appendChild(sb);
 }
+/* ---------- sentou / levantou ----------
+   O jogo só vale com a pessoa sentada. Ao levantar: painel some, mira/posição/animação locais são descartadas
+   e, se havia partida em andamento, ela termina por desistência depois de 8 s de tolerância (dá tempo de voltar ao lugar). */
+let gpSeatWas = null, gpLeftAt = {};
+const GP_GRACE = 8000, GP_ABSENT = 20000;
+function snReset() { snA = null; snPlace = null; snPlacing = false; snAim = 0; snActive = null; if (snRaf) { cancelAnimationFrame(snRaf); snRaf = 0; } }
+function seatWatch() {
+  const my = meRef ? mySeat() : null, now = Date.now();
+  if (gpSeatWas && !my) { snReset(); gpHidden = null; gpSig = ""; gpLeftAt[gpSeatWas] = now; }
+  gpSeatWas = my ? my.set.id : null;
+  TV_SETS.forEach(set => {
+    const g = gamesData[set.id]; if (!g || g.st !== "play") return;
+    const mineIdx = g.p0 === uid ? 0 : g.p1 === uid ? 1 : -1;
+    const seatedAs = id => set.seats.slice(0, 2).some(t => sitterAt(t[0], t[1]) === id);
+    if (mineIdx >= 0 && seatedAs(uid)) { delete gpLeftAt[set.id]; }
+    else if (mineIdx >= 0) {                                                             // sou jogador e não estou mais sentado: desisto
+      if (!gpLeftAt[set.id]) gpLeftAt[set.id] = now;
+      if (now - gpLeftAt[set.id] > GP_GRACE) { delete gpLeftAt[set.id]; snReset(); setStatus("🛋️ Você saiu do sofá: a partida foi encerrada.", 4000); gameEnd(set, 1 - mineIdx); }
+    }
+    const other = mineIdx === 0 ? g.p1 : g.p0;
+    if (mineIdx >= 0 && seatedAs(uid)) {                                                 // adversário sumiu (fechou a página): fico com a vitória
+      const k = "o" + set.id;
+      if (seatedAs(other)) delete gpLeftAt[k];
+      else { if (!gpLeftAt[k]) gpLeftAt[k] = now; if (now - gpLeftAt[k] > GP_ABSENT) { delete gpLeftAt[k]; gameEnd(set, mineIdx); } }
+    }
+  });
+}
 function renderGamePanel(force) {
   const box = $("gamepanel"); if (!box) return;
+  seatWatch();
   const my = meRef ? mySeat() : null;
-  if (!my) { gpHidden = null; snActive = null; if (!box.hidden) { box.hidden = true; box.classList.remove("gp-wide"); gpSig = ""; } return; }
+  if (!my) { gpHidden = null; snActive = null; if (!box.hidden) { box.hidden = true; box.classList.remove("gp-wide"); box.textContent = ""; gpSig = ""; } return; }
   if (gpHidden === my.set.id) { snActive = null; if (!box.hidden) box.hidden = true; return; }
   const set = my.set, g = gamesData[set.id], a = sitterAt(set.seats[0][0], set.seats[0][1]), b = sitterAt(set.seats[1][0], set.seats[1][1]);
   const sig = JSON.stringify([set.id, my.idx, a, b, g, rankList(), a && nameOf(a), b && nameOf(b), snBusy(), snPlacing, snPlace]);
@@ -173,42 +177,15 @@ function renderGamePanel(force) {
 
   const playing = g && g.st === "play", over = g && g.st === "over";
   const mineIdx = g ? (g.p0 === uid ? 0 : g.p1 === uid ? 1 : -1) : -1;
-  if (g && g.kind === "sinuca" && (playing || over)) return snRender(box, set, g, mineIdx, a, b);
+  if (g && (playing || over)) return snRender(box, set, g, mineIdx, a, b);
   box.classList.remove("gp-wide"); snActive = null; box.textContent = "";
-  gpHead(box, set, "🎮 TV " + (TV_SETS.indexOf(set) + 1) + (g && (playing || over) ? " · Jogo da velha" : " · Escolha um jogo"));
-
-  if (g && (playing || over)) {
-    const turn = playing ? g.t : -1, line = gpEl("div", "gp-vs");
-    [[0, "❌", g.n0, g.s0], [1, "⭕", g.n1, g.s1]].forEach(([i, ic, nm, sc]) => {
-      const c = gpEl("div", "gp-pl" + (turn === i ? " turn" : "") + (over && g.w === i ? " won" : ""));
-      c.appendChild(gpEl("span", "", ic + " " + nm + (mineIdx === i ? " (você)" : ""))); c.appendChild(gpEl("b", "gp-sc", String(sc))); line.appendChild(c);
-    });
-    box.appendChild(line);
-    const wl = over ? velhaLine(g.b) : null, bd = gpEl("div", "gp-board");
-    for (let i = 0; i < 9; i++) {
-      const ch = g.b[i], cell = gpEl("button", "gp-cell" + (ch === "X" ? " x" : ch === "O" ? " o" : "") + (wl && wl.includes(i) ? " win" : ""), ch === "X" ? "X" : ch === "O" ? "O" : "");
-      cell.type = "button"; cell.setAttribute("aria-label", "Casa " + (i + 1));
-      const can = playing && mineIdx === g.t && ch === "-"; cell.disabled = !can; cell.onclick = () => velhaMove(set, i); bd.appendChild(cell);
-    }
-    box.appendChild(bd);
-    let msg;
-    if (playing) msg = mineIdx < 0 ? "Vez de " + (g.t === 0 ? g.n0 : g.n1) + "." : mineIdx === g.t ? "✨ Sua vez!" : "Vez de " + (g.t === 0 ? g.n0 : g.n1) + "…";
-    else msg = g.w === 2 ? "🤝 Empate!" : "🏆 " + (g.w === 0 ? g.n0 : g.n1) + " venceu!";
-    box.appendChild(gpEl("div", "gp-msg", msg));
-    if (g.dr) box.appendChild(gpEl("div", "muted gp-small", "Empates da dupla: " + g.dr));
-  } else {
-    box.appendChild(gpEl("div", "gp-msg", my.idx < 2 ? (a && b ? "Dois jogadores prontos! Escolham o jogo." : "Chame mais uma pessoa para sentar no sofá.") : "Você está na plateia. Os dois primeiros lugares jogam."));
-  }
+  gpHead(box, set, "🎱 TV " + (TV_SETS.indexOf(set) + 1) + " · Sinuca");
+  box.appendChild(gpEl("div", "gp-msg", my.idx < 2 ? (a && b ? "Dois jogadores prontos! Vamos jogar sinuca." : "Chame mais uma pessoa para sentar no sofá.") : "Você está na plateia. Os dois primeiros lugares jogam."));
   gpActions(box, set, g, mineIdx, a, b); gpRank(box);
 }
 
-/* ---------- ação para chegar no sofá (descoberta) ---------- */
-function sofaAction() {
-  if (mySeat()) return null;
-  for (const s of TV_SETS) {
-    if (!s.seats.some(t => Math.max(Math.abs(t[0] - me.x), Math.abs(t[1] - me.y)) <= 3)) continue;
-    const free = s.seats.find(t => !sitterAt(t[0], t[1])); if (!free) return null;
-    return { k: "sofa", l: "🛋️ Sentar e jogar", fn: () => { const p = bfs(me.x, me.y, free[0], free[1], tileBlocked); if (p) path = p; else setStatus("Não deu para chegar ao sofá.", 2500); } };
-  }
-  return null;
+/* ---------- ação: reabrir o painel (só aparece quem está sentado e escondeu o jogo) ---------- */
+function gameAction() {
+  const my = mySeat(); if (!my || gpHidden !== my.set.id) return null;
+  return { k: "game", l: "🎱 Abrir a sinuca", fn: () => { gpHidden = null; renderGamePanel(true); } };
 }

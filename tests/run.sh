@@ -5,6 +5,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 node scripts/build.mjs --check
+node scripts/gera-regras.mjs --check
+node tests/rules/rules.test.cjs
+node tests/rules/acesso.test.cjs
+node tests/rules/agente.test.cjs
+node tests/limpeza.test.mjs
 PORT=8765
 if ! curl -s -o /dev/null "localhost:$PORT"; then
   (python3 -m http.server $PORT >/dev/null 2>&1 & echo $! > /tmp/party-http.pid); sleep 1; STARTED=1
@@ -14,6 +19,7 @@ trap cleanup EXIT
 cd tests/e2e
 python3 smoke.py
 python3 jogos.py
+python3 contas.py
 # grava as escritas reais do cliente e confere contra as regras do Firebase
 python3 record_ops.py
 (cd "$ROOT" && node tests/rules/replay.cjs)

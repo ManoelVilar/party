@@ -12,7 +12,8 @@ const fix = (v, now) => (v && typeof v === "object")
 let db = targaryen.database(rules, {}, ops[0].t), bad = 0;
 for (const o of ops) {
   const now = o.t, v = fix(o.v, now);
-  const d = db.as({ uid: o.u }), opt = { now };
+  const auth = o.u ? { uid: o.u, token: { firebase: { sign_in_provider: o.pv || "anonymous" }, email_verified: !!o.ev, email: o.pv && o.pv !== "anonymous" ? "x@teste.com" : undefined } } : null;
+  const d = auth ? db.as(auth) : db.as(null), opt = { now };
   const r = o.op === "update" ? d.update("/" + o.p.replace(/^\//, ""), v, opt) : d.write("/" + o.p.replace(/^\//, ""), v, opt);
   if (r.allowed) db = r.newDatabase.with({ now });
   else { bad++; console.log("NEGADO:", o.op, o.p, JSON.stringify(v).slice(0, 120), "\n   ", String(r.info).split("\n").filter(l => /=> false|denied/.test(l)).slice(0, 3).join(" | ")); }

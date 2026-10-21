@@ -1,23 +1,28 @@
 /* =========================================================
    A CASA (mapa fixo)
    ========================================================= */
+/* geometria dos escritórios e das mesas: src/layout.json (a mesma fonte gera as regras do Firebase) */
+const LAYOUT = /*LAYOUT*/null;
+const OFFICE_IDS = Object.keys(LAYOUT.offices);
+const DESK_BY_ID = {}, DESK_AT = {};
+LAYOUT.desks.forEach(d => { DESK_BY_ID[d.id] = d; DESK_AT[d.x + "_" + d.y] = d; });
 const ROOMS = [
-  { id: "esc1", name: "Escritório 1", x: 1,  y: 1,  w: 7,  h: 7,  floor: ["#b9c3d8", "#afb9ce"], wall: "#8fa5c9", talk: "room", pat: "carpet" },
-  { id: "esc2", name: "Escritório 2", x: 9,  y: 1,  w: 7,  h: 7,  floor: ["#bcd0c1", "#b2c7b8"], wall: "#8fb59c", talk: "room", pat: "carpet" },
+  { id: "esc1", name: "Escritório 1", ...LAYOUT.offices.esc1,  floor: ["#b9c3d8", "#afb9ce"], wall: "#8fa5c9", talk: "room", pat: "carpet" },
+  { id: "esc2", name: "Escritório 2", ...LAYOUT.offices.esc2,  floor: ["#bcd0c1", "#b2c7b8"], wall: "#8fb59c", talk: "room", pat: "carpet" },
   { id: "coz",  name: "Cozinha",      x: 17, y: 1,  w: 12, h: 7,  floor: ["#f3f4f6", "#dfe3e8"], wall: "#ecdcb8", talk: "near", pat: "tile" },
   { id: "cin",  name: "Cinema",       x: 30, y: 1,  w: 14, h: 7,  floor: ["#5a2a3a", "#512534"], wall: "#4b2f6e", talk: "room", pat: "carpet" },
   { id: "sala", name: "Sala",         x: 1,  y: 9,  w: 43, h: 4,  floor: ["#cfa771", "#c19a65"], wall: "#b9a6d8", talk: "near", pat: "wood" },
   { id: "q1",   name: "Quarto 1",     x: 1,  y: 14, w: 9,  h: 5,  floor: ["#e5d3e3", "#dcc8da"], wall: "#dba7ba", talk: "room", pat: "carpet" },
   { id: "q2",   name: "Quarto 2",     x: 11, y: 14, w: 9,  h: 5,  floor: ["#d2e0e9", "#c7d7e2"], wall: "#a7cadb", talk: "room", pat: "carpet" },
   { id: "ban",  name: "Banheiro",     x: 21, y: 14, w: 8,  h: 5,  floor: ["#c3e3f0", "#b3d6e6"], wall: "#90d2d2", talk: "room", pat: "tile" },
-  { id: "reu",  name: "Sala de Reuniões", x: 30, y: 14, w: 14, h: 5, floor: ["#c9d3e0", "#bfcad9"], wall: "#8fb0d9", talk: "room", pat: "carpet" }
+  { id: "reu",  name: "Sala de Reuniões", ...LAYOUT.offices.reu, floor: ["#c9d3e0", "#bfcad9"], wall: "#8fb0d9", talk: "room", pat: "carpet" }
 ];
 const ROOMBY = {}; ROOMS.forEach(r => ROOMBY[r.id] = r);
 const rid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 ROOMS.forEach(r => { for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) rid[y][x] = r.id; });
 [[5, 13], [6, 13], [15, 13], [16, 13], [24, 13], [25, 13], [21, 8], [22, 8], [23, 8], [4, 8], [12, 8], [35, 8], [36, 8], [37, 8], [36, 13]].forEach(p => { rid[p[1]][p[0]] = "sala"; });
 /* portas com "bater e permitir": escritórios 1 e 2 e sala de reuniões (um tile de porta cada) */
-const DOORS = [{ office: "esc1", x: 4, y: 8 }, { office: "esc2", x: 12, y: 8 }, { office: "reu", x: 36, y: 13 }];
+const DOORS = Object.keys(LAYOUT.doors).map(o => ({ office: o, x: LAYOUT.doors[o][0], y: LAYOUT.doors[o][1] }));
 const inO = o => (o === "reu" ? "na " : "no ") + ROOMBY[o].name, ofO = o => (o === "reu" ? "da " : "do ") + ROOMBY[o].name;
 const DOORAT = {}; DOORS.forEach(d => DOORAT[d.x + "_" + d.y] = d);
 const roomOf = (x, y) => (y >= 0 && y < ROWS && x >= 0 && x < COLS) ? rid[y][x] : null;
@@ -43,7 +48,8 @@ const DEF = {
     box(x, y, L ? 0 : .03, .05, R ? 1 : .97, .95, 22, 27, "#a9825f", !(L || R));
     if (L && R) {
       box(x, y, .38, .38, .62, .58, 27, 30, "#2b2f3a"); box(x, y, .46, .42, .54, .5, 30, 38, "#2b2f3a");
-      box(x, y, .14, .4, .86, .5, 38, 62, "#1d2230"); faceY(x, y, .17, .83, .5, 41, 59, "#58b4ff"); faceY(x, y, .17, .5, .5, 51, 59, "#9ad6ff");
+      const on = deskLit(x, y);                                                              // tela acesa só com alguém sentado
+      box(x, y, .14, .4, .86, .5, 38, 62, "#1d2230"); faceY(x, y, .17, .83, .5, 41, 59, on ? "#58b4ff" : "#26364d"); faceY(x, y, .17, .5, .5, 51, 59, on ? "#9ad6ff" : "#314560");
       box(x, y, .22, .62, .78, .88, 27, 29, "#cfd3da");
     } else if (!L) { box(x, y, .5, .5, .7, .7, 27, 33, "#d9534f"); box(x, y, .12, .2, .4, .5, 27, 28.5, "#f4f1e8"); }
   }},
@@ -118,12 +124,9 @@ const DEF = {
     box(x, y, .05, .22, .95, .8, 0, 16, "#4a3b30"); faceY(x, y, .1, .9, .8, 3, 13, "#3a2d24");
     box(x, y, .4, .45, .6, .6, 16, 19, "#222"); box(x, y, .1, .42, .9, .54, 19, 50, "#12141b");
     const gv = tvGameView(o);
-    if (gv && gv.kind === "sinuca") {                                                          // sinuca: mesa verde com as bolas
+    if (gv) {                                                          // sinuca: mesa verde com as bolas
       faceY(x, y, .14, .86, .54, 22, 47, "#1f7a3a");
       snView(gv.bl).forEach((bb, n) => { if (!bb.on) return; const cx = .14 + .72 * bb.x / 1000, cz = 22 + 25 * (1 - bb.y / 500); faceY(x, y, cx - .022, cx + .022, .54, cz - 1.7, cz + 1.7, n === 0 ? "#f4f4f4" : snCol(n)); });
-    } else if (gv) {                                                                           // jogo da velha: tabuleiro 3x3 na tela (vermelho = X, azul = O)
-      faceY(x, y, .14, .86, .54, 22, 47, "#0f3a22");
-      for (let i = 0; i < 9; i++) { const cx = .16 + (i % 3) * .24, zt = 45 - Math.floor(i / 3) * 8.2, ch = gv.b[i]; faceY(x, y, cx, cx + .2, .54, zt - 6.6, zt, ch === "X" ? "#ff5a5a" : ch === "O" ? "#5ad1ff" : "#1f6b3c"); }
     } else { faceY(x, y, .14, .86, .54, 22, 47, "#3a8fe0"); faceY(x, y, .14, .5, .54, 36, 47, "#7ec0f5"); }
   }},
   planta: { solid: true, draw(o) {
@@ -239,11 +242,13 @@ function add(t, x, y, o) {
 }
 const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o); };
 (function buildHouse() {
-  /* escritórios */
-  row("escrivaninha", 2, 2, 3); add("cadeira", 3, 3, { f: "u" }); add("cadeira", 5, 2, { f: "l" });
-  row("estante", 6, 1, 2); add("luz", 1, 1); add("planta", 7, 7); add("planta", 1, 7); row("tapete", 2, 5, 4); row("tapete", 2, 6, 4);
-  row("escrivaninha", 10, 2, 3); add("cadeira", 11, 3, { f: "u" }); add("cadeira", 13, 2, { f: "l" });
-  row("estante", 14, 1, 2); add("luz", 9, 1); add("planta", 15, 7); add("planta", 9, 7); row("tapete2", 10, 5, 4); row("tapete2", 10, 6, 4);
+  /* escritórios: 3 mesas de 3 tiles e 7 lugares cada (ids em src/layout.json); o corredor da porta (coluna do meio) fica livre */
+  [1, 9].forEach((b, k) => {
+    row("escrivaninha", b + 1, 2, 3); row("escrivaninha", b, 5, 3); row("escrivaninha", b + 4, 5, 3);
+    LAYOUT.desks.filter(d => d.office === "esc" + (k + 1)).forEach(d => add("cadeira", d.x, d.y, { f: d.f, desk: d.id }));
+    row("estante", b + 5, 1, 2); add("luz", b, 1); add("planta", b + 6, 7); add("planta", b, 7);
+    for (let y = 3; y <= 7; y++) add(k ? "tapete2" : "tapete", b + 3, y);
+  });
   /* cozinha + cuidados dos gatos */
   add("despensa", 17, 1); row("balcao", 18, 1, 2); add("fogao", 20, 1); add("pia", 21, 1); row("balcao", 22, 1, 2); add("geladeira", 24, 1); add("planta", 28, 1);
   for (let x = 21; x <= 24; x++) { add("mesa", x, 4, { plate: true }); add("mesa", x, 5, { plate: true }); add("cadeira", x, 3, { f: "d" }); add("cadeira", x, 6, { f: "u" }); }
@@ -358,6 +363,7 @@ function drawDoor(d) {
     box(x, y, .1, WT0 + .04, .9, WT1 - .04, 0, DOOR_H - 8, "#8a5a30");
     faceY(x, y, .17, .83, WT1 - .04, 5, 32, "#9a6a40"); faceY(x, y, .17, .83, WT1 - .04, 38, DOOR_H - 13, "#9a6a40");
     ball(x + .78, y + WT1 - .04, 34, 0, 2.2, "#e8d9a8");
+    if (officeLocked(d.office)) { faceY(x, y, .42, .58, WT1 - .05, 38, 50, "#c43d55"); faceY(x, y, .46, .54, WT1 - .05, 50, 57, "#e8d9a8"); }       // cadeado: reservado ao anfitrião
     if (NATAL) natalDoor(d);
   }
 }

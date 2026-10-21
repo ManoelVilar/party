@@ -96,7 +96,7 @@ function frame() {
   for (const id in players) {
     const p = players[id]; p.rx += (p.x - p.rx) * f; p.ry += (p.y - p.ry) * f;
     const act = (p.act && (!p.act.until || now < p.act.until + 300)) ? p.act : null, L = p.lookN || DEFL;
-    const base = { icon: (p.hand && ["reu", "cin"].includes(roomOf(p.x, p.y))) ? "hand" : null, name: p.name || "?", me: id === uid, linked: !!peers[id], mute: p.mic === false, bc: !!p.bsid, say: (p.say && now - (p.sayTs || 0) < 6000) ? p.say : null };
+    const base = { icon: (p.hand && ["reu", "cin"].includes(roomOf(p.x, p.y))) ? "hand" : null, name: (p.acct === "agent" ? "🤖 " : "") + (p.name || "?"), me: id === uid, linked: !!peers[id], mute: p.mic === false, bc: !!p.bsid, say: (p.say && now - (p.sayTs || 0) < 6000) ? p.say : null };
     const moving = Math.abs(p.x - p.rx) + Math.abs(p.y - p.ry) > .06, seat = SEAT[p.x + "_" + p.y], sit = !!seat && !moving && !act;
     const stk = act && act.type === "sleep" ? "sleep" : (act && act.type === "shower" && !moving) ? "shower" : sit ? "sit" : "x";
     if (p._stk === undefined) { p._stk = stk; p._stT = now - 9000; } else if (p._stk !== stk) { p._stk = stk; p._stT = now; }

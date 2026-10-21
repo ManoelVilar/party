@@ -11,7 +11,7 @@ Espaço virtual em **pixel art isométrica** para festas, encontros com amigos e
 | Área | Recursos |
 |---|---|
 | **Personagem** | Criador completo (corpo, rosto, cabelo, roupas, acessórios, fantasias, conjuntos), guarda-roupa dentro do jogo, conjuntos salvos |
-| **Espaços** | Sala, cozinha, quartos, banheiro, 2 escritórios, **cinema** e **sala de reuniões** |
+| **Espaços** | Sala, cozinha, quartos, banheiro, 2 escritórios (7 mesas cada), **cinema** e **sala de reuniões** |
 | **Voz e vídeo** | WebRTC direto entre os participantes (malha), ativado por **proximidade** na sala/cozinha e por **cômodo** nos demais |
 | **Transmissão** | Compartilhar tela, vídeo local ou slides (PDF/imagens) no telão do cinema e da sala de reuniões; modo **sentado** (tela cheia ao sentar na cadeira) |
 | **YouTube** | Vídeo sincronizado para todos no cinema |
@@ -19,8 +19,9 @@ Espaço virtual em **pixel art isométrica** para festas, encontros com amigos e
 | **Portas** | Escritórios e sala de reuniões têm porta: bater, permitir ou recusar |
 | **Gatos** | Sombra e Neblina têm fome, sede, energia, banheiro e bem-estar; ração, areia, carinho, petisco e brincadeira |
 | **Chat** | Chat do espaço com hora, reiniciado a cada sessão |
-| **Código do espaço** | Gerador de código aleatório (`party-lua-trevo-4821`); só quem tem o código entra |
-| **Jogos na TV** | Sente no sofá em frente a uma TV da sala para jogar **jogo da velha** ou **sinuca (bola 8)** com outra pessoa (o terceiro lugar assiste), com placar da dupla e ranking da sala |
+| **Código do espaço** | Sala **temporária** sem login (`party-lua-trevo-4821`): quem tem o código entra e ela some quando esvazia |
+| **Contas e sala permanente** | Login com e-mail/senha ou Google; sala fixa e privada por conta, convites com papel e validade, escritórios reservados ao anfitrião e **agentes de IA** externos ([docs](docs/CONTAS.md)) |
+| **Jogos na TV** | Sente no sofá em frente a uma TV da sala para jogar **sinuca (bola 8)** com outra pessoa (o terceiro lugar assiste; a opção só aparece sentado), com placar da dupla e ranking da sala |
 | **Tema de Natal** | Mapa decorado (árvores, lareira, guirlandas, neve) e fantasias natalinas; botão 🎄 liga/desliga, escolha individual |
 | **Celular** | Layout responsivo, direcional na tela, toque para andar, pinça para zoom |
 
@@ -91,6 +92,7 @@ Os testes de navegador **não usam o Firebase real nem rede real**: `tests/e2e/f
 
 - [Arquitetura](docs/ARCHITECTURE.md) — módulos, dados no Firebase, WebRTC, decisões
 - [Firebase](docs/FIREBASE.md) — criar o projeto, regras, restringir a chave
+- [Contas, salas e convites](docs/CONTAS.md) · [Agentes de IA](docs/AGENTES.md) · [Limpeza no servidor](docs/LIMPEZA.md)
 - [Deploy](docs/DEPLOY.md) — Netlify, GitHub Pages, TURN
 - [Auditoria do MVP](docs/AUDITORIA-MVP.md) — o que foi revisado, achados, riscos conhecidos
 - [Checklist de lançamento](docs/MVP-CHECKLIST.md) — o que testar em aparelhos reais antes de divulgar

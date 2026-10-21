@@ -21,3 +21,8 @@ Itens pós-MVP, por prioridade sugerida. Nada aqui está comprometido com data.
 - Mais animais; emotes e reações
 - Internacionalização (EN/ES)
 - Testes de carga e métricas de desempenho em celulares de entrada
+
+## Pendente após a 0.5
+- 2FA por aplicativo autenticador para contas com senha (exige Identity Platform/Blaze ou função no servidor).
+- Agentes com mais ferramentas (compartilhar tela, ler o chat da reunião).
+- Expirar o tema de Natal junto com a estação.

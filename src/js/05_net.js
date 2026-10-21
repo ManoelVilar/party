@@ -78,24 +78,10 @@ $("btnCopyCode").onclick = async () => {
   if (!c) return codeNote("Escreva ou gere um código primeiro.", false);
   codeNote((await copyText(c)) ? "Código " + c + " copiado!" : "Não consegui copiar. Selecione o texto e copie manualmente.", true);
 };
-$("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Gerar e mande o código para quem vai entrar com você. Só quem tem o código entra no espaço.", false));
+$("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Gerar e mande o código para quem vai entrar com você. Sala temporária: some sozinha quando todo mundo sai.", false));
 
-$("btnEnter").onclick = async () => {
-  const name = $("inName").value.trim();
-  const room = $("inRoom").value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
-  if (!name) return ($("err").textContent = "Escreva seu nome.");
-  if (room.length < 4) return ($("err").textContent = "O código do espaço precisa de 4+ letras ou números.");
-  $("err").textContent = "";
-  myLook = normLook(loginCreator.get());
-  store.set("nc_name", name); store.set("nc_room", room); store.set("nc_look", JSON.stringify(myLook));
-  try {
-    firebase.initializeApp(firebaseConfig);
-    const cred = await firebase.auth().signInAnonymously();
-    uid = cred.user.uid; db = firebase.database();
-  } catch (e) { return ($("err").textContent = "Não conectou: " + (e.message || e)); }
-  loginCreator.destroy(); startGame(name, room);
-};
-
+/* o que o servidor precisa saber de nós (usado ao entrar e ao voltar da queda) */
+function selfState() { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, acct: myAcct(), csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 3 }; }
 function startGame(name, room) {
   myName = name; $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
@@ -103,17 +89,19 @@ function startGame(name, room) {
   do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30);
   me.dir = "d"; me.act = null;
   const pp = P(me.x + .5, me.y + .5); camX = pp[0] - LW / K / 2; camY = pp[1] - LH / K / 2;
-  meRef.set({ name, look: myLook, x: me.x, y: me.y, dir: "d", mic: false, cam: false, vis: !document.hidden, ver: 2 });
-  document.addEventListener("visibilitychange", () => { const v = !document.hidden; if (players[uid]) players[uid].vis = v; if (meRef) meRef.update({ vis: v }); });
+  meRef.set({ name, look: myLook, x: me.x, y: me.y, dir: "d", mic: false, cam: false, vis: !document.hidden, ver: 3, acct: myAcct() })
+    .catch(e => { setStatus("⛔ O servidor não deixou você entrar (" + String((e && e.message) || e).slice(0, 90) + "). Confira as regras do Firebase (docs/FIREBASE.md).", 0); });
+  document.addEventListener("visibilitychange", () => { const v = !document.hidden; if (players[uid]) players[uid].vis = v; if (meRef && !leaving && players[uid]) meRef.update({ vis: v }).catch(() => {}); });
   /* presença: ao perder a rede o servidor apaga nossa entrada (onDisconnect); ao voltar, recriamos para não virar "fantasma" invisível */
   let wasConn = false;
-  const selfState = () => { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 2 }; };
   db.ref(".info/connected").on("value", s => {
+    connectedNow = s.val() === true;
     if (s.val() !== true) { if (wasConn) setStatus("⚠️ Sem conexão. Tentando reconectar...", 0); return; }
     meRef.onDisconnect().remove(); roomRef.child("signals/" + uid).onDisconnect().remove();
+    if (myDesk) { try { roomRef.child("desks/" + myDesk).onDisconnect().remove(); } catch (e) {} }
     if (wasConn) {
-      meRef.set(selfState()); setStatus("✅ Reconectado.", 2500);
-      setTimeout(() => { if (!players[uid]) meRef.set(selfState()); }, 1500);      // o servidor pode apagar logo depois: confere de novo
+      restoreSelf(); setStatus("✅ Reconectado.", 2500);
+      setTimeout(() => { if (!players[uid]) restoreSelf(); }, 1500);              // o servidor pode apagar logo depois: confere de novo
     }
     wasConn = true;
   });
@@ -128,9 +116,11 @@ function startGame(name, room) {
       const js = JSON.stringify(v[id].look || null); if (p._lj !== js) { p._lj = js; p.lookN = normLook(v[id].look); }
     }
     for (const id in players) if (!v[id]) delete players[id];
+    playersReady = true;
+    for (const id in players) players[id].acct = players[id].acct === "agent" ? "agent" : players[id].acct === "user" ? "user" : "guest";
     const others = Object.keys(v).filter(id => id !== uid).map(id => cleanName(v[id].name));
     $("who").textContent = others.length ? "Aqui também: " + others.join(", ") : "Só você por aqui";
-  }, err => { console.warn(err); setStatus("⛔ Sem permissão no servidor. Confira as regras do Firebase (docs/FIREBASE.md).", 0); });
+  }, err => { console.warn(err); setStatus(isPermRoom() && !isRoomOwner() ? "⛔ Você não tem mais acesso a esta sala." : "⛔ Sem permissão no servidor. Confira as regras do Firebase (docs/FIREBASE.md).", 0); });
   roomRef.child("cats").on("value", s => {
     const v = s.val() || {}, now = Date.now();
     for (const id in CATS) if (v[id]) {
@@ -163,7 +153,7 @@ function startGame(name, room) {
     pass = s.val() || {};
     DOORS.forEach(d => { const has = !!(pass[d.office] && pass[d.office][uid]); if (has && !lastPassMine[d.office]) setStatus("✅ Pode entrar " + inO(d.office) + "! A porta abriu.", 6000); lastPassMine[d.office] = has; });
   });
-  initRooms(); initGames();
+  initAccess(); initDesks(); initRooms(); initGames();
   renderCatPanel("rebuild");
   setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); requestAnimationFrame(loop);
 }
@@ -173,9 +163,10 @@ const passSeen = {}, passUsed = {};
 const insideOffice = o => roomOf(me.x, me.y) === o;
 const officeOccupied = o => Object.keys(players).some(id => id !== uid && roomOf(players[id].x, players[id].y) === o);
 const hasPass = o => !!(pass[o] && pass[o][uid]);
-const doorOpenFor = d => insideOffice(d.office) || hasPass(d.office) || !officeOccupied(d.office);
+const doorOpenFor = d => canEnterOffice(d.office) && (insideOffice(d.office) || hasPass(d.office) || !officeOccupied(d.office));       // reservado/agentes trabalhando: só o anfitrião (as regras do servidor também exigem)
 /* aparência da porta (igual para todo mundo): fechada enquanto tem alguém dentro, abre quando alguém está no vão ou encostado nela por dentro */
 const doorOpenVisual = d => {
+  if (officeLocked(d.office)) return Object.keys(players).some(id => { const p = players[id]; return Math.max(Math.abs(p.x - d.x), Math.abs(p.y - d.y)) <= 1 && id === (roomMeta && roomMeta.owner); });
   const ids = Object.keys(players); let inside = false;
   for (const id of ids) {
     const p = players[id], r = roomOf(p.x, p.y);
@@ -188,14 +179,17 @@ const knockAge = k => Date.now() + serverOffset - (k.ts || 0);
 function tileBlocked(x, y) {
   if (x < 0 || y < 0 || x >= COLS || y >= ROWS || isWall(x, y)) return true;
   const d = DOORAT[x + "_" + y]; if (d && !doorOpenFor(d)) return true;
+  const dk = DESK_AT[x + "_" + y]; if (dk && deskTakenByOther(deskKey(dk))) return true;                 // mesa com outra pessoa
   const it = ITEM[x + "_" + y]; return !!(it && DEF[it.t].solid);
 }
 const dirOf = (dx, dy) => dx > 0 ? "r" : dx < 0 ? "l" : dy > 0 ? "d" : "u";
 function stepTo(nx, ny, vec, now) {
   const dir = dirOf(vec[0], vec[1]);
   if (tileBlocked(nx, ny)) { if (dir !== me.dir) { me.dir = dir; meRef.update({ dir }); } return false; }
+  const dk = deskAtTile(nx, ny);
+  if (dk && deskKey(dk) !== myDesk) return seatAtDesk(dk, nx, ny, dir, now);                      // mesa: grava o registro antes de andar
   if (me.act && me.act.type === "eat") { me.act = null; meRef.update({ act: null }); }
-  me.x = nx; me.y = ny; me.dir = dir; meRef.update({ x: nx, y: ny, dir }); lastStep = now; return true;
+  me.x = nx; me.y = ny; me.dir = dir; meRef.update({ x: nx, y: ny, dir }); lastStep = now; afterMoveDesk(nx, ny); return true;
 }
 function bfs(sx, sy, tx, ty, blocked, maxD) {
   const q = [[sx, sy, 0]], prev = {}; prev[sx + "_" + sy] = null;
@@ -256,8 +250,8 @@ cv.addEventListener("pointerdown", e => {
   const cid = nearestCatTo(x, y, 1.2); if (cid) selectCat(cid);
   if (tileBlocked(x, y)) return;
   const ro = roomOf(x, y), dd = DOORS.find(d2 => d2.office === ro);
-  if (dd && !doorOpenFor(dd) && !bfs(me.x, me.y, x, y, tileBlocked)) return setStatus("🚪 A porta " + ofO(ro) + " está fechada. Chegue perto dela e bata (botão ou tecla E).", 4000);
-  const p = bfs(me.x, me.y, x, y, tileBlocked); if (p) path = p;
+  if (dd && !doorOpenFor(dd) && !bfs(me.x, me.y, x, y, tileBlocked)) return setStatus(officeLocked(ro) ? "🔒 " + ROOMBY[ro].name + " está reservado: só o anfitrião entra." : "🚪 A porta " + ofO(ro) + " está fechada. Chegue perto dela e bata (botão ou tecla E).", 4000);
+  const p = bfs(me.x, me.y, x, y, walkBlockedTo(x, y)); if (p) path = p;
 });
 
 /* =========================================================
@@ -325,7 +319,7 @@ $("btnWard").onclick = () => { if (near(o => o.t === "guarda")) openWardrobe(); 
 function currentActions() {
   const a = [];
   if (me.act) { if (me.act.type === "sleep") a.push({ k: "wake", l: "☀️ Acordar", fn: wake }); return a; }
-  const sf = sofaAction(); if (sf) a.push(sf);
+  const gm = gameAction(); if (gm) a.push(gm);
   if (near(o => o.t === "cama")) a.push({ k: "sleep", l: "😴 Dormir", fn: sleep });
   if (near(o => o.t === "chuveiro")) a.push({ k: "shower", l: "🚿 Tomar banho", fn: shower });
   if (near(o => DEF[o.t].food && (o.t !== "mesa" || o.plate))) a.push({ k: "eat", l: "🍽️ Comer", fn: eat });
@@ -344,8 +338,10 @@ function currentActions() {
     a.push({ k: "play" + id, l: "🧶 Brincar · " + CATS[id].name, fn: () => catAction(id, "play") });
   }
   DOORS.forEach(d => {
-    if (Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) <= 2 && roomOf(me.x, me.y) !== d.office && !doorOpenFor(d))
-      a.push({ k: "knock" + d.office, l: "🚪 Bater na porta · " + ROOMBY[d.office].name, fn: () => knock(d) });
+    if (Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) <= 2 && roomOf(me.x, me.y) !== d.office && !doorOpenFor(d)) {
+      if (officeLocked(d.office)) a.push({ k: "lock" + d.office, l: "🔒 Reservado ao anfitrião · " + ROOMBY[d.office].name, fn: () => setStatus("🔒 " + ROOMBY[d.office].name + ": " + lockReason(d.office) + ". Só o anfitrião entra; pedir para bater não adianta.", 5000) });
+      else a.push({ k: "knock" + d.office, l: "🚪 Bater na porta · " + ROOMBY[d.office].name, fn: () => knock(d) });
+    }
   });
   if (["reu", "cin"].includes(roomOf(me.x, me.y))) a.push({ k: "hand", l: myHand() ? "✋ Abaixar a mão" : "✋ Levantar a mão", fn: toggleHand });
   return a;
@@ -354,7 +350,7 @@ let actSig = "";
 function refreshActions() {
   const a = currentActions(), sig = a.map(x => x.k + x.l).join("|"); if (sig === actSig) return; actSig = sig;
   const box2 = $("actions"); box2.innerHTML = "";
-  if (!a.length) { const h = document.createElement("span"); h.className = "hint"; h.textContent = "Chegue perto de camas, chuveiro, geladeira, guarda-roupa, painéis, potes, caixas de areia, sujeira, gatos, portas ou do sofá da TV para interagir (tecla E)."; box2.appendChild(h); return; }
+  if (!a.length) { const h = document.createElement("span"); h.className = "hint"; h.textContent = "Chegue perto de camas, chuveiro, geladeira, guarda-roupa, painéis, potes, caixas de areia, sujeira, gatos, portas ou da TV (sente no sofá para jogar sinuca) para interagir (tecla E)."; box2.appendChild(h); return; }
   a.forEach(x => { const b = document.createElement("button"); b.className = "primary"; b.textContent = x.l; b.onclick = x.fn; box2.appendChild(b); });
 }
 
@@ -414,7 +410,7 @@ function tick() {
   if (!meRef) return;
   const now = Date.now();
   for (const id in players) {
-    if (id === uid) continue;
+    if (id === uid || players[id].acct === "agent") continue;                     // agentes de IA não têm voz/vídeo: não abrimos chamada com eles
     const rec = peers[id], ok = canTalk(id, !!rec);
     if (!rec && ok && uid < id && now > (retryAt[id] || 0)) callPeer(id).catch(console.warn);
     if (rec && !ok) closePeer(id, true);
@@ -435,6 +431,10 @@ function tick() {
     const mine = knocks[o] && knocks[o][uid];
     if (mine && mine.status === "pending" && (knockAge(mine) > 60000 || (!inside && Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) > 3))) roomRef.child("knocks/" + o + "/" + uid).remove();   // demorou ou se afastou
   });
+  healPresence(now);
+  if (myDesk) { const dd2 = DESK_AT[myDesk]; if (!dd2 || me.x !== dd2.x || me.y !== dd2.y) releaseDeskLocal(); }       // dormiu/foi levado: solta a mesa
+  if (myAcl && myAcl.exp && myAcl.exp <= gNow() && !isRoomOwner()) kicked("O seu acesso à sala expirou.");
+  enforceLock();
   const r = roomOf(me.x, me.y); $("roomLabel").textContent = r ? ROOMBY[r].name : ""; $("roomtag").textContent = r ? ROOMBY[r].name : "";
   renderPrompts(); updateTiles(); renderCatPanel(); catAlerts(now); updateRoomPanel(); renderGamePanel();
 }

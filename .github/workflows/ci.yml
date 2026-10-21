@@ -15,9 +15,14 @@ jobs:
         run: npm run check
       - name: Lint (ESLint)
         run: npm run lint
-      - name: Regras do Firebase
+      - name: Regras do Firebase em dia com src/layout.json
+        run: node scripts/gera-regras.mjs --check
+      - name: Regras do Firebase (simulador)
         run: |
           node tests/rules/rules.test.cjs
+          node tests/rules/acesso.test.cjs
+      - name: Limpeza do servidor (banco falso)
+        run: node tests/limpeza.test.mjs
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - name: Testes de navegador + replay do cliente contra as regras

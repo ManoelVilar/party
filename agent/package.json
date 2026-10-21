@@ -1,0 +1,11 @@
+{
+  "name": "party-agent",
+  "version": "0.1.0",
+  "description": "Cliente de referência para conectar um agente de IA (programa externo) a uma sala do Party com a credencial gerada pelo dono.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "bin": { "party-agent": "./party-agent.mjs" },
+  "dependencies": { "firebase": "^10.12.2" },
+  "engines": { "node": ">=18" }
+}

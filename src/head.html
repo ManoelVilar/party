@@ -42,6 +42,10 @@
   #err { color:var(--bad); min-height:1.2em; font-size:.9rem; }
   .chips { display:flex; flex-wrap:wrap; gap:6px; }
   .chips span { background:var(--panel2); border:3px solid var(--line); padding:3px 10px; font-size:.85rem; box-shadow: inset -2px -2px 0 var(--lo), inset 2px 2px 0 var(--hi); }
+  .acctbox, .invitebox { display:grid; gap:8px; padding:10px; background:var(--panel2); border:3px solid var(--line); }
+  .invitebox b { color:var(--accent); }
+  #acctMsg { min-height:1.2em; font-size:.85rem; } #acctMsg.ok { color:var(--good); } #acctMsg.bad { color:var(--bad); }
+  #modeTemp, #modeAcct { display:grid; gap:10px; }
   .codebox { display:grid; gap:6px; }
   .codebox label { margin:0; }
   .coderow { display:flex; gap:6px; }
@@ -281,6 +285,15 @@
   .privbox p, .privbox ul { margin:0; } .privbox ul { padding-left:20px; display:grid; gap:4px; }
   .privbox a, .privnote a { color:var(--good); }
   .privnote { font-size:.82rem; text-align:center; }
+  .hostbox { width:min(760px,100%); max-height:94vh; overflow:auto; display:grid; gap:10px; }
+  .hostbox section { display:grid; gap:6px; border-top:2px solid var(--line); padding-top:8px; } .hostbox h3 { margin:0; }
+  .hostbox .row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; } .hostbox .row > * { flex:0 1 auto; }
+  .hostbox .row select, .hostbox .row input[type=text] { width:auto; min-width:0; flex:1 1 130px; }
+  .hostbox code, .hostbox textarea { font-family:ui-monospace,monospace; font-size:.78rem; }
+  .hostbox textarea { width:100%; min-height:90px; background:#1f1430; color:inherit; border:3px solid var(--line); padding:6px; }
+  .hostbox ul { margin:0; padding:0; list-style:none; display:grid; gap:4px; }
+  .hostbox li { display:flex; gap:6px; align-items:center; flex-wrap:wrap; background:var(--panel2); border:2px solid var(--line); padding:4px 8px; } .hostbox li > span { margin-right:auto; }
+  .badge { display:inline-block; padding:0 6px; border:2px solid var(--line); font-size:.74rem; background:#3a2a5a; } .badge.agent { background:#5a2f8a; } .badge.host { background:#8a6a1c; } .badge.lock { background:#8a2f45; }
 
   #modal { position:fixed; inset:0; background:rgba(18,10,28,.8); display:grid; place-items:center; z-index:50; padding:10px; }
   .mbox { width:min(980px,100%); max-height:94vh; overflow:auto; display:grid; gap:10px; }
@@ -299,16 +312,55 @@
       <input id="inName" maxlength="14" autocomplete="off">
     </label>
     <div id="creator"></div>
-    <div class="codebox">
-      <label for="inRoom">Código do espaço (todo mundo usa o mesmo)</label>
-      <div class="coderow">
-        <input id="inRoom" maxlength="30" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ex: party-sol-lua-4821">
-        <button type="button" id="btnGen" class="gold" title="Cria um código aleatório e difícil de adivinhar">🎲 Gerar</button>
-        <button type="button" id="btnCopyCode" title="Copiar o código">Copiar</button>
-      </div>
-      <div class="muted" id="codeMsg">Primeira vez? Toque em Gerar e mande o código para quem vai entrar com você. Só quem tem o código entra no espaço.</div>
+    <div id="inviteBox" class="invitebox" hidden>
+      <b>🎟️ Você recebeu um convite</b>
+      <div class="muted" id="inviteInfo"></div>
+      <button class="gold" id="btnEnterInvite">ENTRAR COM O CONVITE</button>
     </div>
-    <button class="gold" id="btnEnter">ENTRAR NA PARTY</button>
+    <div class="tabs" id="modeTabs" role="tablist">
+      <button type="button" id="tabTemp" class="sel" role="tab" aria-selected="true">Sala temporária (sem login)</button>
+      <button type="button" id="tabAcct" role="tab" aria-selected="false">Minha conta e sala permanente</button>
+    </div>
+    <div id="modeTemp">
+      <div class="codebox">
+        <label for="inRoom">Código do espaço (todo mundo usa o mesmo)</label>
+        <div class="coderow">
+          <input id="inRoom" maxlength="30" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ex: party-sol-lua-4821">
+          <button type="button" id="btnGen" class="gold" title="Cria um código aleatório e difícil de adivinhar">🎲 Gerar</button>
+          <button type="button" id="btnCopyCode" title="Copiar o código">Copiar</button>
+        </div>
+        <div class="muted" id="codeMsg">Primeira vez? Toque em Gerar e mande o código para quem vai entrar com você. Sala temporária: some sozinha quando todo mundo sai.</div>
+      </div>
+      <button class="gold" id="btnEnter">ENTRAR NA PARTY</button>
+    </div>
+    <div id="modeAcct" hidden>
+      <div id="acctOut" class="acctbox">
+        <b>Entrar na sua conta</b>
+        <div class="muted">Com uma conta você ganha uma sala permanente só sua, que continua existindo mesmo vazia e que só entra quem você convidar.</div>
+        <button type="button" id="btnGoogle">Entrar com Google</button>
+        <label>E-mail <input id="inMail" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email"></label>
+        <label>Senha (mínimo 8 caracteres) <input id="inPass" type="password" autocomplete="current-password"></label>
+        <div class="coderow">
+          <button type="button" id="btnMailIn" class="primary">Entrar</button>
+          <button type="button" id="btnMailNew">Criar conta</button>
+          <button type="button" id="btnMailReset" title="Enviar e-mail para criar nova senha">Esqueci a senha</button>
+        </div>
+      </div>
+      <div id="acctIn" class="acctbox" hidden>
+        <b id="acctWho"></b>
+        <div class="muted" id="acctState"></div>
+        <div class="coderow">
+          <button type="button" id="btnEnterPerm" class="gold">ENTRAR NA MINHA SALA</button>
+        </div>
+        <div class="coderow">
+          <button type="button" id="btnMailVerify" hidden>Reenviar e-mail de confirmação</button>
+          <button type="button" id="btnMailCheck" hidden>Já confirmei</button>
+          <button type="button" id="btnOut">Sair da conta</button>
+        </div>
+        <div class="muted" id="acctSec"></div>
+      </div>
+      <div id="acctMsg" class="muted"></div>
+    </div>
     <div id="err"></div>
     <p class="muted privnote">Sem cookies de rastreamento: seu nome, personagem e preferências ficam salvos só neste aparelho para o jogo funcionar. Câmera e microfone só ligam se você permitir. <a href="#privacidade" id="lnkPriv">Política de privacidade</a></p>
   </div>
@@ -325,6 +377,8 @@
     <button id="btnChatT">Chat</button>
     <button id="btnNatal" title="Ligar/desligar o tema de Natal" aria-pressed="false">🎄 Natal</button>
     <button id="btnFull" title="Tela cheia (F)">Tela cheia</button>
+    <button id="btnRoom" title="Sala: convites, agentes de IA, escritórios e mesas">🔑 Sala</button>
+    <button id="btnLeave" class="no" title="Sair da sala">Sair</button>
   </div>
   <div id="videos"><div id="vhint">Ative mic e câmera e chegue perto de alguém para conversar.</div></div>
   <div id="status" hidden></div>
@@ -356,20 +410,35 @@
 <div id="privModal" class="privback" role="dialog" aria-modal="true" aria-labelledby="privTitle" hidden>
   <div class="privbox panel">
     <h2 id="privTitle">Política de privacidade</h2>
-    <p class="muted">Atualizada em 15/10/2026. O Party é um projeto aberto, feito para jogar e conversar com amigos. Aqui está, sem juridiquês, o que acontece com os seus dados.</p>
+    <p class="muted">Atualizada em 21/10/2026. O Party é um projeto aberto, feito para jogar e conversar com amigos. Aqui está, sem juridiquês, o que acontece com os seus dados.</p>
 
     <h3>O que fica no seu aparelho</h3>
     <ul>
       <li>Nome, código da sala, personagem, roupas salvas, zoom e a escolha do tema de Natal, no armazenamento local do navegador (<code>localStorage</code>).</li>
-      <li>Um identificador anônimo criado pelo Firebase (login anônimo), no armazenamento do navegador. Não pedimos e-mail, telefone nem senha.</li>
+      <li>Um identificador criado pelo Firebase Authentication, no armazenamento do navegador: anônimo em salas temporárias (sem e-mail, telefone nem senha) ou o da sua conta, se você entrar nela.</li>
       <li>O jogo <b>não define cookies</b> e não usa publicidade nem estatísticas de acesso. Para apagar tudo, limpe os dados do site no navegador.</li>
+    </ul>
+
+    <h3>Conta (opcional)</h3>
+    <ul>
+      <li>Salas temporárias não pedem login. Para ter uma <b>sala permanente</b> você pode criar uma conta com e-mail e senha ou entrar com o Google. O Firebase Authentication (Google) guarda seu e-mail e a senha em forma de hash; o Party <b>nunca vê nem guarda sua senha</b>.</li>
+      <li>No banco ficam apenas o identificador da conta e o código da sua sala fixa. Com o login do Google, a verificação em duas etapas é a da sua conta Google.</li>
+      <li>Para apagar a conta e a sala permanente, peça pelo canal de contato abaixo.</li>
     </ul>
 
     <h3>O que vai para o servidor</h3>
     <ul>
       <li>Dentro do código da sala, no Firebase Realtime Database (Google): nome, aparência, posição no mapa, se o microfone e a câmera estão ligados, o que você diz, mensagens do chat (nome, cor, texto e hora), partidas e placar dos jogos, estado dos gatos e do cinema.</li>
       <li>Quem tem o código da sala vê esses dados. Por isso, não compartilhe o código com quem você não quer na sala.</li>
-      <li>Sua presença some quando você sai, mas mensagens, placar e outros registros da sala <b>ficam gravados</b>. Ainda não existe limpeza automática; a pessoa responsável pelo projeto pode apagar uma sala quando você pedir.</li>
+      <li>Também ficam gravados, por sala: quem é o dono, quem recebeu convite (nome e papel), convites ainda válidos, qual mesa de escritório cada pessoa ocupa e se algum escritório está reservado ao anfitrião.</li>
+      <li><b>Salas temporárias</b> (sem login) são apagadas por completo, com chat e placar, quando ficam vazias por alguns minutos ou são abandonadas por cerca de 45 minutos. Uma rotina no servidor faz essa limpeza, sem depender de ninguém ter o site aberto.</li>
+      <li><b>Salas permanentes</b> continuam existindo mesmo vazias. Nelas o chat guarda só as últimas 200 mensagens, e convites e acessos vencidos são removidos.</li>
+    </ul>
+
+    <h3>Convites e agentes de IA</h3>
+    <ul>
+      <li>O dono da sala permanente gera links de convite (com papel e validade) e pode revogar acessos. Quem tem o link entra com o papel do convite.</li>
+      <li>Agentes de IA são programas externos que o dono autoriza com uma credencial de uso único e permissões limitadas. Eles aparecem na sala marcados como “agente” e não podem dar permissões a ninguém. Enquanto um agente trabalha num escritório, só o anfitrião entra nele.</li>
     </ul>
 
     <h3>Voz, vídeo e tela</h3>
@@ -389,7 +458,7 @@
     <p>Só para o jogo funcionar. Não vendemos dados, não fazemos perfis e não enviamos nada para publicidade.</p>
 
     <h3>Seus direitos</h3>
-    <p>Você pode pedir acesso, correção ou exclusão dos seus dados (LGPD, art. 18). Abra uma conversa em <a href="https://github.com/ManoelVilar/party/issues" target="_blank" rel="noopener noreferrer">github.com/ManoelVilar/party/issues</a> informando o <b>código da sala</b> e o <b>nome</b> que você usou, porque não há conta para localizar você de outro jeito. Não coloque senhas nem dados pessoais sensíveis nesse pedido.</p>
+    <p>Você pode pedir acesso, correção ou exclusão dos seus dados (LGPD, art. 18). Abra uma conversa em <a href="https://github.com/ManoelVilar/party/issues" target="_blank" rel="noopener noreferrer">github.com/ManoelVilar/party/issues</a> informando o <b>código da sala</b> e o <b>nome</b> que você usou (ou o e-mail da conta, se tiver uma), porque em salas temporárias não há conta para localizar você de outro jeito. Não coloque senhas nem dados pessoais sensíveis nesse pedido.</p>
 
     <h3>Crianças</h3>
     <p>O Party não foi feito para crianças. Menores de idade devem usá-lo com a supervisão de um responsável.</p>
@@ -397,6 +466,14 @@
     <h3>Mudanças</h3>
     <p>Se o jogo passar a tratar dados de outro jeito, esta página será atualizada e a data acima muda.</p>
     <div class="mfoot"><button type="button" id="privClose" class="primary">Fechar</button></div>
+  </div>
+</div>
+
+<div id="hostModal" class="privback" role="dialog" aria-modal="true" aria-labelledby="hostTitle" hidden>
+  <div class="privbox panel hostbox">
+    <h2 id="hostTitle">Sala</h2>
+    <div id="hostBody"></div>
+    <div class="mfoot"><button type="button" id="hostClose" class="primary">Fechar</button></div>
   </div>
 </div>
 
