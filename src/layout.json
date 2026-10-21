@@ -1,206 +1,134 @@
 {
- "doors": {
-  "esc1": [
-   4,
-   8
-  ],
-  "esc2": [
-   12,
-   8
-  ],
-  "reu": [
-   36,
-   13
+  "doors": {
+    "esc1": [
+      4,
+      8
+    ],
+    "esc2": [
+      12,
+      8
+    ],
+    "reu": [
+      36,
+      13
+    ]
+  },
+  "offices": {
+    "esc1": {
+      "x": 1,
+      "y": 1,
+      "w": 7,
+      "h": 7
+    },
+    "esc2": {
+      "x": 9,
+      "y": 1,
+      "w": 7,
+      "h": 7
+    },
+    "reu": {
+      "x": 30,
+      "y": 14,
+      "w": 14,
+      "h": 5
+    }
+  },
+  "desks": [
+    {
+      "id": "esc1-1",
+      "office": "esc1",
+      "kind": "gamer",
+      "x": 2,
+      "y": 3,
+      "f": "l",
+      "ex": [
+        3,
+        3
+      ]
+    },
+    {
+      "id": "esc1-2",
+      "office": "esc1",
+      "kind": "gamer",
+      "x": 2,
+      "y": 5,
+      "f": "l",
+      "ex": [
+        3,
+        5
+      ]
+    },
+    {
+      "id": "esc1-3",
+      "office": "esc1",
+      "kind": "gamer",
+      "x": 5,
+      "y": 3,
+      "f": "l",
+      "ex": [
+        6,
+        3
+      ]
+    },
+    {
+      "id": "esc1-4",
+      "office": "esc1",
+      "kind": "gamer",
+      "x": 5,
+      "y": 5,
+      "f": "l",
+      "ex": [
+        6,
+        5
+      ]
+    },
+    {
+      "id": "esc2-1",
+      "office": "esc2",
+      "kind": "gamer",
+      "x": 10,
+      "y": 3,
+      "f": "l",
+      "ex": [
+        11,
+        3
+      ]
+    },
+    {
+      "id": "esc2-2",
+      "office": "esc2",
+      "kind": "gamer",
+      "x": 10,
+      "y": 5,
+      "f": "l",
+      "ex": [
+        11,
+        5
+      ]
+    },
+    {
+      "id": "esc2-3",
+      "office": "esc2",
+      "kind": "gamer",
+      "x": 13,
+      "y": 3,
+      "f": "l",
+      "ex": [
+        14,
+        3
+      ]
+    },
+    {
+      "id": "esc2-4",
+      "office": "esc2",
+      "kind": "gamer",
+      "x": 13,
+      "y": 5,
+      "f": "l",
+      "ex": [
+        14,
+        5
+      ]
+    }
   ]
- },
- "offices": {
-  "esc1": {
-   "x": 1,
-   "y": 1,
-   "w": 7,
-   "h": 7
-  },
-  "esc2": {
-   "x": 9,
-   "y": 1,
-   "w": 7,
-   "h": 7
-  },
-  "reu": {
-   "x": 30,
-   "y": 14,
-   "w": 14,
-   "h": 5
-  }
- },
- "desks": [
-  {
-   "id": "esc1-1",
-   "office": "esc1",
-   "kind": "cabine",
-   "x": 2,
-   "y": 1,
-   "f": "l",
-   "ex": [
-    3,
-    1
-   ]
-  },
-  {
-   "id": "esc1-2",
-   "office": "esc1",
-   "kind": "cabine",
-   "x": 2,
-   "y": 3,
-   "f": "l",
-   "ex": [
-    3,
-    3
-   ]
-  },
-  {
-   "id": "esc1-3",
-   "office": "esc1",
-   "kind": "cabine",
-   "x": 2,
-   "y": 5,
-   "f": "l",
-   "ex": [
-    3,
-    5
-   ]
-  },
-  {
-   "id": "esc1-4",
-   "office": "esc1",
-   "kind": "cabine",
-   "x": 2,
-   "y": 7,
-   "f": "l",
-   "ex": [
-    3,
-    7
-   ]
-  },
-  {
-   "id": "esc1-5",
-   "office": "esc1",
-   "kind": "cabine",
-   "x": 5,
-   "y": 1,
-   "f": "l",
-   "ex": [
-    6,
-    1
-   ]
-  },
-  {
-   "id": "esc1-6",
-   "office": "esc1",
-   "kind": "cabine",
-   "x": 5,
-   "y": 3,
-   "f": "l",
-   "ex": [
-    6,
-    3
-   ]
-  },
-  {
-   "id": "esc1-7",
-   "office": "esc1",
-   "kind": "cabine",
-   "x": 5,
-   "y": 5,
-   "f": "l",
-   "ex": [
-    6,
-    5
-   ]
-  },
-  {
-   "id": "esc2-1",
-   "office": "esc2",
-   "kind": "cabine",
-   "x": 10,
-   "y": 1,
-   "f": "l",
-   "ex": [
-    11,
-    1
-   ]
-  },
-  {
-   "id": "esc2-2",
-   "office": "esc2",
-   "kind": "cabine",
-   "x": 10,
-   "y": 3,
-   "f": "l",
-   "ex": [
-    11,
-    3
-   ]
-  },
-  {
-   "id": "esc2-3",
-   "office": "esc2",
-   "kind": "cabine",
-   "x": 10,
-   "y": 5,
-   "f": "l",
-   "ex": [
-    11,
-    5
-   ]
-  },
-  {
-   "id": "esc2-4",
-   "office": "esc2",
-   "kind": "cabine",
-   "x": 10,
-   "y": 7,
-   "f": "l",
-   "ex": [
-    11,
-    7
-   ]
-  },
-  {
-   "id": "esc2-5",
-   "office": "esc2",
-   "kind": "cabine",
-   "x": 13,
-   "y": 1,
-   "f": "l",
-   "ex": [
-    14,
-    1
-   ]
-  },
-  {
-   "id": "esc2-6",
-   "office": "esc2",
-   "kind": "cabine",
-   "x": 13,
-   "y": 3,
-   "f": "l",
-   "ex": [
-    14,
-    3
-   ]
-  },
-  {
-   "id": "esc2-7",
-   "office": "esc2",
-   "kind": "cabine",
-   "x": 13,
-   "y": 5,
-   "f": "l",
-   "ex": [
-    14,
-    5
-   ]
-  }
- ]
 }

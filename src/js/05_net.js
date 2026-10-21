@@ -129,7 +129,7 @@ function startGame(name, room) {
       Object.assign(c, n); if (n.sub === undefined) c.sub = null; cats[id] = c;
     }
   });
-  roomRef.child("care").on("value", s => { const v = s.val() || {}; care = { res: Object.assign({}, v.res), sup: Object.assign({}, v.sup) }; });
+  roomRef.child("care").on("value", s => { const v = s.val() || {}; care = { res: Object.assign({}, v.res), sup: Object.assign({}, v.sup), auto: v.auto === true }; });
   roomRef.child("messes").on("value", s => { messes = s.val() || {}; });
   /* o chat recomeça a cada sessão: só aparecem mensagens enviadas depois que você entrou (hora do servidor, para não depender do relógio de cada aparelho) */
   sessionStart = Date.now(); $("log").innerHTML = "";

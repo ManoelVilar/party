@@ -65,7 +65,7 @@ function frame() {
     const st = sprOK ? sprEstado(o) : null;
     list.push({ d, run: () => {
       let ok = false;
-      if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
+      if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" || o.t === "neon" || o.t === "gamer" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
       if (!ok) DEF[o.t].draw(o); else if (st === "n") { natalLuzes = 2; try { DEF[o.t].draw(o); } finally { natalLuzes = 0; } }
     } });
     if (o.t === "chuveiro") list.push({ d: d + .08, run: () => {
@@ -88,7 +88,7 @@ function frame() {
   for (const id in cats) {
     const c = cats[id], info = CATS[id]; if (!info || c.x == null) continue;
     let moving = false;
-    if (c.t0) { const t = Math.min(1, (now - c.t0) / CAT_STEP); c.rx = c.fx + (c.x - c.fx) * t; c.ry = c.fy + (c.y - c.fy) * t; moving = t < 1; } else { c.rx = c.x; c.ry = c.y; }
+    if (c.t0) { const t = Math.min(1, (now - c.t0) / catStep(c)); c.rx = c.fx + (c.x - c.fx) * t; c.ry = c.fy + (c.y - c.fy) * t; moving = t < 1; } else { c.rx = c.x; c.ry = c.y; }
     const it = ITEM[c.x + "_" + c.y], soft = it && (it.t === "cama" ? 22 : (it.t === "sofa" || it.t === "poltrona") ? 12 : it.t === "caixa_areia" ? 10 : 0);
     const z = (c.st === "sleep" || c.st === "sit" || c.st === "litter") && !moving ? (soft || 0) : 0;
     const w = P(c.rx + .5, c.ry + .5, z); let st = c.st || "sit"; if (st === "walk" && !moving) st = "sit"; if (moving) st = "walk";

@@ -59,7 +59,7 @@ export class PartyAgent {
       while (this.me.y !== ty) await this._move(this.me.x, this.me.y + Math.sign(ty - this.me.y), ty > this.me.y ? "d" : "u");
     }
   }
-  /* escolhe o lugar livre n (1..12) do primeiro escritório do escopo (ou a primeira livre), registra o lugar e senta */
+  /* escolhe o lugar livre n (1..4) do primeiro escritório do escopo (ou a primeira livre), registra o lugar e senta */
   async sitAtDesk(n) {
     const { io, room } = this;
     const mine = LAYOUT.desks.filter(d => this.offices.includes(d.office));
@@ -70,8 +70,8 @@ export class PartyAgent {
     if (!target) throw new Error("Mesa inexistente neste escritório.");
     if (!free(target)) throw new Error("A mesa " + n + " está ocupada.");
     const key = target.x + "_" + target.y, door = LAYOUT.doors[target.office];
-    const exit = target.ex || [target.x, target.y + 1], inX = door[0];
-    const route = [[door[0], door[1]], [inX, door[1] - 1], [inX, exit[1]], [exit[0], exit[1]]];       // porta, primeiro tile de dentro, corredor do meio até a faixa livre e até a cadeira
+    const exit = target.ex || [target.x, target.y + 1];
+    const route = [[door[0], door[1]], [door[0], door[1] - 1], [exit[0], door[1] - 1], [exit[0], exit[1]]];   // porta, faixa livre diante dela, corredor ao lado da cadeira e até ele
     await this._walk(route);
     await io.keepOnDisconnect(room + "/desks/" + key);
     await io.set(room + "/desks/" + key, { uid: this.uid, name: this.acl.name, k: "agent", ts: io.serverTime() });   // 1º o registro da mesa...

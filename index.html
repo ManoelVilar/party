@@ -127,6 +127,10 @@
   #catpanel { display:grid; gap:8px; }
   #catpanel .head { display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:.9rem; }
   #catpanel .head b { color:var(--accent); }
+  #catpanel .head button { font:inherit; font-size:.8rem; padding:3px 8px; border-radius:8px; cursor:pointer; background:transparent; color:inherit; border:1px solid currentColor; opacity:.75; }
+  #catpanel .head button.on { opacity:1; background:var(--accent); color:#1a1026; border-color:var(--accent); }
+  #btnCatsT { position:relative; }
+  #btnCatsT.alerta::after { content:""; position:absolute; top:2px; right:2px; width:9px; height:9px; border-radius:50%; background:#ff5a5a; box-shadow:0 0 0 2px rgba(0,0,0,.35); }
   .cats { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:8px; }
   .cc { background:#2a1b40; border:3px solid var(--line); padding:8px; cursor:pointer; }
   .cc.sel { border-color:var(--accent); }
@@ -1310,14 +1314,19 @@ const CATS = {
 };
 const CAT_STEP = 380;                                                   // ms por casa andada
 const CAT_RATES = { hunger: 3.0, thirst: 4.0, bladder: 3.2, bowel: 2.0, energyDown: 2.0, energyUp: 12 };   // por minuto real
+const CAT_OFFLINE_MAX = 8 * 60;                                         // minutos de "ausência" que o gato vive enquanto ninguém está na sala
+const POTE_BAIXO = 20;                                                  // % do pote em que a reposição automática age e o aviso "acabando" aparece
 const ACC_CD = 5 * 60000;                                               // intervalo mínimo entre "acidentes" de um gato
 const MAX_MESSES = 6;
 const DEF_RES = { racao1: 60, agua1: 80, cx1: 0, cx2: 0 };              // ração/água em %, sujeira das caixas em %
 const DEF_SUP = { racao: 8, sacos: 5 }, SUP_MAX = { racao: 12, sacos: 10 };
-let cats = {}, care = { res: {}, sup: {} }, messes = {}, selectedCat = null;
+let cats = {}, care = { res: {}, sup: {}, auto: false }, messes = {}, selectedCat = null;
 const num = (v, d) => (typeof v === "number" && isFinite(v)) ? v : d;
 const resOf = cid => care.res[cid] != null ? care.res[cid] : (DEF_RES[cid] != null ? DEF_RES[cid] : 0);
 const supOf = k => care.sup[k] != null ? care.sup[k] : DEF_SUP[k];
+/* gato "fraco": fome ou sede extrema. Anda devagar, não brinca; petisco e comida o recuperam */
+const catWeak = c => num(c.hunger, 0) >= 92 || num(c.thirst, 0) >= 92;
+const catStep = c => catWeak(c) ? CAT_STEP * 1.8 : CAT_STEP;
 const messCount = () => Object.keys(messes).length;
 
 /* ---------- sprite do gato (poses: andar, sentar, dormir, comer, beber, caixa de areia, brincar) ---------- */
@@ -1428,6 +1437,7 @@ function addMess(x, y, type, catId) {
 function wellTarget(c) {
   let t = 100;
   t -= Math.max(0, c.hunger - 60) * 1.1; t -= Math.max(0, c.thirst - 60) * 1.1;
+  t -= Math.max(0, c.hunger - 90) * 2 + Math.max(0, c.thirst - 90) * 2;               // passou do limite: o bem-estar despenca
   t -= Math.max(0, Math.max(c.bladder, c.bowel) - 70) * .9; t -= Math.max(0, 25 - c.energy) * 1.2;
   t -= Math.min(5, messCount()) * 4; t -= OBJS.filter(o => o.t === "caixa_areia" && resOf(o.cid) >= 70).length * 5;
   return clamp(t, 5, 100);
@@ -1473,11 +1483,27 @@ function freeAdj(id, c, x, y) {
 function seedCat(id, now) {
   const d = CATS[id]; saveCat(id, { x: d.x, y: d.y, dir: "d", st: "sit", sub: null, hunger: 30, thirst: 25, energy: 85, bladder: 15, bowel: 10, well: 85, ts: now });
 }
+/* o tempo passa de verdade: ao voltar, o gato viveu o que daria (até 8 h). Come e bebe do que os potes tinham; sem comida, a fome acumula. Sem acidentes enquanto ninguém olha. */
+function offlineCatch(c, a, now) {
+  let min = Math.min(CAT_OFFLINE_MAX, Math.max(0, (now - (c.ts || now)) / 60000));
+  if (min < 1) return;
+  const eatFrom = (type, k, rate, side) => {
+    const o = objsOf(type).find(q => resOf(q.cid) >= 5); if (!o) return;
+    const take = Math.min(resOf(o.cid), k === "hunger" ? 25 : 15); resAdd(o.cid, -take);
+    c[k] = clamp(c[k] - take * rate); c[side[0]] = clamp(c[side[0]] + take * side[1]);
+  };
+  while (min > 0) {
+    const dt = Math.min(10, min); min -= dt;
+    stepStats(c, a, dt * .6);                                       // parte do tempo ele dorme
+    if (c.hunger >= 55) eatFrom("pote_racao", "hunger", 2.4, ["bowel", .15]);
+    if (c.thirst >= 55) eatFrom("pote_agua", "thirst", 4, ["bladder", .5]);
+  }
+  c.bladder = Math.min(c.bladder, 90); c.bowel = Math.min(c.bowel, 90);
+}
 function initSim(id, c, now) {
   const a = { path: [], next: 0, until: now + 2000, act: null, goal: null, arriveAt: 0, last: now, syncAt: 0, petSeen: c.pet || 0, treatSeen: c.treat || 0, playSeen: c.play || 0, callSeen: (c.call && c.call.t) || 0, accSince: 0, lastAcc: 0, lastPet: 0 };
   c.hunger = num(c.hunger, 30); c.thirst = num(c.thirst, 25); c.energy = num(c.energy, 85); c.bladder = num(c.bladder, 15); c.bowel = num(c.bowel, 10); c.well = num(c.well, 85);
-  const off = Math.min(15, Math.max(0, (now - (c.ts || now)) / 60000)) * .5;        // recuperação offline limitada
-  if (off > 0) { stepStats(c, a, off); }
+  offlineCatch(c, a, now);
   if (c.st === "sleep") a.act = { type: "sleep", end: now + 120000 }; else if (c.st !== "sit") saveCat(id, { st: "sit", sub: null });
   return a;
 }
@@ -1570,11 +1596,18 @@ function arrive(id, a, c, now) {
     else saveCat(id, { st: soft && Math.random() < .6 ? "sleep" : "sit", sub: null });
   }
 }
+/* reposição automática (liga/desliga no painel dos gatos): a ração sai do estoque, a água é grátis. Só quem roda os gatos age. */
+function autoRefill(now) {
+  if (!care.auto || now - (autoRefill.t || 0) < 4000) return; autoRefill.t = now;
+  objsOf("pote_racao").forEach(o => { if (resOf(o.cid) < POTE_BAIXO && supOf("racao") > 0) supUse("racao", 1, ok => { if (ok) resAdd(o.cid, 50); }); });
+  objsOf("pote_agua").forEach(o => { if (resOf(o.cid) < POTE_BAIXO) resSet(o.cid, 100); });
+}
 function runCatAI(now) {
   now = now || Date.now();
   if (!roomRef) return;
   if (!isOwner()) { runCatAI.was = false; return; }
   if (!runCatAI.was) { runCatAI.was = true; for (const k in catSim) delete catSim[k]; }   // assumiu agora: recomeça do estado salvo
+  autoRefill(now);
   for (const id in CATS) {
     const c = cats[id];
     if (!c || c.x == null) { seedCat(id, now); continue; }
@@ -1596,8 +1629,8 @@ function runCatAI(now) {
     if (a.act) { if (a.act.type === "sleep" ? (c.energy >= 90 || now >= a.act.end) : now >= a.act.end) finishAct(id, a, c, now); continue; }
     if (a.path.length) {
       if (now >= a.next) {
-        const p = a.path.shift(), dir = dirOf(p[0] - c.x, p[1] - c.y); a.next = now + CAT_STEP;
-        saveCat(id, { x: p[0], y: p[1], dir, st: "walk", sub: null }); if (!a.path.length) a.arriveAt = now + CAT_STEP;
+        const p = a.path.shift(), dir = dirOf(p[0] - c.x, p[1] - c.y), stp = catStep(c); a.next = now + stp;
+        saveCat(id, { x: p[0], y: p[1], dir, st: "walk", sub: null }); if (!a.path.length) a.arriveAt = now + stp;
       }
       continue;
     }
@@ -1624,6 +1657,7 @@ function catAction(id, type) {
   if (type === "call") return callCat(id);
   if (!catNear(id)) return setStatus(CATS[id].name + " está longe. Toque em Chamar ou chegue mais perto.", 2500);
   const busy = catBusyMsg(id); if (busy) return setStatus(busy, 2500);       // não gasta o tempo de espera à toa
+  if (type === "play" && catWeak(c)) return setStatus("😿 " + CATS[id].name + " está fraco demais para brincar. Dê comida, água ou um petisco.", 3500);
   const key = id + type, cd = { pet: 15000, treat: 30000, play: 30000 }[type], now = Date.now();
   if ((catCooldown[key] || 0) > now) return setStatus(CATS[id].name + " precisa de um tempinho antes de " + { pet: "mais carinho", treat: "outro petisco", play: "brincar de novo" }[type] + ".", 2500);
   catCooldown[key] = now + cd;
@@ -1668,7 +1702,7 @@ const NEEDS = [["hunger", "fish", "Fome", false], ["thirst", "drop", "Sede", fal
 const sevColor = v => v < 45 ? "#5ad1b4" : v < 72 ? "#ffd166" : "#ff6b6b";
 function catMood(c) {
   if (c.st === "sleep") return "dormindo"; if (c.st === "eat") return "comendo"; if (c.st === "drink") return "bebendo"; if (c.st === "litter") return "na caixa";
-  if (c.st === "play") return "brincando"; if (num(c.hunger, 0) >= 80) return "faminto"; if (num(c.thirst, 0) >= 80) return "com sede";
+  if (c.st === "play") return "brincando"; if (catWeak(c)) return "fraco"; if (num(c.hunger, 0) >= 80) return "faminto"; if (num(c.thirst, 0) >= 80) return "com sede";
   if (Math.max(num(c.bladder, 0), num(c.bowel, 0)) >= 85) return "apertado"; if (num(c.energy, 100) <= 22) return "exausto";
   const w = num(c.well, 80); return w >= 75 ? "feliz" : w >= 45 ? "ok" : "triste";
 }
@@ -1678,7 +1712,8 @@ function renderCatPanel(force) {
   const box = $("catpanel"); if (!box) return;
   if (!catPanelBuilt || force === "rebuild") {
     catPanelBuilt = true;
-    box.innerHTML = '<div class="head"><b>Gatos</b><span id="cpSup"></span><span id="cpHyg"></span><span class="muted" id="cpHint">Toque num gato para ver as necessidades e interagir.</span></div><div class="cats"></div>';
+    box.innerHTML = '<div class="head"><b>Gatos</b><span id="cpSup"></span><span id="cpPots"></span><button id="cpAuto" type="button"></button><span id="cpHyg"></span><span class="muted" id="cpHint">Toque num gato para ver as necessidades e interagir.</span></div><div class="cats"></div>';
+    $("cpAuto").onclick = () => { care.auto = !care.auto; if (roomRef) roomRef.child("care/auto").set(care.auto); setStatus(care.auto ? "🤖 Reposição automática ligada: os potes enchem sozinhos (a ração sai do estoque)." : "Reposição automática desligada: você enche os potes.", 4000); renderCatPanel(true); };
     const wrap = box.querySelector(".cats");
     Object.keys(CATS).forEach(id => {
       const d = document.createElement("div"); d.className = "cc"; d.dataset.id = id;
@@ -1691,6 +1726,10 @@ function renderCatPanel(force) {
     });
   }
   $("cpSup").innerHTML = iconImg("fish", 14) + " Ração <b>" + supOf("racao") + "</b> &nbsp; " + iconImg("bag", 14) + " Sacos <b>" + supOf("sacos") + "</b>";
+  const pot = t => { const l = objsOf(t).map(o => Math.round(resOf(o.cid))); return l.length ? Math.min.apply(null, l) : 0; }, pr = pot("pote_racao"), pa = pot("pote_agua");
+  $("cpPots").innerHTML = "Pote ração <b style='color:" + sevColor(100 - pr * 1.6) + "'>" + pr + "%</b> · água <b style='color:" + sevColor(100 - pa * 1.6) + "'>" + pa + "%</b>";
+  $("cpAuto").textContent = care.auto ? "🤖 Automático: ligado" : "🤖 Automático: desligado"; $("cpAuto").className = care.auto ? "on" : "";
+  $("cpAuto").title = "Enche os potes sozinho quando baixam de " + POTE_BAIXO + "% (a ração sai do estoque da despensa)";
   const hy = houseHygiene(); $("cpHyg").innerHTML = "Higiene da casa <b style='color:" + sevColor(100 - hy) + "'>" + hy + "%</b>" + (messCount() ? " · " + messCount() + " sujeira(s)" : "");
   box.querySelectorAll(".cc").forEach(d => {
     const id = d.dataset.id, c = cats[id]; d.classList.toggle("sel", selectedCat === id);
@@ -1703,28 +1742,40 @@ function renderCatPanel(force) {
   });
 }
 let lastAlert = {};
+const TITULO_BASE = document.title;
 function catAlerts(now) {
   const al = (k, ms, txt) => { if (now - (lastAlert[k] || 0) > ms) { lastAlert[k] = now; setStatus(txt, 7000); } };
+  const potes = t => objsOf(t).map(o => resOf(o.cid)), semRacao = !potes("pote_racao").some(r => r >= 5), semAgua = !potes("pote_agua").some(r => r >= 5);
+  let urgente = false;
   for (const id in cats) {
     const c = cats[id]; if (!CATS[id] || c.hunger == null) continue;
-    if (c.hunger >= 85 && !objsOf("pote_racao").some(o => resOf(o.cid) >= 5)) al("food" + id, 120000, "😿 " + CATS[id].name + " está com muita fome e o pote de ração está vazio! Pegue ração na despensa e encha o pote.");
-    if (c.thirst >= 85 && !objsOf("pote_agua").some(o => resOf(o.cid) >= 5)) al("water" + id, 120000, "💧 " + CATS[id].name + " está com sede e o pote de água está vazio!");
-    if (c.well <= 35) al("well" + id, 180000, "😿 " + CATS[id].name + " está tristinho. Cuide das necessidades dele!");
+    const n = CATS[id].name;
+    if (catWeak(c)) { urgente = true; al("weak" + id, 150000, "😿 " + n + " está fraco de " + (c.hunger >= 92 ? "fome" : "sede") + " e não quer brincar. Dê comida, água ou um petisco!"); }
+    if (c.hunger >= 85 && semRacao) { urgente = true; al("food" + id, 120000, "😿 " + n + " está com muita fome e o pote de ração está vazio! " + (supOf("racao") > 0 ? "Encha o pote (ou ligue o automático no painel dos gatos)." : "Pegue ração na despensa e encha o pote.")); }
+    if (c.thirst >= 85 && semAgua) { urgente = true; al("water" + id, 120000, "💧 " + n + " está com sede e o pote de água está vazio!"); }
+    if (c.well <= 35) { urgente = true; al("well" + id, 180000, "😿 " + n + " está tristinho. Cuide das necessidades dele!"); }
   }
+  if (!care.auto) {                                                  // aviso antes de acabar, quando ainda dá tempo
+    if (potes("pote_racao").some(r => r < POTE_BAIXO)) al("lowfood", 240000, "🥣 O pote de ração está acabando. Encha antes que os gatos fiquem com fome.");
+    if (potes("pote_agua").some(r => r < POTE_BAIXO)) al("lowwater", 240000, "💧 O pote de água está acabando.");
+  } else if (potes("pote_racao").some(r => r < POTE_BAIXO) && supOf("racao") <= 0) { urgente = true; al("nostock", 240000, "📦 A reposição automática parou: acabou a ração do estoque. Pegue mais na despensa da cozinha."); }
+  if (supOf("racao") <= 1 && supOf("racao") > 0) al("lowstock", 300000, "📦 Resta pouca ração no estoque. Pegue mais na despensa.");
   if (objsOf("caixa_areia").length && objsOf("caixa_areia").every(o => resOf(o.cid) >= 70)) al("litter", 150000, "🧹 Todas as caixas de areia estão sujas! Limpe para os gatos usarem.");
   if (messCount() >= 3) al("mess", 180000, "💩 Tem sujeira de gato espalhada pela casa. Chegue perto e limpe.");
+  const b = $("btnCatsT"); if (b) b.classList.toggle("alerta", urgente);       // bolinha vermelha no botão Gatos
+  const t = (urgente && document.hidden ? "😿 " : "") + TITULO_BASE; if (document.title !== t) document.title = t;   // aba em segundo plano: o título avisa
 }
 /* =========================================================
    A CASA (mapa fixo)
    ========================================================= */
 /* geometria dos escritórios e das mesas: src/layout.json (a mesma fonte gera as regras do Firebase) */
-const LAYOUT = {"doors":{"esc1":[4,8],"esc2":[12,8],"reu":[36,13]},"offices":{"esc1":{"x":1,"y":1,"w":7,"h":7},"esc2":{"x":9,"y":1,"w":7,"h":7},"reu":{"x":30,"y":14,"w":14,"h":5}},"desks":[{"id":"esc1-1","office":"esc1","kind":"cabine","x":2,"y":1,"f":"l","ex":[3,1]},{"id":"esc1-2","office":"esc1","kind":"cabine","x":2,"y":3,"f":"l","ex":[3,3]},{"id":"esc1-3","office":"esc1","kind":"cabine","x":2,"y":5,"f":"l","ex":[3,5]},{"id":"esc1-4","office":"esc1","kind":"cabine","x":2,"y":7,"f":"l","ex":[3,7]},{"id":"esc1-5","office":"esc1","kind":"cabine","x":5,"y":1,"f":"l","ex":[6,1]},{"id":"esc1-6","office":"esc1","kind":"cabine","x":5,"y":3,"f":"l","ex":[6,3]},{"id":"esc1-7","office":"esc1","kind":"cabine","x":5,"y":5,"f":"l","ex":[6,5]},{"id":"esc2-1","office":"esc2","kind":"cabine","x":10,"y":1,"f":"l","ex":[11,1]},{"id":"esc2-2","office":"esc2","kind":"cabine","x":10,"y":3,"f":"l","ex":[11,3]},{"id":"esc2-3","office":"esc2","kind":"cabine","x":10,"y":5,"f":"l","ex":[11,5]},{"id":"esc2-4","office":"esc2","kind":"cabine","x":10,"y":7,"f":"l","ex":[11,7]},{"id":"esc2-5","office":"esc2","kind":"cabine","x":13,"y":1,"f":"l","ex":[14,1]},{"id":"esc2-6","office":"esc2","kind":"cabine","x":13,"y":3,"f":"l","ex":[14,3]},{"id":"esc2-7","office":"esc2","kind":"cabine","x":13,"y":5,"f":"l","ex":[14,5]}]};
+const LAYOUT = {"doors":{"esc1":[4,8],"esc2":[12,8],"reu":[36,13]},"offices":{"esc1":{"x":1,"y":1,"w":7,"h":7},"esc2":{"x":9,"y":1,"w":7,"h":7},"reu":{"x":30,"y":14,"w":14,"h":5}},"desks":[{"id":"esc1-1","office":"esc1","kind":"gamer","x":2,"y":3,"f":"l","ex":[3,3]},{"id":"esc1-2","office":"esc1","kind":"gamer","x":2,"y":5,"f":"l","ex":[3,5]},{"id":"esc1-3","office":"esc1","kind":"gamer","x":5,"y":3,"f":"l","ex":[6,3]},{"id":"esc1-4","office":"esc1","kind":"gamer","x":5,"y":5,"f":"l","ex":[6,5]},{"id":"esc2-1","office":"esc2","kind":"gamer","x":10,"y":3,"f":"l","ex":[11,3]},{"id":"esc2-2","office":"esc2","kind":"gamer","x":10,"y":5,"f":"l","ex":[11,5]},{"id":"esc2-3","office":"esc2","kind":"gamer","x":13,"y":3,"f":"l","ex":[14,3]},{"id":"esc2-4","office":"esc2","kind":"gamer","x":13,"y":5,"f":"l","ex":[14,5]}]};
 const OFFICE_IDS = Object.keys(LAYOUT.offices);
 const DESK_BY_ID = {}, DESK_AT = {};
 LAYOUT.desks.forEach(d => { DESK_BY_ID[d.id] = d; DESK_AT[d.x + "_" + d.y] = d; });
 const ROOMS = [
-  { id: "esc1", name: "Escritório 1", ...LAYOUT.offices.esc1,  floor: ["#b9c3d8", "#afb9ce"], wall: "#8fa5c9", talk: "room", pat: "carpet" },
-  { id: "esc2", name: "Escritório 2", ...LAYOUT.offices.esc2,  floor: ["#bcd0c1", "#b2c7b8"], wall: "#8fb59c", talk: "room", pat: "carpet" },
+  { id: "esc1", name: "Escritório 1", ...LAYOUT.offices.esc1,  floor: ["#252c42", "#20263a"], wall: "#33456f", talk: "room", pat: "carpet" },
+  { id: "esc2", name: "Escritório 2", ...LAYOUT.offices.esc2,  floor: ["#2b2442", "#251f3a"], wall: "#4c3777", talk: "room", pat: "carpet" },
   { id: "coz",  name: "Cozinha",      x: 17, y: 1,  w: 12, h: 7,  floor: ["#f3f4f6", "#dfe3e8"], wall: "#ecdcb8", talk: "near", pat: "tile" },
   { id: "cin",  name: "Cinema",       x: 30, y: 1,  w: 14, h: 7,  floor: ["#5a2a3a", "#512534"], wall: "#4b2f6e", talk: "room", pat: "carpet" },
   { id: "sala", name: "Sala",         x: 1,  y: 9,  w: 43, h: 4,  floor: ["#cfa771", "#c19a65"], wall: "#b9a6d8", talk: "near", pat: "wood" },
@@ -1756,25 +1807,54 @@ function glow(gx, gy, z, r, rgba) {
   const p = P(gx, gy, z), g = ctx.createRadialGradient(p[0], p[1], 2, p[0], p[1], r);
   g.addColorStop(0, rgba); g.addColorStop(1, rgba.replace(/[\d.]+\)$/, "0)")); ctx.fillStyle = g; ctx.fillRect(p[0] - r, p[1] - r, r * 2, r * 2);
 }
+/* cores de neon do escritório (esc1 ciano, esc2 magenta): [borda, claro, brilho no chão, halo] */
+const neonOf = x => x < 9 ? ["#19e6ff", "#8af4ff", "rgba(25,230,255,.13)", "rgba(25,230,255,.26)"] : ["#ff3df0", "#ffa0f7", "rgba(255,61,240,.13)", "rgba(255,61,240,.26)"];
 const DEF = {
-  baia: { solid: true, draw(o) {                                                           // mesa de cabine encostada à esquerda, monitor virado para o leste (para a cadeira)
-    const x = o.x, y = o.y, lg = "#5c4230", on = deskLit(x, y);
-    box(x, y, .06, .1, .16, .2, 0, 22, lg); box(x, y, .06, .8, .16, .9, 0, 22, lg); box(x, y, .84, .1, .94, .2, 0, 22, lg); box(x, y, .84, .8, .94, .9, 0, 22, lg);
-    box(x, y, .03, .05, .97, .95, 22, 27, "#a9825f");
-    box(x, y, .22, .38, .4, .62, 27, 30, "#2b2f3a"); box(x, y, .26, .46, .34, .54, 30, 38, "#2b2f3a");
-    box(x, y, .22, .16, .32, .84, 38, 62, "#1d2230"); faceX(x, y, .32, .19, .81, 41, 59, on ? "#58b4ff" : "#26364d"); faceX(x, y, .32, .19, .5, 51, 59, on ? "#9ad6ff" : "#314560");
-    box(x, y, .62, .24, .86, .76, 27, 29, "#cfd3da"); box(x, y, .6, .8, .74, .92, 27, 33, "#f4f1e8");
+  /* mesa gamer de escritório tech: tela ultrawide com código (acende quando alguém senta), torre com RGB, teclado e mouse. Cor do neon por escritório. */
+  gamer: { solid: true, draw(o) {
+    const x = o.x, y = o.y, on = deskLit(x, y), ac = neonOf(x), fr = "#1a1e2c";
+    flat(x, y, -.04, -.04, 1.04, 1.04, .4, ac[2]);                                                // brilho no chão (underglow)
+    box(x, y, .06, .1, .16, .2, 0, 22, fr); box(x, y, .06, .8, .16, .9, 0, 22, fr); box(x, y, .84, .1, .94, .2, 0, 22, fr); box(x, y, .84, .8, .94, .9, 0, 22, fr);
+    box(x, y, .03, .05, .97, .95, 22, 26, "#262c40"); faceX(x, y, .97, .08, .92, 22, 25, ac[0]); faceY(x, y, .06, .94, .95, 22, 25, ac[0]);   // fita RGB na borda
+    box(x, y, .3, .06, .72, .28, 26, 64, "#12151f");                                              // torre
+    faceX(x, y, .72, .09, .25, 30, 60, on ? "#0a2030" : "#0b1018");
+    [34, 44, 54].forEach(z => faceX(x, y, .72, .11, .23, z - 3, z + 3, on ? ac[1] : ac[0]));        // ventoinhas RGB
+    faceY(x, y, .34, .68, .28, 58, 62, ac[0]);
+    box(x, y, .22, .34, .32, .94, 38, 66, "#0e1119");                                              // monitor ultrawide
+    box(x, y, .24, .6, .3, .68, 26, 38, "#0e1119");
+    faceX(x, y, .32, .37, .91, 41, 63, on ? "#031a10" : "#0b121c");
+    if (on) {
+      const ln = [.9, .55, .75, .4, .8, .6];
+      ln.forEach((w, i) => { const z = 60 - i * 3.6; faceX(x, y, .32, .4, .4 + .48 * w, z, z + 1.6, i % 3 === 1 ? "#19e6ff" : i % 3 === 2 ? "#ffd84a" : "#39ff7a"); });
+      glow(x + .35, y + .64, 52, 40, ac[3]);
+    } else faceX(x, y, .32, .37, .64, 52, 63, "#16202e");
+    box(x, y, .56, .4, .82, .84, 26, 28, "#0d1017"); flat(x, y, .6, .44, .78, .5, 28.2, ac[0]); flat(x, y, .6, .56, .78, .62, 28.2, "#2a3148"); flat(x, y, .6, .66, .78, .72, 28.2, "#2a3148");   // teclado
+    box(x, y, .6, .88, .7, .96, 26, 29, "#0d1017"); flat(x, y, .62, .9, .68, .94, 29.1, ac[1]);       // mouse
   }},
-  divisoria: { solid: true, draw(o) {                                                       // painel baixo entre cabines, liga com o painel vizinho (corre ao longo de x)
-    const x = o.x, y = o.y, L = adj(x - 1, y, "divisoria"), R = adj(x + 1, y, "divisoria");
-    box(x, y, L ? 0 : .04, .4, R ? 1 : .96, .6, 0, 46, "#7a8fb5"); box(x, y, L ? 0 : .02, .38, R ? 1 : .98, .62, 46, 49, "#4d5f82");
+  /* rack de servidor: gavetas com LEDs (fixos, para poder ir para o cache) */
+  rack: { solid: true, draw(o) {
+    const x = o.x, y = o.y, ac = neonOf(x);
+    box(x, y, .08, .1, .92, .9, 0, 82, "#161a26");
+    for (let i = 0; i < 6; i++) {
+      const z = 6 + i * 12;
+      faceY(x, y, .14, .86, .905, z, z + 9, "#232a3b"); faceY(x, y, .5, .82, .91, z + 3, z + 4.2, "#0e121c"); faceY(x, y, .5, .82, .91, z + 5.6, z + 6.8, "#0e121c");
+      for (let j = 0; j < 3; j++) { const k = (x * 7 + i * 3 + j * 5) % 4; faceY(x, y, .18 + j * .07, .22 + j * .07, .915, z + 3, z + 6, k === 0 ? "#39ff7a" : k === 1 ? ac[0] : k === 2 ? "#ffb020" : "#39ff7a"); }
+    }
+    faceX(x, y, .92, .14, .86, 3, 5, ac[0]);
+  }},
+  /* luminária neon de pé */
+  neon: { solid: true, draw(o) {
+    const x = o.x, y = o.y, ac = neonOf(x);
+    glow(x + .5, y + .5, 40, 60, ac[3]);
+    box(x, y, .32, .32, .68, .68, 0, 4, "#1a1e2c"); box(x, y, .45, .45, .55, .55, 4, 74, ac[1], false); box(x, y, .47, .47, .53, .53, 4, 74, "#ffffff", false);
   }},
   cadeira: { solid: false, seat: true, draw(o) {
-    const x = o.x, y = o.y, f = o.f, dk = "#8a5a30";
+    const x = o.x, y = o.y, f = o.f, gm = !!o.desk, dk = gm ? "#1a1e2c" : "#8a5a30";                  // cadeira de mesa de escritório = cadeira gamer
     [[.2, .2], [.68, .2], [.2, .68], [.68, .68]].forEach(p => box(x, y, p[0], p[1], p[0] + .1, p[1] + .1, 0, 12, dk));
-    box(x, y, .15, .15, .85, .85, 12, 16, "#c98b4f"); box(x, y, .2, .2, .8, .8, 16, 19, "#b8505a");
+    box(x, y, .15, .15, .85, .85, 12, 16, gm ? "#232a3b" : "#c98b4f"); box(x, y, .2, .2, .8, .8, 16, 19, gm ? "#2d3550" : "#b8505a");
     if (f === "d") box(x, y, .15, .12, .85, .24, 16, 44, dk); else if (f === "u") box(x, y, .15, .76, .85, .88, 16, 44, dk);
     else if (f === "l") box(x, y, .76, .15, .88, .85, 16, 44, dk); else box(x, y, .12, .15, .24, .85, 16, 44, dk);
+    if (gm && f === "l") { faceX(x, y, .88, .22, .78, 30, 36, neonOf(x)[0]); faceX(x, y, .88, .3, .7, 44, 49, neonOf(x)[0]); }
   }},
   poltrona: { solid: false, seat: true, draw(o) {
     const x = o.x, y = o.y;
@@ -1858,6 +1938,8 @@ const DEF = {
   }},
   tapete: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#a8262c", "#cf4a4f") : rugDraw(o, "#7b5ea7", "#9b7fc7"); } },
   tapete2: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#2f7a45", "#4aa064") : rugDraw(o, "#2f9a86", "#58c2ae"); } },
+  tapeteT1: { solid: false, flat: true, draw(o) { rugDraw(o, "#0e1422", "#18233a"); } },
+  tapeteT2: { solid: false, flat: true, draw(o) { rugDraw(o, "#140f24", "#241a40"); } },
   tapete3: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#7a1c24", "#a2303a") : rugDraw(o, "#6a1f33", "#8a2f45"); } },
   tapete4: { solid: false, flat: true, draw(o) { NATAL ? rugDraw(o, "#2f6a52", "#3f8a6a") : rugDraw(o, "#3a5f9a", "#4f7bc0"); } },
   criado: { solid: true, draw(o) {
@@ -1958,20 +2040,17 @@ function add(t, x, y, o) {
 }
 const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o); };
 (function buildHouse() {
-  /* escritórios de setor: 7 CABINES individuais em duas colunas (4 na parede da esquerda e 3 no meio). Cada cabine tem mesa com monitor,
-     cadeira e divisórias; todas as divisórias correm no mesmo sentido (de cima-esquerda para baixo-direita) e todos os monitores ficam
-     virados para quem olha o mapa. Ótimas para deixar um agente de IA. Ids, tipo e saída de cada cadeira em src/layout.json.
-     Livres: as colunas ao lado das cadeiras e a faixa y=7 (corredor da porta), por onde todo mundo entra e sai. */
+  /* escritórios tech (hacker/gamer): 4 mesas gamer em duas colunas (2 na parede da esquerda e 2 no meio), cada uma com cadeira virada para a tela,
+     racks de servidor na parede do fundo e neon. Boas para deixar um agente de IA. Ids, tipo e saída de cada cadeira em src/layout.json.
+     Livres: os corredores ao lado das cadeiras (colunas b+2 e b+5) e a faixa y=7 (frente da porta), por onde todo mundo entra e sai. */
   [1, 9].forEach((b, k) => {
-    const tp = k ? "tapete2" : "tapete";
-    for (let y = 1; y <= 7; y++) { add(tp, b + 2, y); add(tp, b + 5, y); }
+    const tp = k ? "tapeteT2" : "tapeteT1";
+    for (let y = 2; y <= 7; y++) { add(tp, b + 2, y); add(tp, b + 5, y); }
     add(tp, b + 3, 7); add(tp, b + 4, 7);
-    [[b, [1, 3, 5, 7], [2, 4, 6]], [b + 3, [1, 3, 5], [2, 4]]].forEach(c => {
-      c[1].forEach(y => add("baia", c[0], y));
-      c[2].forEach(y => { add("divisoria", c[0], y); add("divisoria", c[0] + 1, y); });
-    });
+    [3, 5].forEach(y => { add("gamer", b, y); add("gamer", b + 3, y); });
     LAYOUT.desks.filter(d => d.office === "esc" + (k + 1)).forEach(d => add("cadeira", d.x, d.y, { f: d.f, desk: d.id }));
-    add("estante", b + 6, 1); add("estante", b + 6, 2); add("planta", b + 6, 5); add("luz", b + 6, 7);
+    [1, 2, 4, 5].forEach(dx => add("rack", b + dx, 1));
+    add("neon", b, 1); add("neon", b + 6, 1); add("neon", b + 6, 7);
   });
   /* cozinha + cuidados dos gatos */
   add("despensa", 17, 1); row("balcao", 18, 1, 2); add("fogao", 20, 1); add("pia", 21, 1); row("balcao", 22, 1, 2); add("geladeira", 24, 1); add("planta", 28, 1);
@@ -2120,7 +2199,7 @@ let natalT = Date.now();                                      // relógio do qua
 /* paleta festiva por cômodo (verde, vermelho, dourado e branco) */
 const ROOM_ORIG = {}; ROOMS.forEach(r => { ROOM_ORIG[r.id] = { floor: r.floor, wall: r.wall }; });
 const ROOM_NATAL = {
-  esc1: { floor: ["#d9e3d2", "#cfdac8"], wall: "#3f7a56" }, esc2: { floor: ["#ecd9d6", "#e3cecb"], wall: "#b0414a" },
+  esc1: { floor: ["#252c42", "#20263a"], wall: "#2f5a58" }, esc2: { floor: ["#2b2442", "#251f3a"], wall: "#6a3560" },      // escritórios tech: continuam escuros no Natal
   coz:  { floor: ["#fbf6ee", "#efe6d6"], wall: "#d0604f" }, cin:  { floor: ["#4a1e2c", "#431a28"], wall: "#2f5a4a" },
   sala: { floor: ["#d9b48a", "#cda57a"], wall: "#2f7a52" }, q1:   { floor: ["#f2e2e6", "#eadadf"], wall: "#c05a6a" },
   q2:   { floor: ["#dbe8ef", "#d0dfe8"], wall: "#5f9bb8" }, ban:  { floor: ["#d2ebf3", "#c5e2ec"], wall: "#7fb9c9" },
@@ -2322,14 +2401,14 @@ function natalSnow(now) {
    é igual. O cache é refeito quando o zoom, o tema ou o estado do móvel (ex.: monitor aceso) mudam; durante a animação de zoom desenha direto.
    Móveis animados ou ligados a dados da sala (TV, painéis, potes dos gatos, portas, árvore de Natal piscando...) nunca entram no cache. */
 const SPR = new Map();
-const SPR_TIPOS = new Set(["cadeira", "divisoria", "poltrona", "sofa", "mesa", "balcao", "geladeira", "despensa", "guarda", "vaso", "criado", "quadro", "baia", "luz", "pia", "cama"]);
+const SPR_TIPOS = new Set(["cadeira", "rack", "neon", "poltrona", "sofa", "mesa", "balcao", "geladeira", "despensa", "guarda", "vaso", "criado", "quadro", "gamer", "luz", "pia", "cama"]);
 let sprFeitos = 0;                                              // quantos caches foram montados neste quadro (limite, para não travar na primeira vez)
 const SPR_MAX_QUADRO = 14;
 
 /* este móvel pode ir para o cache agora? devolve o "estado" (texto) que invalida o cache quando muda, ou null se não pode */
 function sprEstado(o) {
   const t = o.t;
-  if (t === "baia") return deskLit(o.x, o.y) ? "1" : "0";
+  if (t === "gamer") return deskLit(o.x, o.y) ? "1" : "0";
   if (t === "estante") return NATAL && o.y === 9 && (o.x === 14 || o.x === 15) ? null : "";         // lareira de Natal é animada
   if (t === "planta") return NATAL ? "n" : "";                                                       // árvore de Natal: parte fixa no cache, luzes todo quadro
   return SPR_TIPOS.has(t) ? "" : null;
@@ -2506,7 +2585,7 @@ function startGame(name, room) {
       Object.assign(c, n); if (n.sub === undefined) c.sub = null; cats[id] = c;
     }
   });
-  roomRef.child("care").on("value", s => { const v = s.val() || {}; care = { res: Object.assign({}, v.res), sup: Object.assign({}, v.sup) }; });
+  roomRef.child("care").on("value", s => { const v = s.val() || {}; care = { res: Object.assign({}, v.res), sup: Object.assign({}, v.sup), auto: v.auto === true }; });
   roomRef.child("messes").on("value", s => { messes = s.val() || {}; });
   /* o chat recomeça a cada sessão: só aparecem mensagens enviadas depois que você entrou (hora do servidor, para não depender do relógio de cada aparelho) */
   sessionStart = Date.now(); $("log").innerHTML = "";
@@ -3245,7 +3324,7 @@ function renderHostPanel() {
   const nOf = {};
   LAYOUT.desks.forEach(d => {
     const r = deskLive(deskKey(d)), li = gpEl("li"); nOf[d.office] = (nOf[d.office] || 0) + 1;
-    li.appendChild(gpEl("span", "", ROOMBY[d.office].name + " · " + "cabine " + nOf[d.office]));
+    li.appendChild(gpEl("span", "", ROOMBY[d.office].name + " · " + "mesa gamer " + nOf[d.office]));
     li.appendChild(r ? badge((r.k === "agent" ? "🤖 " : "") + r.name, r.k === "agent" ? "agent" : "") : badge("livre"));
     ud.appendChild(li);
   });
@@ -4442,7 +4521,7 @@ function frame() {
     const st = sprOK ? sprEstado(o) : null;
     list.push({ d, run: () => {
       let ok = false;
-      if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
+      if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" || o.t === "neon" || o.t === "gamer" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
       if (!ok) DEF[o.t].draw(o); else if (st === "n") { natalLuzes = 2; try { DEF[o.t].draw(o); } finally { natalLuzes = 0; } }
     } });
     if (o.t === "chuveiro") list.push({ d: d + .08, run: () => {
@@ -4465,7 +4544,7 @@ function frame() {
   for (const id in cats) {
     const c = cats[id], info = CATS[id]; if (!info || c.x == null) continue;
     let moving = false;
-    if (c.t0) { const t = Math.min(1, (now - c.t0) / CAT_STEP); c.rx = c.fx + (c.x - c.fx) * t; c.ry = c.fy + (c.y - c.fy) * t; moving = t < 1; } else { c.rx = c.x; c.ry = c.y; }
+    if (c.t0) { const t = Math.min(1, (now - c.t0) / catStep(c)); c.rx = c.fx + (c.x - c.fx) * t; c.ry = c.fy + (c.y - c.fy) * t; moving = t < 1; } else { c.rx = c.x; c.ry = c.y; }
     const it = ITEM[c.x + "_" + c.y], soft = it && (it.t === "cama" ? 22 : (it.t === "sofa" || it.t === "poltrona") ? 12 : it.t === "caixa_areia" ? 10 : 0);
     const z = (c.st === "sleep" || c.st === "sit" || c.st === "litter") && !moving ? (soft || 0) : 0;
     const w = P(c.rx + .5, c.ry + .5, z); let st = c.st || "sit"; if (st === "walk" && !moving) st = "sit"; if (moving) st = "walk";

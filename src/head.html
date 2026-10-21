@@ -127,6 +127,10 @@
   #catpanel { display:grid; gap:8px; }
   #catpanel .head { display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:.9rem; }
   #catpanel .head b { color:var(--accent); }
+  #catpanel .head button { font:inherit; font-size:.8rem; padding:3px 8px; border-radius:8px; cursor:pointer; background:transparent; color:inherit; border:1px solid currentColor; opacity:.75; }
+  #catpanel .head button.on { opacity:1; background:var(--accent); color:#1a1026; border-color:var(--accent); }
+  #btnCatsT { position:relative; }
+  #btnCatsT.alerta::after { content:""; position:absolute; top:2px; right:2px; width:9px; height:9px; border-radius:50%; background:#ff5a5a; box-shadow:0 0 0 2px rgba(0,0,0,.35); }
   .cats { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:8px; }
   .cc { background:#2a1b40; border:3px solid var(--line); padding:8px; cursor:pointer; }
   .cc.sel { border-color:var(--accent); }

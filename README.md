@@ -11,13 +11,13 @@ Espaço virtual em **pixel art isométrica** para festas, encontros com amigos e
 | Área | Recursos |
 |---|---|
 | **Personagem** | Criador completo (corpo, rosto, cabelo, roupas, acessórios, fantasias, conjuntos), guarda-roupa dentro do jogo, conjuntos salvos |
-| **Espaços** | Sala, cozinha, quartos, banheiro, 2 escritórios com 7 cabines cada, **cinema** e **sala de reuniões** |
+| **Espaços** | Sala, cozinha, quartos, banheiro, 2 escritórios tech com 4 mesas gamer cada, **cinema** e **sala de reuniões** |
 | **Voz e vídeo** | WebRTC direto entre os participantes (malha), ativado por **proximidade** na sala/cozinha e por **cômodo** nos demais |
 | **Transmissão** | Compartilhar tela, vídeo local ou slides (PDF/imagens) no telão do cinema e da sala de reuniões; modo **sentado** (tela cheia ao sentar na cadeira) |
 | **YouTube** | Vídeo sincronizado para todos no cinema |
 | **Reuniões** | Levantar a mão (✋), "Dar a palavra" (só quem apresenta), chat da reunião |
 | **Portas** | Escritórios e sala de reuniões têm porta: bater, permitir ou recusar |
-| **Gatos** | Sombra e Neblina têm fome, sede, energia, banheiro e bem-estar; ração, areia, carinho, petisco e brincadeira |
+| **Gatos** | Sombra e Neblina têm fome, sede, energia, banheiro e bem-estar; ração, areia, carinho, petisco e brincadeira. O tempo corre mesmo com a sala vazia, com fome extrema o gato fica fraco, e os potes podem encher sozinhos (modo automático) |
 | **Chat** | Chat do espaço com hora, reiniciado a cada sessão |
 | **Código do espaço** | Sala **temporária** sem login (`party-lua-trevo-4821`): quem tem o código entra e ela some quando esvazia |
 | **Contas e sala permanente** | Login com e-mail/senha ou Google; sala fixa e privada por conta, convites com papel e validade, escritórios reservados ao anfitrião e **agentes de IA** externos ([docs](docs/CONTAS.md)) |

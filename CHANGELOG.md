@@ -5,12 +5,16 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [0.5.0] — 2026-10-21
 
 ### Adicionado
+- **Escritórios tech (hacker/gamer)**: cada escritório tem agora 4 mesas gamer (tela ultrawide com código que acende ao sentar, torre com RGB, teclado, cadeira gamer), racks de servidor, neon e piso escuro (também no tema de Natal). O agente de IA agora caminha pela faixa livre da porta, sem atravessar mesas.
+- **Gatos: fome e sede com mais consequência** — o tempo passa de verdade (até 8 h de ausência): o gato come e bebe do que os potes tinham e, sem comida, a fome acumula (sem acidentes enquanto ninguém olha). Com fome ou sede ≥ 92 o gato fica **fraco**: anda devagar, recusa brincar e o bem-estar despenca; petisco, comida e água o recuperam.
+- **Reposição automática dos potes** (botão 🤖 no painel dos gatos, guardado em `care/auto`): enche o pote quando baixa de 20%; a ração sai do estoque da despensa, a água é grátis.
+- **Avisos**: pote "acabando" antes de zerar, estoque de ração baixo, bolinha vermelha no botão Gatos e título da aba (😿) quando há urgência; o painel mostra o nível dos potes.
 - **Contas** (e-mail/senha e Google) e **sala permanente por conta**: fixa, privada, volta sempre ao mesmo lugar e nunca é apagada. Salas temporárias continuam sem login.
 - **Convites** com papel e validade (`#sala=...&convite=...`), co-anfitriões, convidados, revogação e janela **🔑 Sala** (pessoas, escritórios, mesas, agentes).
 - **Agentes de IA** externos com credencial de uso único e permissões limitadas (`agent/`), marcados na sala; não concedem permissões.
 - **Escritórios reservados**: o anfitrião reserva; com agente trabalhando só o anfitrião entra. Validado no servidor (regras) em cada posição.
 - **Fluidez**: piso, tapetes, paredes e móveis são desenhados uma vez e copiados a cada quadro (`src/js/04c_sprcache.js`); luzes de Natal continuam piscando por cima. O tempo de desenho por quadro caiu cerca de 50% medido no navegador de teste; o pós-processamento de cores (`posterize`) lê 32 bits por vez.
-- **Escritórios com cabines**: 7 cabines individuais por escritório em duas colunas (mesa, monitor, cadeira e divisórias), centro livre, ocupação individual (uma pessoa ou agente por cadeira), liberada ao sair ou cair. Boas para deixar agentes de IA.
+- **Mesas de escritório individuais**: ocupação por cadeira (uma pessoa ou agente), liberada ao sair ou cair. Boas para deixar agentes de IA.
 - **Limpeza no servidor** (GitHub Actions + firebase-admin, plano gratuito): salas temporárias vazias/abandonadas são apagadas; permanentes nunca; chat aparado; convites vencidos removidos.
 - Regras do banco **geradas** de `src/layout.json`; novos testes (`acesso`, `agente`, `limpeza`, e2e `contas`).
 
