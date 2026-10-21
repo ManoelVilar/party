@@ -13,7 +13,7 @@ let natalT = Date.now();                                      // relógio do qua
 /* paleta festiva por cômodo (verde, vermelho, dourado e branco) */
 const ROOM_ORIG = {}; ROOMS.forEach(r => { ROOM_ORIG[r.id] = { floor: r.floor, wall: r.wall }; });
 const ROOM_NATAL = {
-  esc1: { floor: ["#d9e3d2", "#cfdac8"], wall: "#3f7a56" }, esc2: { floor: ["#ecd9d6", "#e3cecb"], wall: "#b0414a" },
+  esc1: { floor: ["#252c42", "#20263a"], wall: "#2f5a58" }, esc2: { floor: ["#2b2442", "#251f3a"], wall: "#6a3560" },      // escritórios tech: continuam escuros no Natal
   coz:  { floor: ["#fbf6ee", "#efe6d6"], wall: "#d0604f" }, cin:  { floor: ["#4a1e2c", "#431a28"], wall: "#2f5a4a" },
   sala: { floor: ["#d9b48a", "#cda57a"], wall: "#2f7a52" }, q1:   { floor: ["#f2e2e6", "#eadadf"], wall: "#c05a6a" },
   q2:   { floor: ["#dbe8ef", "#d0dfe8"], wall: "#5f9bb8" }, ban:  { floor: ["#d2ebf3", "#c5e2ec"], wall: "#7fb9c9" },

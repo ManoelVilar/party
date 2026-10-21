@@ -4,14 +4,14 @@
    é igual. O cache é refeito quando o zoom, o tema ou o estado do móvel (ex.: monitor aceso) mudam; durante a animação de zoom desenha direto.
    Móveis animados ou ligados a dados da sala (TV, painéis, potes dos gatos, portas, árvore de Natal piscando...) nunca entram no cache. */
 const SPR = new Map();
-const SPR_TIPOS = new Set(["cadeira", "divisoria", "poltrona", "sofa", "mesa", "balcao", "geladeira", "despensa", "guarda", "vaso", "criado", "quadro", "baia", "luz", "pia", "cama"]);
+const SPR_TIPOS = new Set(["cadeira", "rack", "neon", "poltrona", "sofa", "mesa", "balcao", "geladeira", "despensa", "guarda", "vaso", "criado", "quadro", "gamer", "luz", "pia", "cama"]);
 let sprFeitos = 0;                                              // quantos caches foram montados neste quadro (limite, para não travar na primeira vez)
 const SPR_MAX_QUADRO = 14;
 
 /* este móvel pode ir para o cache agora? devolve o "estado" (texto) que invalida o cache quando muda, ou null se não pode */
 function sprEstado(o) {
   const t = o.t;
-  if (t === "baia") return deskLit(o.x, o.y) ? "1" : "0";
+  if (t === "gamer") return deskLit(o.x, o.y) ? "1" : "0";
   if (t === "estante") return NATAL && o.y === 9 && (o.x === 14 || o.x === 15) ? null : "";         // lareira de Natal é animada
   if (t === "planta") return NATAL ? "n" : "";                                                       // árvore de Natal: parte fixa no cache, luzes todo quadro
   return SPR_TIPOS.has(t) ? "" : null;

@@ -65,7 +65,7 @@ function frame() {
     const st = sprOK ? sprEstado(o) : null;
     list.push({ d, run: () => {
       let ok = false;
-      if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
+      if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" || o.t === "neon" || o.t === "gamer" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
       if (!ok) DEF[o.t].draw(o); else if (st === "n") { natalLuzes = 2; try { DEF[o.t].draw(o); } finally { natalLuzes = 0; } }
     } });
     if (o.t === "chuveiro") list.push({ d: d + .08, run: () => {
