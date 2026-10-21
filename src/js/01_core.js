@@ -52,9 +52,12 @@ const lo = mkCanvas(LW, LH), lctx = lo.getContext("2d", { willReadFrequently: tr
 let ctx = lctx;                                            // contexto de desenho atual do mundo
 const QLV = 10, QT = new Uint8Array(256);
 for (let i = 0; i < 256; i++) QT[i] = Math.round(Math.round(i / 255 * (QLV - 1)) / (QLV - 1) * 255);
+const LITTLE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
 function posterize() {
-  const id = lctx.getImageData(0, 0, LW, LH), d = id.data;
-  for (let i = 0; i < d.length; i += 4) { d[i] = QT[d[i]]; d[i + 1] = QT[d[i + 1]]; d[i + 2] = QT[d[i + 2]]; }
+  const id = lctx.getImageData(0, 0, LW, LH);
+  if (!LITTLE) { const d = id.data; for (let i = 0; i < d.length; i += 4) { d[i] = QT[d[i]]; d[i + 1] = QT[d[i + 1]]; d[i + 2] = QT[d[i + 2]]; } lctx.putImageData(id, 0, 0); return; }
+  const u = new Uint32Array(id.data.buffer);                                             // 1 leitura de 32 bits por pixel (RGBA little-endian) em vez de 3 de 8 bits
+  for (let i = 0; i < u.length; i++) { const v = u[i]; u[i] = (v & 0xff000000) | (QT[(v >>> 16) & 255] << 16) | (QT[(v >>> 8) & 255] << 8) | QT[v & 255]; }
   lctx.putImageData(id, 0, 0);
 }
 /* sprite com contorno escuro de 1 pixel de arte */

@@ -7,6 +7,7 @@
    ========================================================= */
 const NATAL_ATE = new Date(2027, 0, 10).getTime(), NATAL_BG = "#0e1a36";
 let NATAL = (() => { const s = store.get("nc_natal"); return s === "1" ? true : s === "0" ? false : Date.now() < NATAL_ATE; })();
+let natalLuzes = 0;                                           // 0 = desenha tudo; 1 = só a parte fixa (vai para o cache); 2 = só o que pisca (todo quadro)
 let natalT = Date.now();                                      // relógio do quadro atual (luzes piscando, fogo)
 
 /* paleta festiva por cômodo (verde, vermelho, dourado e branco) */
@@ -40,12 +41,12 @@ const XLIGHT = ["#ff5a5a", "#ffe066", "#66d9ff", "#8dff8d"], XBALL = ["#ff3b3b",
 
 /* ---------- árvore de Natal (também usada, menor, no lugar das plantas, e no quintal) ---------- */
 function drawXmasTree(gx, gy, sc, seed, snowy) {
-  const c = P(gx + .5, gy + .5, 0), cx = c[0], cy = c[1], g = ctx;
-  g.fillStyle = "rgba(26,16,38,.28)"; g.beginPath(); g.ellipse(cx, cy + 1, 15 * sc, 6 * sc, 0, 0, 7); g.fill();
-  g.fillStyle = "#5a3a22"; g.fillRect(cx - 3 * sc, cy - 10 * sc, 6 * sc, 10 * sc);
+  const modo = natalLuzes, c = P(gx + .5, gy + .5, 0), cx = c[0], cy = c[1], g = ctx;
+  if (modo !== 2) { g.fillStyle = "rgba(26,16,38,.28)"; g.beginPath(); g.ellipse(cx, cy + 1, 15 * sc, 6 * sc, 0, 0, 7); g.fill();
+    g.fillStyle = "#5a3a22"; g.fillRect(cx - 3 * sc, cy - 10 * sc, 6 * sc, 10 * sc); }
   const tiers = [[24, 30, 8], [19, 28, 28], [14, 26, 46], [9, 24, 62]];            // [meia-largura, altura, z da base]
   g.lineWidth = 1; g.strokeStyle = LN;
-  tiers.forEach(t => {
+  if (modo !== 2) tiers.forEach(t => {
     const hw = t[0] * sc, h = t[1] * sc, z = t[2] * sc, by = cy - z, ry = hw * .38;
     g.fillStyle = "#1f5c33"; g.beginPath(); g.ellipse(cx, by, hw, ry, 0, 0, 7); g.fill();
     g.fillStyle = "#38944f"; g.beginPath(); g.moveTo(cx - hw, by); g.lineTo(cx, by - h); g.lineTo(cx, by + ry); g.closePath(); g.fill(); g.stroke();
@@ -56,15 +57,18 @@ function drawXmasTree(gx, gy, sc, seed, snowy) {
   const R = nrand(seed + 7), n = sc < .7 ? 5 : 9;
   for (let i = 0; i < n; i++) {                                                     // bolinhas
     const t = tiers[i % 4], u = (.14 + R() * .38) * t[1] * sc, lim = t[0] * sc * (1 - u / (t[1] * sc)) * .78, dx = (R() * 2 - 1) * lim;
-    g.fillStyle = XBALL[Math.floor(R() * XBALL.length)]; g.beginPath(); g.arc(cx + dx, cy - t[2] * sc - u + 2 * sc, 1.9 * sc + .3, 0, 7); g.fill();
+    const bc = XBALL[Math.floor(R() * XBALL.length)];
+    if (modo === 2) continue;
+    g.fillStyle = bc; g.beginPath(); g.arc(cx + dx, cy - t[2] * sc - u + 2 * sc, 1.9 * sc + .3, 0, 7); g.fill();
     g.fillStyle = "rgba(255,255,255,.75)"; g.fillRect(cx + dx - .8, cy - t[2] * sc - u + 1.2 * sc, .8, .8);
   }
   const m = sc < .7 ? 5 : 9;
   for (let i = 0; i < m; i++) {                                                     // luzes piscando
     const t = tiers[i % 4], u = (.25 + R() * .45) * t[1] * sc, lim = t[0] * sc * (1 - u / (t[1] * sc)) * .85, dx = (R() * 2 - 1) * lim;
-    if (((natalT / 380 + i * 1.7 + seed) % 3) < 2) { g.fillStyle = XLIGHT[(i + Math.floor(natalT / 1900)) % 4]; g.fillRect(cx + dx - .8, cy - t[2] * sc - u, 1.7, 1.7); }
+    if (modo !== 1 && ((natalT / 380 + i * 1.7 + seed) % 3) < 2) { g.fillStyle = XLIGHT[(i + Math.floor(natalT / 1900)) % 4]; g.fillRect(cx + dx - .8, cy - t[2] * sc - u, 1.7, 1.7); }
   }
   const topY = cy - 86 * sc;
+  if (modo === 2) return;
   if (sc >= .7) { glow(gx + .5, gy + .5, 88 * sc, 26, "rgba(255,225,120,.3)"); }
   g.imageSmoothingEnabled = false; g.drawImage(iconCanvas("star"), cx - 5.5 * sc - 1, topY - 9 * sc - 2, 11 * sc + 2, 11 * sc + 2);
 }
@@ -124,18 +128,18 @@ function drawFireplace(o) {
 /* ---------- planta vira árvore ---------- */
 function drawPlantAsTree(o) {
   const x = o.x, y = o.y;
-  box(x, y, .3, .3, .7, .7, 0, 12, "#b3282d"); box(x, y, .26, .26, .74, .74, 12, 16, "#d9372f");
+  if (natalLuzes !== 2) { box(x, y, .3, .3, .7, .7, 0, 12, "#b3282d"); box(x, y, .26, .26, .74, .74, 12, 16, "#d9372f"); }
   drawXmasTree(x, y, .66, o.x * 7 + o.y * 13, false);
 }
 
 /* ---------- guirlandas nas paredes altas, coroas nas portas, neve nas janelas ---------- */
 function festoon(pts, key) {
-  const g = ctx; g.lineCap = "round";
-  g.strokeStyle = "#1f5c33"; g.lineWidth = 3.6; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke();
-  g.strokeStyle = "#38944f"; g.lineWidth = 2.2; g.stroke();
+  const g = ctx, modo = natalLuzes; g.lineCap = "round";
+  if (modo !== 2) { g.strokeStyle = "#1f5c33"; g.lineWidth = 3.6; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke();
+    g.strokeStyle = "#38944f"; g.lineWidth = 2.2; g.stroke(); }
   pts.forEach((p, i) => {
-    if (i % 2 === 1) { g.fillStyle = "#d9372f"; g.fillRect(p[0] - 1, p[1] + 1, 2, 2); }
-    if (i > 0 && i < pts.length - 1 && ((natalT / 420 + i * 1.3 + key) % 3) < 2) { g.fillStyle = XLIGHT[(i + key) % 4]; g.fillRect(p[0] - .8, p[1] + 2.4, 1.8, 1.8); }
+    if (modo !== 2 && i % 2 === 1) { g.fillStyle = "#d9372f"; g.fillRect(p[0] - 1, p[1] + 1, 2, 2); }
+    if (modo !== 1 && i > 0 && i < pts.length - 1 && ((natalT / 420 + i * 1.3 + key) % 3) < 2) { g.fillStyle = XLIGHT[(i + key) % 4]; g.fillRect(p[0] - .8, p[1] + 2.4, 1.8, 1.8); }
   });
   g.lineCap = "butt";
 }
@@ -144,7 +148,7 @@ function natalWall(w) {
   const x = w.x, y = w.y, N = 6;
   if (y === 0 && w.cL) {
     const pts = []; for (let i = 0; i <= N; i++) pts.push(P(x + i / N, y + WT1 + .02, 90 - 7 * Math.sin(Math.PI * i / N))); festoon(pts, x);
-    const b = P(x, y + WT1 + .02, 90); ctx.fillStyle = "#d9372f"; ctx.fillRect(b[0] - 2.5, b[1] - 1, 5, 4); ctx.fillStyle = "#ffd166"; ctx.fillRect(b[0] - .6, b[1], 1.2, 2);
+    if (natalLuzes !== 2) { const b = P(x, y + WT1 + .02, 90); ctx.fillStyle = "#d9372f"; ctx.fillRect(b[0] - 2.5, b[1] - 1, 5, 4); ctx.fillStyle = "#ffd166"; ctx.fillRect(b[0] - .6, b[1], 1.2, 2); }
   } else if (x === 0 && w.cR) {
     const pts = []; for (let i = 0; i <= N; i++) pts.push(P(x + WT1 + .02, y + i / N, 90 - 7 * Math.sin(Math.PI * i / N))); festoon(pts, y + 5);
   }
