@@ -8,7 +8,7 @@
    ========================================================= */
 let desksData = {}, myDesk = null, deskBusy = false;
 const deskKey = d => d.x + "_" + d.y;
-const deskExit = d => [d.x, d.y + 1];                                                  // tile livre logo abaixo de cada cadeira (todas têm)
+const deskExit = d => d.ex || [d.x, d.y + 1];                                         // tile livre ao lado da cadeira (campo "ex" do layout)
 const deskAtTile = (x, y) => DESK_AT[x + "_" + y] || null;
 
 /* o registro só vale enquanto o dono está na sala (se a pessoa caiu, o lugar volta a ser livre para todos) */
@@ -19,7 +19,7 @@ function deskLive(id) {
 }
 const deskTakenByOther = id => { const r = deskLive(id); return !!r && r.uid !== uid; };
 /* a tela do computador acende quando alguém (pessoa ou agente) está sentado numa das cadeiras daquela mesa */
-const deskLit = (x, y) => LAYOUT.desks.some(d => Math.abs(d.x - x) <= 2 && Math.abs(d.y - y) === 1 || (d.y === y && Math.abs(d.x - x) <= 2) ? !!deskLive(deskKey(d)) : false);
+const deskLit = (x, y) => [[x, y - 1], [x, y + 1]].some(c => { const d = DESK_AT[c[0] + "_" + c[1]]; return !!d && !!deskLive(deskKey(d)); });
 
 function initDesks() {
   roomRef.child("desks").on("value", s => {

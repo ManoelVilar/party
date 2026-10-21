@@ -1709,7 +1709,7 @@ function catAlerts(now) {
    A CASA (mapa fixo)
    ========================================================= */
 /* geometria dos escritórios e das mesas: src/layout.json (a mesma fonte gera as regras do Firebase) */
-const LAYOUT = {"doors":{"esc1":[4,8],"esc2":[12,8],"reu":[36,13]},"offices":{"esc1":{"x":1,"y":1,"w":7,"h":7},"esc2":{"x":9,"y":1,"w":7,"h":7},"reu":{"x":30,"y":14,"w":14,"h":5}},"desks":[{"id":"esc1-1","office":"esc1","x":1,"y":2,"f":"r"},{"id":"esc1-2","office":"esc1","x":3,"y":3,"f":"u"},{"id":"esc1-3","office":"esc1","x":5,"y":2,"f":"l"},{"id":"esc1-4","office":"esc1","x":2,"y":6,"f":"u"},{"id":"esc1-5","office":"esc1","x":3,"y":6,"f":"u"},{"id":"esc1-6","office":"esc1","x":5,"y":6,"f":"u"},{"id":"esc1-7","office":"esc1","x":6,"y":6,"f":"u"},{"id":"esc2-1","office":"esc2","x":9,"y":2,"f":"r"},{"id":"esc2-2","office":"esc2","x":11,"y":3,"f":"u"},{"id":"esc2-3","office":"esc2","x":13,"y":2,"f":"l"},{"id":"esc2-4","office":"esc2","x":10,"y":6,"f":"u"},{"id":"esc2-5","office":"esc2","x":11,"y":6,"f":"u"},{"id":"esc2-6","office":"esc2","x":13,"y":6,"f":"u"},{"id":"esc2-7","office":"esc2","x":14,"y":6,"f":"u"}]};
+const LAYOUT = {"doors":{"esc1":[4,8],"esc2":[12,8],"reu":[36,13]},"offices":{"esc1":{"x":1,"y":1,"w":7,"h":7},"esc2":{"x":9,"y":1,"w":7,"h":7},"reu":{"x":30,"y":14,"w":14,"h":5}},"desks":[{"id":"esc1-1","office":"esc1","x":1,"y":2,"f":"d","ex":[1,1]},{"id":"esc1-2","office":"esc1","x":2,"y":2,"f":"d","ex":[2,1]},{"id":"esc1-3","office":"esc1","x":3,"y":2,"f":"d","ex":[3,1]},{"id":"esc1-4","office":"esc1","x":5,"y":2,"f":"d","ex":[5,1]},{"id":"esc1-5","office":"esc1","x":6,"y":2,"f":"d","ex":[6,1]},{"id":"esc1-6","office":"esc1","x":7,"y":2,"f":"d","ex":[7,1]},{"id":"esc1-7","office":"esc1","x":1,"y":4,"f":"u","ex":[1,5]},{"id":"esc1-8","office":"esc1","x":2,"y":4,"f":"u","ex":[2,5]},{"id":"esc1-9","office":"esc1","x":3,"y":4,"f":"u","ex":[3,5]},{"id":"esc1-10","office":"esc1","x":5,"y":4,"f":"u","ex":[5,5]},{"id":"esc1-11","office":"esc1","x":6,"y":4,"f":"u","ex":[6,5]},{"id":"esc1-12","office":"esc1","x":7,"y":4,"f":"u","ex":[7,5]},{"id":"esc2-1","office":"esc2","x":9,"y":2,"f":"d","ex":[9,1]},{"id":"esc2-2","office":"esc2","x":10,"y":2,"f":"d","ex":[10,1]},{"id":"esc2-3","office":"esc2","x":11,"y":2,"f":"d","ex":[11,1]},{"id":"esc2-4","office":"esc2","x":13,"y":2,"f":"d","ex":[13,1]},{"id":"esc2-5","office":"esc2","x":14,"y":2,"f":"d","ex":[14,1]},{"id":"esc2-6","office":"esc2","x":15,"y":2,"f":"d","ex":[15,1]},{"id":"esc2-7","office":"esc2","x":9,"y":4,"f":"u","ex":[9,5]},{"id":"esc2-8","office":"esc2","x":10,"y":4,"f":"u","ex":[10,5]},{"id":"esc2-9","office":"esc2","x":11,"y":4,"f":"u","ex":[11,5]},{"id":"esc2-10","office":"esc2","x":13,"y":4,"f":"u","ex":[13,5]},{"id":"esc2-11","office":"esc2","x":14,"y":4,"f":"u","ex":[14,5]},{"id":"esc2-12","office":"esc2","x":15,"y":4,"f":"u","ex":[15,5]}]};
 const OFFICE_IDS = Object.keys(LAYOUT.offices);
 const DESK_BY_ID = {}, DESK_AT = {};
 LAYOUT.desks.forEach(d => { DESK_BY_ID[d.id] = d; DESK_AT[d.x + "_" + d.y] = d; });
@@ -1787,7 +1787,7 @@ const DEF = {
     if (!L && !D) box(x, y, .06, .84, .16, .94, 0, 22, lg); if (!R && !D) box(x, y, .84, .84, .94, .94, 0, 22, lg);
     box(x, y, L ? 0 : .03, U ? 0 : .03, R ? 1 : .97, D ? 1 : .97, 22, 28, "#c58b50", !(L || R || U || D));
     if (o.plate) { ell(x + .5, y + .5, 28, 10, 5, "#f6f6f6"); ell(x + .5, y + .5, 28.6, 6, 3, "#e8a05c"); ell(x + .3, y + .5, 28.6, 2, 1, "#d9534f"); }
-    if (o.laptop) { box(x, y, .25, .35, .75, .75, 28, 29.5, "#c7ccd4"); box(x, y, .25, .3, .75, .38, 29, 43, "#222a3c"); faceY(x, y, .28, .72, .38, 31, 41, "#58b4ff"); }
+    if (o.laptop) { box(x, y, .25, .35, .75, .75, 28, 29.5, "#c7ccd4"); box(x, y, .25, .3, .75, .38, 29, 43, "#222a3c"); faceY(x, y, .28, .72, .38, 31, 41, o.office && !deskLit(x, y) ? "#2c3a57" : "#58b4ff"); }   // nos escritórios a tela só acende com alguém sentado
   }},
   balcao: { solid: true, draw(o) {
     const x = o.x, y = o.y, L = adj(x - 1, y, "balcao"), R = adj(x + 1, y, "balcao");
@@ -1949,12 +1949,14 @@ function add(t, x, y, o) {
 }
 const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o); };
 (function buildHouse() {
-  /* escritórios: 3 mesas de 3 tiles e 7 lugares cada (ids em src/layout.json); o corredor da porta (coluna do meio) fica livre */
+  /* escritórios "software house": duas mesas compridas (3 tiles cada) com cadeiras dos dois lados e notebooks, como na sala de reuniões;
+     12 lugares por escritório (ids e saídas em src/layout.json). Corredor da porta (coluna do meio) e as faixas y=1 e y=5 ficam livres. */
   [1, 9].forEach((b, k) => {
-    row("escrivaninha", b + 1, 2, 3); row("escrivaninha", b, 5, 3); row("escrivaninha", b + 4, 5, 3);
+    for (let y = 2; y <= 4; y++) row(k ? "tapete2" : "tapete", b, y, 7);
+    [b, b + 4].forEach(x0 => { for (let i = 0; i < 3; i++) add("mesa", x0 + i, 3, { laptop: true, office: true }); });
     LAYOUT.desks.filter(d => d.office === "esc" + (k + 1)).forEach(d => add("cadeira", d.x, d.y, { f: d.f, desk: d.id }));
-    row("estante", b + 5, 1, 2); add("luz", b, 1); add("planta", b + 6, 7); add("planta", b, 7);
-    for (let y = 3; y <= 7; y++) add(k ? "tapete2" : "tapete", b + 3, y);
+    row("estante", b, 7, 2); add("luz", b + 6, 6); add("planta", b + 6, 7); add("planta", b + 2, 7);
+    for (let y = 5; y <= 7; y++) add(k ? "tapete2" : "tapete", b + 3, y);
   });
   /* cozinha + cuidados dos gatos */
   add("despensa", 17, 1); row("balcao", 18, 1, 2); add("fogao", 20, 1); add("pia", 21, 1); row("balcao", 22, 1, 2); add("geladeira", 24, 1); add("planta", 28, 1);
@@ -3140,9 +3142,10 @@ function renderHostPanel() {
 
   /* mesas */
   hostUI.desks.textContent = ""; const ud = gpEl("ul");
-  LAYOUT.desks.forEach((d, i) => {
-    const r = deskLive(deskKey(d)), li = gpEl("li");
-    li.appendChild(gpEl("span", "", ROOMBY[d.office].name + " · mesa " + (i % 7 + 1)));
+  const nOf = {};
+  LAYOUT.desks.forEach(d => {
+    const r = deskLive(deskKey(d)), li = gpEl("li"); nOf[d.office] = (nOf[d.office] || 0) + 1;
+    li.appendChild(gpEl("span", "", ROOMBY[d.office].name + " · lugar " + nOf[d.office]));
     li.appendChild(r ? badge((r.k === "agent" ? "🤖 " : "") + r.name, r.k === "agent" ? "agent" : "") : badge("livre"));
     ud.appendChild(li);
   });
@@ -3190,7 +3193,7 @@ function kick(id) { roomRef.child("players/" + id).remove().catch(() => setStatu
    ========================================================= */
 let desksData = {}, myDesk = null, deskBusy = false;
 const deskKey = d => d.x + "_" + d.y;
-const deskExit = d => [d.x, d.y + 1];                                                  // tile livre logo abaixo de cada cadeira (todas têm)
+const deskExit = d => d.ex || [d.x, d.y + 1];                                         // tile livre ao lado da cadeira (campo "ex" do layout)
 const deskAtTile = (x, y) => DESK_AT[x + "_" + y] || null;
 
 /* o registro só vale enquanto o dono está na sala (se a pessoa caiu, o lugar volta a ser livre para todos) */
@@ -3201,7 +3204,7 @@ function deskLive(id) {
 }
 const deskTakenByOther = id => { const r = deskLive(id); return !!r && r.uid !== uid; };
 /* a tela do computador acende quando alguém (pessoa ou agente) está sentado numa das cadeiras daquela mesa */
-const deskLit = (x, y) => LAYOUT.desks.some(d => Math.abs(d.x - x) <= 2 && Math.abs(d.y - y) === 1 || (d.y === y && Math.abs(d.x - x) <= 2) ? !!deskLive(deskKey(d)) : false);
+const deskLit = (x, y) => [[x, y - 1], [x, y + 1]].some(c => { const d = DESK_AT[c[0] + "_" + c[1]]; return !!d && !!deskLive(deskKey(d)); });
 
 function initDesks() {
   roomRef.child("desks").on("value", s => {

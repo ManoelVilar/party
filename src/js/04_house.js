@@ -80,7 +80,7 @@ const DEF = {
     if (!L && !D) box(x, y, .06, .84, .16, .94, 0, 22, lg); if (!R && !D) box(x, y, .84, .84, .94, .94, 0, 22, lg);
     box(x, y, L ? 0 : .03, U ? 0 : .03, R ? 1 : .97, D ? 1 : .97, 22, 28, "#c58b50", !(L || R || U || D));
     if (o.plate) { ell(x + .5, y + .5, 28, 10, 5, "#f6f6f6"); ell(x + .5, y + .5, 28.6, 6, 3, "#e8a05c"); ell(x + .3, y + .5, 28.6, 2, 1, "#d9534f"); }
-    if (o.laptop) { box(x, y, .25, .35, .75, .75, 28, 29.5, "#c7ccd4"); box(x, y, .25, .3, .75, .38, 29, 43, "#222a3c"); faceY(x, y, .28, .72, .38, 31, 41, "#58b4ff"); }
+    if (o.laptop) { box(x, y, .25, .35, .75, .75, 28, 29.5, "#c7ccd4"); box(x, y, .25, .3, .75, .38, 29, 43, "#222a3c"); faceY(x, y, .28, .72, .38, 31, 41, o.office && !deskLit(x, y) ? "#2c3a57" : "#58b4ff"); }   // nos escritórios a tela só acende com alguém sentado
   }},
   balcao: { solid: true, draw(o) {
     const x = o.x, y = o.y, L = adj(x - 1, y, "balcao"), R = adj(x + 1, y, "balcao");
@@ -242,12 +242,14 @@ function add(t, x, y, o) {
 }
 const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o); };
 (function buildHouse() {
-  /* escritórios: 3 mesas de 3 tiles e 7 lugares cada (ids em src/layout.json); o corredor da porta (coluna do meio) fica livre */
+  /* escritórios "software house": duas mesas compridas (3 tiles cada) com cadeiras dos dois lados e notebooks, como na sala de reuniões;
+     12 lugares por escritório (ids e saídas em src/layout.json). Corredor da porta (coluna do meio) e as faixas y=1 e y=5 ficam livres. */
   [1, 9].forEach((b, k) => {
-    row("escrivaninha", b + 1, 2, 3); row("escrivaninha", b, 5, 3); row("escrivaninha", b + 4, 5, 3);
+    for (let y = 2; y <= 4; y++) row(k ? "tapete2" : "tapete", b, y, 7);
+    [b, b + 4].forEach(x0 => { for (let i = 0; i < 3; i++) add("mesa", x0 + i, 3, { laptop: true, office: true }); });
     LAYOUT.desks.filter(d => d.office === "esc" + (k + 1)).forEach(d => add("cadeira", d.x, d.y, { f: d.f, desk: d.id }));
-    row("estante", b + 5, 1, 2); add("luz", b, 1); add("planta", b + 6, 7); add("planta", b, 7);
-    for (let y = 3; y <= 7; y++) add(k ? "tapete2" : "tapete", b + 3, y);
+    row("estante", b, 7, 2); add("luz", b + 6, 6); add("planta", b + 6, 7); add("planta", b + 2, 7);
+    for (let y = 5; y <= 7; y++) add(k ? "tapete2" : "tapete", b + 3, y);
   });
   /* cozinha + cuidados dos gatos */
   add("despensa", 17, 1); row("balcao", 18, 1, 2); add("fogao", 20, 1); add("pia", 21, 1); row("balcao", 22, 1, 2); add("geladeira", 24, 1); add("planta", 28, 1);
