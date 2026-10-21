@@ -41,7 +41,7 @@ function glow(gx, gy, z, r, rgba) {
   g.addColorStop(0, rgba); g.addColorStop(1, rgba.replace(/[\d.]+\)$/, "0)")); ctx.fillStyle = g; ctx.fillRect(p[0] - r, p[1] - r, r * 2, r * 2);
 }
 const DEF = {
-  baia: { solid: true, draw(o) {                                                           // mesa de cabine; o.f = lado para onde a tela olha (d = sul, r = leste, l = oeste)
+  baia: { solid: true, draw(o) {                                                           // mesa de cabine; o.f = lado para onde a tela olha (d = sul, r = leste)
     const x = o.x, y = o.y, f = o.f, lg = "#5c4230", on = deskLit(x, y);
     box(x, y, .06, .1, .16, .2, 0, 22, lg); box(x, y, .06, .8, .16, .9, 0, 22, lg); box(x, y, .84, .1, .94, .2, 0, 22, lg); box(x, y, .84, .8, .94, .9, 0, 22, lg);
     box(x, y, .03, .05, .97, .95, 22, 27, "#a9825f");
@@ -54,10 +54,6 @@ const DEF = {
       box(x, y, .22, .38, .4, .62, 27, 30, "#2b2f3a"); box(x, y, .26, .46, .34, .54, 30, 38, "#2b2f3a");
       box(x, y, .22, .16, .32, .84, 38, 62, "#1d2230"); faceX(x, y, .32, .19, .81, 41, 59, scr); faceX(x, y, .32, .19, .5, 51, 59, hi);
       box(x, y, .62, .24, .86, .76, 27, 29, "#cfd3da"); box(x, y, .6, .8, .74, .92, 27, 33, "#f4f1e8");
-    } else {                                                                             // encostada na parede da direita: vemos o verso do monitor
-      box(x, y, .6, .38, .78, .62, 27, 30, "#2b2f3a"); box(x, y, .66, .46, .74, .54, 30, 38, "#2b2f3a");
-      box(x, y, .68, .16, .78, .84, 38, 62, "#1d2230"); box(x, y, .76, .3, .8, .7, 44, 56, on ? "#58b4ff" : "#26364d");
-      box(x, y, .14, .24, .38, .76, 27, 29, "#cfd3da"); box(x, y, .26, .08, .4, .2, 27, 33, "#f4f1e8");
     }
   }},
   divisoria: { solid: true, draw(o) {                                                       // painel baixo de cabine, liga com o painel vizinho (o.h = deitado ao longo de x)
@@ -255,19 +251,20 @@ function add(t, x, y, o) {
 }
 const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o); };
 (function buildHouse() {
-  /* escritórios de setor: 8 CABINES individuais ao redor da sala (4 no fundo, 2 em cada lado), cada uma com mesa e monitor, cadeira e
-     divisórias; o centro fica livre. Ótimas para deixar um agente de IA. Ids, tipo e saída de cada cadeira em src/layout.json.
-     Livres: o corredor da porta (coluna do meio), a faixa y=3 e o centro, por onde todo mundo entra e sai das cadeiras. */
+  /* escritórios de setor: 6 CABINES individuais (3 no fundo e 3 na parede da esquerda, com a tela virada para quem olha o mapa), cada uma com
+     mesa, monitor, cadeira e divisórias; o centro e o lado direito ficam livres. Ótimas para deixar um agente de IA.
+     Ids, tipo e saída de cada cadeira em src/layout.json. Livres: o corredor da porta (coluna do meio), a faixa y=3 e o centro. */
   [1, 9].forEach((b, k) => {
     const tp = k ? "tapete2" : "tapete";
     for (let y = 3; y <= 6; y++) for (let x = b + 2; x <= b + 4; x++) add(tp, x, y);
     add(tp, b + 3, 7); for (let x = b; x <= b + 6; x++) if (x < b + 2 || x > b + 4) add(tp, x, 3);
-    [b, b + 2, b + 4, b + 6].forEach(x => add("baia", x, 1, { f: "d" }));
-    [b + 1, b + 3, b + 5].forEach(x => { add("divisoria", x, 1); add("divisoria", x, 2); });
-    [4, 6].forEach(y => { add("baia", b, y, { f: "r" }); add("baia", b + 6, y, { f: "l" }); });
-    [b, b + 1, b + 5, b + 6].forEach(x => add("divisoria", x, 5, { h: true }));
+    [b + 2, b + 4, b + 6].forEach(x => add("baia", x, 1, { f: "d" }));
+    [b + 3, b + 5].forEach(x => { add("divisoria", x, 1); add("divisoria", x, 2); });
+    [3, 5, 7].forEach(y => add("baia", b, y, { f: "r" }));
+    [4, 6].forEach(y => add("divisoria", b, y, { h: true }));
+    row("estante", b, 1, 2); add("planta", b, 2); add("luz", b + 1, 2);
     LAYOUT.desks.filter(d => d.office === "esc" + (k + 1)).forEach(d => add("cadeira", d.x, d.y, { f: d.f, desk: d.id }));
-    add("planta", b, 7); add("planta", b + 6, 7);
+    row("estante", b + 5, 7, 2); add("planta", b + 6, 4); add("luz", b + 6, 5);
   });
   /* cozinha + cuidados dos gatos */
   add("despensa", 17, 1); row("balcao", 18, 1, 2); add("fogao", 20, 1); add("pia", 21, 1); row("balcao", 22, 1, 2); add("geladeira", 24, 1); add("planta", 28, 1);
