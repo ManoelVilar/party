@@ -14,6 +14,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Regras do banco **geradas** de `src/layout.json`; novos testes (`acesso`, `agente`, `limpeza`, e2e `contas`).
 
 ### Alterado
+- Login por e-mail em três telas: **entrar**, **criar conta** (senha pedida **duas vezes**) e **recuperar a senha** ("Esqueci a senha" leva direto ao campo de e-mail). Enter envia a tela atual.
 - Sala de estar: só **sinuca** (jogo da velha removido). A opção de jogar só aparece com a pessoa **sentada** no sofá; ao levantar, o painel e o estado local somem e a partida em andamento termina por desistência após 8 s (ou o adversário assume a vitória se sumir por 20 s).
 - Política de privacidade atualizada (contas, convites, agentes, limpeza).
 

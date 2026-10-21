@@ -334,16 +334,22 @@
       <button class="gold" id="btnEnter">ENTRAR NA PARTY</button>
     </div>
     <div id="modeAcct" hidden>
-      <div id="acctOut" class="acctbox">
-        <b>Entrar na sua conta</b>
-        <div class="muted">Com uma conta você ganha uma sala permanente só sua, que continua existindo mesmo vazia e que só entra quem você convidar.</div>
+      <div id="acctOut" class="acctbox" data-mode="in">
+        <b id="acctTitle">Entrar na sua conta</b>
+        <div class="muted" id="acctLead">Com uma conta você ganha uma sala permanente só sua, que continua existindo mesmo vazia e que só entra quem você convidar.</div>
         <button type="button" id="btnGoogle">Entrar com Google</button>
         <label>E-mail <input id="inMail" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email"></label>
-        <label>Senha (mínimo 8 caracteres) <input id="inPass" type="password" autocomplete="current-password"></label>
+        <label id="rowPass">Senha <span class="muted" id="passHint">(mínimo 8 caracteres)</span> <input id="inPass" type="password" autocomplete="current-password"></label>
+        <label id="rowPass2" hidden>Repita a senha <input id="inPass2" type="password" autocomplete="new-password"></label>
         <div class="coderow">
           <button type="button" id="btnMailIn" class="primary">Entrar</button>
-          <button type="button" id="btnMailNew">Criar conta</button>
-          <button type="button" id="btnMailReset" title="Enviar e-mail para criar nova senha">Esqueci a senha</button>
+          <button type="button" id="btnMailNew" class="primary" hidden>Criar conta</button>
+          <button type="button" id="btnMailSend" class="primary" hidden>Enviar link por e-mail</button>
+        </div>
+        <div class="coderow">
+          <button type="button" id="goNew">Criar conta nova</button>
+          <button type="button" id="btnMailReset">Esqueci a senha</button>
+          <button type="button" id="goIn" hidden>Voltar para entrar</button>
         </div>
       </div>
       <div id="acctIn" class="acctbox" hidden>

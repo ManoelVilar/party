@@ -62,7 +62,7 @@ with sync_playwright() as p:
     A.wait_for_timeout(6000)                              # a IA dos gatos escreve sozinha
     B.evaluate("document.querySelector('#btnMic').click()"); A.evaluate("document.querySelector('#btnMic').click()"); A.wait_for_timeout(800)
     # ---- conta + sala permanente + convite + agente + saída (outro grupo de páginas) ----
-    C = mk(ctx); C.click("#tabAcct"); C.fill("#inMail", "dona@teste.com"); C.fill("#inPass", "senha-bem-longa-1"); C.click("#btnMailNew"); C.wait_for_timeout(400)
+    C = mk(ctx); C.click("#tabAcct"); C.click("#goNew"); C.fill("#inMail", "dona@teste.com"); C.fill("#inPass", "senha-bem-longa-1"); C.fill("#inPass2", "senha-bem-longa-1"); C.click("#btnMailNew"); C.wait_for_timeout(400)
     C.evaluate("__fbVerify()"); C.click("#btnMailCheck"); C.wait_for_timeout(500)
     C.fill("#inName", "Dona"); C.click("#btnEnterPerm"); C.wait_for_timeout(1200)
     perm = C.evaluate("roomIdNow()")
