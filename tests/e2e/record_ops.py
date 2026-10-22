@@ -16,7 +16,7 @@ def mk(ctx, url=None):
         elif "gstatic.com/firebasejs" in u: r.fulfill(body="", content_type="application/javascript")
         elif u.startswith("http://localhost"): r.continue_()
         else: r.abort()
-    pg.route("**/*", route); pg.goto(url or URL); pg.wait_for_timeout(300); pg.errs = errs
+    pg.route("**/*", route); pg.goto(url or URL); pg.wait_for_timeout(500); pg.locator("#tGuest").is_visible() and pg.click("#tGuest"); pg.errs = errs
     return pg
 
 with sync_playwright() as p:

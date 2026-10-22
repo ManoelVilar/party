@@ -36,7 +36,13 @@ function enforceLock() {
 function cleanMeta(v) {
   if (!v || typeof v !== "object") return null;
   const n = x => typeof x === "number" ? x : 0;
-  return { kind: v.kind === "perm" ? "perm" : "temp", owner: String(v.owner || "").slice(0, 64), created: n(v.created), seen: n(v.seen) };
+  return { kind: v.kind === "perm" ? "perm" : "temp", owner: String(v.owner || "").slice(0, 64), created: n(v.created), seen: n(v.seen), title: cleanTitle(v.title) };
+}
+/* nome da sala permanente (até 30 caracteres, sem marcação) */
+const cleanTitle = v => typeof v === "string" ? v.replace(/[\u0000-\u001f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 30) : "";
+function showRoomTitle() {
+  const t = roomMeta && roomMeta.kind === "perm" ? roomMeta.title : "", el = $("roomTitle");
+  el.textContent = t ? "🏠 " + t : ""; el.hidden = !t;
 }
 function cleanAcl(v) {
   if (!v || typeof v !== "object" || !ROLE_LABEL[v.role] || v.role === "owner") return null;
@@ -50,7 +56,7 @@ function kicked(msg) {
 function initAccess() {
   roomRef.child("meta").on("value", s => {
     const m = cleanMeta(s.val());
-    if (m) roomMeta = m;
+    if (m) { roomMeta = m; showRoomTitle(); }
     else if (playersReady && !leaving && roomMeta && roomMeta.kind !== "perm") ensureMeta();           // sala temporária apagada enquanto estávamos aqui (limpeza): recria
     if (!$("hostModal").hidden) renderHostPanel();
   });
@@ -135,6 +141,14 @@ function buildHostPanel() {
   hostBody.textContent = "";
   const sec = (title, id) => { const s = gpEl("section"); s.appendChild(gpEl("h3", "", title)); const c = gpEl("div"); c.id = id; s.appendChild(c); hostBody.appendChild(s); return s; };
   hostUI = { info: gpEl("div") }; hostBody.appendChild(hostUI.info);
+  if (isRoomOwner() && isPermRoom()) {                                                       // renomear a sala permanente (o campo não é refeito a cada atualização)
+    const s0 = gpEl("section"); s0.appendChild(gpEl("h3", "", "Nome da sala"));
+    const r0 = gpEl("div", "row"), inp = document.createElement("input"); inp.type = "text"; inp.maxLength = 30; inp.placeholder = "Ex.: Casa do Manoel"; inp.setAttribute("aria-label", "Nome da sala");
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveRoomTitle(inp.value); } });
+    r0.append(inp, mkBtn("Salvar nome", "primary", () => saveRoomTitle(inp.value)), mkBtn("Tirar nome", "", () => saveRoomTitle("")));
+    s0.appendChild(r0); s0.appendChild(gpEl("div", "muted", "Aparece no topo da tela para todos que entram na sala. O link e o código da sala não mudam."));
+    hostBody.appendChild(s0); hostUI.titleIn = inp;
+  }
   hostUI.here = sec("Na sala agora", "hpHere").lastChild;
   hostUI.offices = sec("Escritórios", "hpOff").lastChild;
   hostUI.desks = sec("Mesas dos escritórios", "hpDesk").lastChild;
@@ -183,11 +197,18 @@ async function makeAgentInvite(name, offices, chat, claimMs, lifeMs) {
   const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = JSON.stringify(cred, null, 2);
   out.textContent = ""; out.append(gpEl("div", "muted", "Salve como credencial.json e rode: node agent/party-agent.mjs credencial.json (veja docs/AGENTES.md). A credencial é de uso único: depois que o agente conectar, ela não funciona mais."), ta, copyBtn("Copiar credencial", () => ta.value));
 }
+async function saveRoomTitle(v) {
+  const t = cleanTitle(v);
+  try { await roomRef.child("meta/title").set(t || null); } catch (e) { return setStatus("⛔ O servidor recusou o nome da sala. Só o dono da sala permanente pode renomear.", 4500); }
+  if (roomMeta) roomMeta.title = t; showRoomTitle(); if (hostUI && hostUI.titleIn) hostUI.titleIn.value = t;
+  setStatus(t ? "🏠 Sala renomeada: " + t : "Nome da sala removido.", 3000);
+}
 function renderHostPanel() {
   if (!hostUI) return;
+  if (hostUI.titleIn && document.activeElement !== hostUI.titleIn) hostUI.titleIn.value = (roomMeta && roomMeta.title) || "";
   const kind = isPermRoom() ? "Sala permanente" : "Sala temporária";
   hostUI.info.textContent = "";
-  const head = gpEl("div", "row"); head.append(gpEl("b", "", kind), badge(ROLE_LABEL[myRole()] || "Convidado", isHost() ? "host" : ""));
+  const head = gpEl("div", "row"); head.append(gpEl("b", "", kind + (isPermRoom() && roomMeta && roomMeta.title ? " · " + roomMeta.title : "")), badge(ROLE_LABEL[myRole()] || "Convidado", isHost() ? "host" : ""));
   if (!isPermRoom()) head.append(gpEl("span", "muted", "Código: " + roomIdNow()), copyBtn("Copiar código", () => roomIdNow()));
   hostUI.info.appendChild(head);
   hostUI.info.appendChild(gpEl("div", "muted", isPermRoom()

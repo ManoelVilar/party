@@ -33,6 +33,24 @@ with sync_playwright() as p:
     r = K.evaluate("() => { const c = __sim({ ts: Date.now() - 20000 }); offlineCatch(c, { act: null }, Date.now()); return c.hunger; }")
     ok(r == 30, "ausência de segundos não muda nada")
 
+    # a sala "cheia": com caixa limpa, o gato usa a caixa enquanto ninguém olha; sem caixa limpa, nada de acidente
+    r = K.evaluate("""() => {
+      resSet('cx1', 0); resSet('cx2', 0); resSet('racao1', 100); resSet('agua1', 100);
+      const c = __sim({ ts: Date.now() - 240 * 60000 }); offlineCatch(c, { act: null }, Date.now());
+      return { bl: c.bladder, bw: c.bowel, cx: resOf('cx1') + resOf('cx2') };
+    }""")
+    ok(r["cx"] > 0, "ausência longa: o gato usou a caixa de areia (sujeira nas caixas: %d)" % r["cx"])
+    ok(r["bl"] < 68 and r["bw"] < 68, "…e voltou sem estar apertado (%.0f / %.0f)" % (r["bl"], r["bw"]))
+    # reposição automática também limpa caixas sujas (gasta 1 saco)
+    K.evaluate("roomRef.child('care/auto').set(true); roomRef.child('care/sup/sacos').set(3); resSet('cx1', 80); resSet('cx2', 10);"); K.wait_for_timeout(300)
+    K.evaluate("autoRefill.t = 0; autoRefill(Date.now());"); K.wait_for_timeout(300)
+    ok(K.evaluate("resOf('cx1')") == 0 and K.evaluate("resOf('cx2')") == 10, "automático limpa só a caixa suja")
+    ok(K.evaluate("supOf('sacos')") == 2, "…e gasta 1 saco do estoque")
+    K.evaluate("roomRef.child('care/sup/sacos').set(0); resSet('cx1', 90);"); K.wait_for_timeout(300)
+    K.evaluate("autoRefill.t = 0; autoRefill(Date.now());"); K.wait_for_timeout(300)
+    ok(K.evaluate("resOf('cx1')") == 90, "sem sacos a caixa não é limpa")
+    K.evaluate("roomRef.child('care/auto').set(false); roomRef.child('care/sup/sacos').set(5); resSet('cx1', 0);"); K.wait_for_timeout(300)
+
     # ---------- consequências: gato fraco ----------
     r = K.evaluate("""() => {
       const ok1 = __sim({ hunger: 60 }), fr = __sim({ hunger: 95 }), fr2 = __sim({ thirst: 93 });

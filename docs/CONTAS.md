@@ -32,3 +32,6 @@ Cada escritório é uma sala **tech (hacker/gamer)** com **4 mesas gamer** (tela
 - **Login com Google:** vale a verificação em duas etapas da própria conta Google.
 - **E-mail e senha:** ainda **não há** 2FA por aplicativo autenticador (TOTP). O Firebase só oferece TOTP/SMS com o **Identity Platform** (plano Blaze), e um TOTP feito só no navegador não protegeria nada. A tela avisa isso. Caminhos possíveis: usar só Google para contas sensíveis, ou migrar para o Blaze/Identity Platform no futuro.
 - Senhas nunca passam pelo Party: ficam no Firebase Authentication (hash).
+
+## Nome da sala permanente
+O dono pode dar um nome à sala (até 30 caracteres) na janela **🔑 Sala → Nome da sala** ou, sem entrar na sala, na tela **Minha conta → Renomear**. O nome fica em `rooms/<sala>/meta/title`, aparece no topo da tela para todos e pode ser removido. As regras só deixam o **dono da sala permanente** escrever esse campo; o código (`perm-...`) e os links de convite não mudam. Salas temporárias não têm nome.

@@ -11,7 +11,7 @@ def mkpage(ctx,url=None):
         elif 'gstatic.com/firebasejs' in u: r.fulfill(body='',content_type='application/javascript')
         elif u.startswith('file:') or u.startswith('http://localhost'): r.continue_()
         else: r.abort()
-    pg.route('**/*',route); pg.goto(PARTY_URL); return pg
+    pg.route('**/*',route); pg.goto(PARTY_URL); pg.wait_for_timeout(500); pg.locator("#tGuest").is_visible() and pg.click("#tGuest"); return pg
 with sync_playwright() as p:
     b=p.chromium.launch(args=["--use-fake-ui-for-media-stream","--use-fake-device-for-media-stream"])
     ctx=b.new_context(viewport={'width':1280,'height':1000},permissions=['clipboard-read','clipboard-write','camera','microphone'])

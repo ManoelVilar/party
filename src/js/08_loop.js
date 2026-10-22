@@ -23,6 +23,7 @@ function drawMess(key, m, near) {
 function frame() {
   const now = Date.now(), dtMs = Math.min(100, now - lastFrame); lastFrame = now;
   const f = 1 - Math.exp(-dtMs / 70);
+  if (titleOn) { path = []; holdVec = null; keys.length = 0; }                  // na tela inicial ninguém anda
   if (me.act && me.act.until && now > me.act.until) endAct();
   if (!me.act && path.length && now - lastStep > 125) { const nx = path[0][0], ny = path[0][1]; path.shift(); if (!stepTo(nx, ny, [nx - me.x, ny - me.y], now)) path = []; }
   else if (!me.act && !path.length && now - lastStep > 125) {
@@ -31,7 +32,7 @@ function frame() {
 
   /* zoom e câmera (em unidades do mundo; K = pixels de arte por unidade) */
   zoom += (zoomT - zoom) * .2; if (Math.abs(zoomT - zoom) < .002) zoom = zoomT; K = zoom / ART;
-  const vw = LW / K, vh = LH / K, mp = players[uid], tp = P((mp ? mp.rx : me.x) + .5, (mp ? mp.ry : me.y) + .5, 20);
+  const vw = LW / K, vh = LH / K, mp = players[uid], tp = titleOn ? titleTarget(now) : P((mp ? mp.rx : me.x) + .5, (mp ? mp.ry : me.y) + .5, 20);
   let cx = tp[0] - vw / 2, cy = tp[1] - vh / 2;
   cx = vw >= WORLD_W ? (WORLD_W - vw) / 2 : Math.max(0, Math.min(WORLD_W - vw, cx));
   cy = vh >= WORLD_H ? (WORLD_H - vh) / 2 : Math.max(0, Math.min(WORLD_H - vh, cy));
@@ -173,7 +174,10 @@ function frame() {
     }
   });
 }
+let loopOn = false, loopN = 0;
 function loop() {
-  try { frame(); } catch (e) { console.error(e); }
   requestAnimationFrame(loop);
+  if (titleOn && (loopN++ & 1)) return;                               // fundo da tela inicial a 30 quadros por segundo (o desfoque pesa)
+  try { frame(); } catch (e) { console.error(e); }
 }
+function startLoop() { if (!loopOn) { loopOn = true; requestAnimationFrame(loop); } }

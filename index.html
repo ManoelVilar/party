@@ -37,6 +37,20 @@
   h1 { margin:0; font-size:2rem; letter-spacing:2px; color:var(--accent); text-shadow:3px 3px 0 var(--line); }
   img.pix, canvas.pix { image-rendering:pixelated; }
 
+  /* tela inicial: mapa desfocado ao fundo e quadro no centro */
+  body.title #app { display:block; padding:0; max-width:none; margin:0; }
+  body.title #app > *:not(#stage) { display:none !important; }
+  body.title #stage { position:fixed; inset:0; z-index:0; border:0; box-shadow:none; pointer-events:none; background:#0e0a18; }
+  body.title #stage > *:not(#cv) { display:none !important; }
+  body.title canvas#cv { width:100%; height:100%; filter:blur(5px) brightness(.62) saturate(1.1); transform:translate(calc(var(--tpx, 0) * -1px), calc(var(--tpy, 0) * -1px)) scale(1.06); transition:transform .35s ease-out; }
+  #title { position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:16px; overflow:auto; background:radial-gradient(ellipse at center, rgba(10,6,20,.1) 20%, rgba(10,6,20,.62) 100%); }
+  .tbox { width:min(420px,100%); display:grid; gap:12px; text-align:center; padding:22px 20px; }
+  .tlogo { font-size:clamp(2.6rem,12vw,4rem); letter-spacing:5px; line-height:1; color:var(--accent); text-shadow:4px 4px 0 var(--line), 0 0 28px rgba(255,209,102,.35); padding:6px 0 2px; }
+  .tsub { margin:0 0 6px; font-size:.95rem; }
+  .tbtn { width:100%; padding:14px 10px; font-size:1.1rem; }
+  .tnote { margin:4px 0 0; font-size:.78rem; }
+  .backbtn { padding:3px 10px; font-size:.85rem; }
+  body.title #login { position:relative; z-index:6; }
   #login { max-width:920px; margin:0 auto; padding:18px 12px; }
   #login .panel { display:grid; gap:12px; }
   #err { color:var(--bad); min-height:1.2em; font-size:.9rem; }
@@ -106,6 +120,7 @@
   #app { display:grid; gap:8px; padding:8px; max-width:1180px; margin:0 auto; }
   .top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 10px; }
   .top .room { font-weight:700; margin-right:auto; color:var(--accent); }
+  .top .roomtitle { font-size:.85rem; opacity:.85; max-width:34ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .top .who { color:var(--muted); font-size:.85rem; }
   #videos { display:flex; gap:8px; overflow-x:auto; min-height:44px; align-items:center; padding-bottom:2px; }
   #vhint { color:var(--muted); font-size:.85rem; padding:6px 2px; }
@@ -307,8 +322,19 @@
 </head>
 <body>
 
-<section id="login">
+<section id="title" aria-label="Tela inicial" hidden>
+  <div class="tbox panel">
+    <div class="tlogo">PARTY</div>
+    <p class="muted tsub">Espaço pixel para festas, encontros e reuniões</p>
+    <button type="button" id="tGuest" class="gold tbtn">Jogar sem login</button>
+    <button type="button" id="tLogin" class="tbtn">Entrar na conta</button>
+    <p class="muted tnote">Com uma conta você tem uma sala permanente só sua. Sem login, você joga numa sala temporária com um código.</p>
+  </div>
+</section>
+
+<section id="login" hidden>
   <div class="panel">
+    <div><button type="button" id="btnBack" class="backbtn">← Voltar</button></div>
     <h1>PARTY</h1>
     <p class="muted" style="margin:0">Um espaço pixel para festas, encontros com amigos e reuniões. Crie seu personagem, entre e converse por voz e vídeo quando chegar perto de alguém.</p>
     <div class="chips"><span>🎉 Festa e amigos</span><span>🎬 Cinema e jogos de gatos</span><span>💼 Reuniões com porta e slides</span></div>
@@ -362,6 +388,10 @@
         <div class="coderow">
           <button type="button" id="btnEnterPerm" class="gold">ENTRAR NA MINHA SALA</button>
         </div>
+        <div class="coderow" id="rowRename">
+          <input type="text" id="acctRoomName" maxlength="30" placeholder="Nome da minha sala" aria-label="Nome da minha sala" autocomplete="off">
+          <button type="button" id="btnRoomRename">Renomear</button>
+        </div>
         <div class="coderow">
           <button type="button" id="btnMailVerify" hidden>Reenviar e-mail de confirmação</button>
           <button type="button" id="btnMailCheck" hidden>Já confirmei</button>
@@ -379,6 +409,7 @@
 <section id="app" hidden>
   <div class="top panel">
     <span class="room" id="roomLabel"></span>
+    <span class="roomtitle" id="roomTitle" hidden></span>
     <span class="who" id="who"></span>
     <button id="btnMic" class="off">Mic</button>
     <button id="btnCam" class="off">Câmera</button>
@@ -1497,6 +1528,11 @@ function offlineCatch(c, a, now) {
     stepStats(c, a, dt * .6);                                       // parte do tempo ele dorme
     if (c.hunger >= 55) eatFrom("pote_racao", "hunger", 2.4, ["bowel", .15]);
     if (c.thirst >= 55) eatFrom("pote_agua", "thirst", 4, ["bladder", .5]);
+    ["bladder", "bowel"].forEach(k => {                             // usa a caixa de areia (se houver uma limpa), como faria com a sala cheia
+      if (c[k] < 68) return;
+      const bx = objsOf("caixa_areia").find(q => resOf(q.cid) < 70); if (!bx) return;
+      c[k] = 0; resAdd(bx.cid, k === "bowel" ? 24 : 14);
+    });
   }
   c.bladder = Math.min(c.bladder, 90); c.bowel = Math.min(c.bowel, 90);
 }
@@ -1601,6 +1637,7 @@ function autoRefill(now) {
   if (!care.auto || now - (autoRefill.t || 0) < 4000) return; autoRefill.t = now;
   objsOf("pote_racao").forEach(o => { if (resOf(o.cid) < POTE_BAIXO && supOf("racao") > 0) supUse("racao", 1, ok => { if (ok) resAdd(o.cid, 50); }); });
   objsOf("pote_agua").forEach(o => { if (resOf(o.cid) < POTE_BAIXO) resSet(o.cid, 100); });
+  objsOf("caixa_areia").forEach(o => { if (resOf(o.cid) >= 60 && supOf("sacos") > 0) supUse("sacos", 1, ok => { if (ok) resSet(o.cid, 0); }); });   // limpa a caixa antes de o gato não ter onde ir
 }
 function runCatAI(now) {
   now = now || Date.now();
@@ -1729,7 +1766,7 @@ function renderCatPanel(force) {
   const pot = t => { const l = objsOf(t).map(o => Math.round(resOf(o.cid))); return l.length ? Math.min.apply(null, l) : 0; }, pr = pot("pote_racao"), pa = pot("pote_agua");
   $("cpPots").innerHTML = "Pote ração <b style='color:" + sevColor(100 - pr * 1.6) + "'>" + pr + "%</b> · água <b style='color:" + sevColor(100 - pa * 1.6) + "'>" + pa + "%</b>";
   $("cpAuto").textContent = care.auto ? "🤖 Automático: ligado" : "🤖 Automático: desligado"; $("cpAuto").className = care.auto ? "on" : "";
-  $("cpAuto").title = "Enche os potes sozinho quando baixam de " + POTE_BAIXO + "% (a ração sai do estoque da despensa)";
+  $("cpAuto").title = "Enche os potes quando baixam de " + POTE_BAIXO + "% e limpa as caixas de areia sujas (gasta ração e sacos do estoque da despensa)";
   const hy = houseHygiene(); $("cpHyg").innerHTML = "Higiene da casa <b style='color:" + sevColor(100 - hy) + "'>" + hy + "%</b>" + (messCount() ? " · " + messCount() + " sujeira(s)" : "");
   box.querySelectorAll(".cc").forEach(d => {
     const id = d.dataset.id, c = cats[id]; d.classList.toggle("sel", selectedCat === id);
@@ -1758,7 +1795,10 @@ function catAlerts(now) {
   if (!care.auto) {                                                  // aviso antes de acabar, quando ainda dá tempo
     if (potes("pote_racao").some(r => r < POTE_BAIXO)) al("lowfood", 240000, "🥣 O pote de ração está acabando. Encha antes que os gatos fiquem com fome.");
     if (potes("pote_agua").some(r => r < POTE_BAIXO)) al("lowwater", 240000, "💧 O pote de água está acabando.");
-  } else if (potes("pote_racao").some(r => r < POTE_BAIXO) && supOf("racao") <= 0) { urgente = true; al("nostock", 240000, "📦 A reposição automática parou: acabou a ração do estoque. Pegue mais na despensa da cozinha."); }
+  } else {
+    if (objsOf("caixa_areia").some(o => resOf(o.cid) >= 60) && supOf("sacos") <= 0) { urgente = true; al("nobags", 240000, "🧹 As caixas de areia estão sujas e acabaram os sacos do estoque. Pegue mais na despensa da cozinha."); }
+    if (potes("pote_racao").some(r => r < POTE_BAIXO) && supOf("racao") <= 0) { urgente = true; al("nostock", 240000, "📦 A reposição automática parou: acabou a ração do estoque. Pegue mais na despensa da cozinha."); }
+  }
   if (supOf("racao") <= 1 && supOf("racao") > 0) al("lowstock", 300000, "📦 Resta pouca ração no estoque. Pegue mais na despensa.");
   if (objsOf("caixa_areia").length && objsOf("caixa_areia").every(o => resOf(o.cid) >= 70)) al("litter", 150000, "🧹 Todas as caixas de areia estão sujas! Limpe para os gatos usarem.");
   if (messCount() >= 3) al("mess", 180000, "💩 Tem sujeira de gato espalhada pela casa. Chegue perto e limpe.");
@@ -2472,7 +2512,7 @@ const keys = [];
 const cv = $("cv"); cv.width = LW * 3; cv.height = LH * 3; const mctx = cv.getContext("2d");
 /* tamanho da "tela de arte": fixo no modo normal, acompanha a janela em tela cheia */
 function resizeView() {
-  const full = document.body.classList.contains("full");
+  const full = document.body.classList.contains("full") || titleOn;             // a tela inicial usa o mesmo tamanho do jogo em tela cheia
   let w = Math.round(VW / ART), h = Math.round(VH / ART);
   if (full) {
     if (Math.min(innerWidth, innerHeight) < 600) { /* celular: cada pixel de arte ≈ 2,4 px de tela, qualquer orientação, sem esticar */
@@ -2539,7 +2579,7 @@ $("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Ger
 /* o que o servidor precisa saber de nós (usado ao entrar e ao voltar da queda) */
 function selfState() { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, acct: myAcct(), csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 3 }; }
 function startGame(name, room) {
-  myName = name; $("login").hidden = true; $("app").hidden = false; enterLayout();
+  myName = name; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
   let tries = 0;
   do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30);
@@ -2611,7 +2651,7 @@ function startGame(name, room) {
   });
   initAccess(); initDesks(); initRooms(); initGames();
   renderCatPanel("rebuild");
-  setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); requestAnimationFrame(loop);
+  setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); startLoop();
 }
 
 /* ---------- colisão e portas com permissão ---------- */
@@ -2950,15 +2990,32 @@ function renderAcct() {
   const u = isRealUser(fbUser) ? fbUser : null;
   $("acctOut").hidden = !!u; $("acctIn").hidden = !u;
   if (firstAuth) { firstAuth = false; if (u && !inviteIn) selectTab("acct"); }
-  if (!u) return;
+  if (!u) { $("tLogin").textContent = "Entrar na conta"; return; }
   $("acctWho").textContent = "Conectado como " + (u.displayName || u.email || "sua conta");
   const ok = !!u.emailVerified;
   $("acctState").textContent = ok ? "Conta confirmada. Sua sala permanente fica guardada nesta conta: você volta a ela quando quiser, de qualquer aparelho."
     : "Falta confirmar o e-mail: abra a mensagem que enviamos, toque no link e depois em “Já confirmei”.";
   $("btnEnterPerm").disabled = !ok; $("btnMailVerify").hidden = ok; $("btnMailCheck").hidden = ok;
+  $("rowRename").hidden = !ok; loadAcctRoom(u);
+  $("tLogin").textContent = "Minha conta e sala";
   $("acctSec").textContent = isGoogle(u) ? "Seu acesso é protegido pela verificação em duas etapas da sua conta Google (configure em myaccount.google.com/security)."
     : "Use uma senha longa e só sua. A verificação em duas etapas por aplicativo autenticador ainda não está disponível para contas com senha.";
 }
+/* nome da sala permanente na tela da conta: lê o nome atual e permite renomear sem entrar na sala */
+let acctRoomFor = "";
+async function loadAcctRoom(u) {
+  if (!u.emailVerified || acctRoomFor === u.uid || !fbInit()) return; acctRoomFor = u.uid;
+  try {
+    const room = (await db.ref("users/" + u.uid + "/room").once("value")).val(); if (!room) return;
+    const t = (await db.ref("rooms/" + room + "/meta/title").once("value")).val();
+    if (typeof t === "string" && document.activeElement !== $("acctRoomName")) $("acctRoomName").value = t.slice(0, 30);
+  } catch (e) { acctRoomFor = ""; }
+}
+$("btnRoomRename").onclick = () => acctRun(async () => {
+  const t = cleanTitle($("acctRoomName").value), room = await ensurePermRoom();
+  await db.ref("rooms/" + room + "/meta/title").set(t || null); $("acctRoomName").value = t;
+}, "Nome da sala salvo.");
+$("acctRoomName").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("btnRoomRename").click(); } });
 async function acctRun(fn, okMsg) {
   acctNote("");
   if (!fbInit()) return acctNote("O Firebase não carregou. Confira a conexão e recarregue.", "bad");
@@ -3006,7 +3063,7 @@ $("btnMailCheck").onclick = () => acctRun(async () => {
   await fbUser.reload(); await fbUser.getIdToken(true); renderAcct();
   if (!fbUser.emailVerified) throw { message: "Ainda não confirmado. Abra o link do e-mail e tente de novo." };
 }, "E-mail confirmado!");
-$("btnOut").onclick = () => acctRun(async () => { await firebase.auth().signOut(); acctMode("in", false); selectTab("temp"); });
+$("btnOut").onclick = () => acctRun(async () => { acctRoomFor = ""; $("acctRoomName").value = ""; await firebase.auth().signOut(); acctMode("in", false); selectTab("temp"); });
 
 /* ---------- link de convite: #sala=<sala>&convite=<token> (o token fica no fragmento, que não vai para o servidor do site) ---------- */
 (() => {
@@ -3099,7 +3156,8 @@ $("btnEnter").onclick = () => enter("temp");
 $("btnEnterPerm").onclick = () => enter("perm");
 $("btnEnterInvite").onclick = () => enter("invite");
 fbInit();
-try { const m = sessionStorage.getItem("pt_msg"); if (m) { sessionStorage.removeItem("pt_msg"); errBox(m); } } catch (e) {}
+let loginMsg = false;
+try { const m = sessionStorage.getItem("pt_msg"); if (m) { sessionStorage.removeItem("pt_msg"); loginMsg = true; errBox(m); } } catch (e) {}
 /* =========================================================
    ACESSO NA SALA: papéis, escritório reservado, convites, agentes e saída
    Papéis: dono (rooms/<sala>/meta/owner), co-anfitrião, membro, convidado e agente de IA (rooms/<sala>/acl/<uid>.role).
@@ -3138,7 +3196,13 @@ function enforceLock() {
 function cleanMeta(v) {
   if (!v || typeof v !== "object") return null;
   const n = x => typeof x === "number" ? x : 0;
-  return { kind: v.kind === "perm" ? "perm" : "temp", owner: String(v.owner || "").slice(0, 64), created: n(v.created), seen: n(v.seen) };
+  return { kind: v.kind === "perm" ? "perm" : "temp", owner: String(v.owner || "").slice(0, 64), created: n(v.created), seen: n(v.seen), title: cleanTitle(v.title) };
+}
+/* nome da sala permanente (até 30 caracteres, sem marcação) */
+const cleanTitle = v => typeof v === "string" ? v.replace(/[\u0000-\u001f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 30) : "";
+function showRoomTitle() {
+  const t = roomMeta && roomMeta.kind === "perm" ? roomMeta.title : "", el = $("roomTitle");
+  el.textContent = t ? "🏠 " + t : ""; el.hidden = !t;
 }
 function cleanAcl(v) {
   if (!v || typeof v !== "object" || !ROLE_LABEL[v.role] || v.role === "owner") return null;
@@ -3152,7 +3216,7 @@ function kicked(msg) {
 function initAccess() {
   roomRef.child("meta").on("value", s => {
     const m = cleanMeta(s.val());
-    if (m) roomMeta = m;
+    if (m) { roomMeta = m; showRoomTitle(); }
     else if (playersReady && !leaving && roomMeta && roomMeta.kind !== "perm") ensureMeta();           // sala temporária apagada enquanto estávamos aqui (limpeza): recria
     if (!$("hostModal").hidden) renderHostPanel();
   });
@@ -3237,6 +3301,14 @@ function buildHostPanel() {
   hostBody.textContent = "";
   const sec = (title, id) => { const s = gpEl("section"); s.appendChild(gpEl("h3", "", title)); const c = gpEl("div"); c.id = id; s.appendChild(c); hostBody.appendChild(s); return s; };
   hostUI = { info: gpEl("div") }; hostBody.appendChild(hostUI.info);
+  if (isRoomOwner() && isPermRoom()) {                                                       // renomear a sala permanente (o campo não é refeito a cada atualização)
+    const s0 = gpEl("section"); s0.appendChild(gpEl("h3", "", "Nome da sala"));
+    const r0 = gpEl("div", "row"), inp = document.createElement("input"); inp.type = "text"; inp.maxLength = 30; inp.placeholder = "Ex.: Casa do Manoel"; inp.setAttribute("aria-label", "Nome da sala");
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveRoomTitle(inp.value); } });
+    r0.append(inp, mkBtn("Salvar nome", "primary", () => saveRoomTitle(inp.value)), mkBtn("Tirar nome", "", () => saveRoomTitle("")));
+    s0.appendChild(r0); s0.appendChild(gpEl("div", "muted", "Aparece no topo da tela para todos que entram na sala. O link e o código da sala não mudam."));
+    hostBody.appendChild(s0); hostUI.titleIn = inp;
+  }
   hostUI.here = sec("Na sala agora", "hpHere").lastChild;
   hostUI.offices = sec("Escritórios", "hpOff").lastChild;
   hostUI.desks = sec("Mesas dos escritórios", "hpDesk").lastChild;
@@ -3285,11 +3357,18 @@ async function makeAgentInvite(name, offices, chat, claimMs, lifeMs) {
   const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = JSON.stringify(cred, null, 2);
   out.textContent = ""; out.append(gpEl("div", "muted", "Salve como credencial.json e rode: node agent/party-agent.mjs credencial.json (veja docs/AGENTES.md). A credencial é de uso único: depois que o agente conectar, ela não funciona mais."), ta, copyBtn("Copiar credencial", () => ta.value));
 }
+async function saveRoomTitle(v) {
+  const t = cleanTitle(v);
+  try { await roomRef.child("meta/title").set(t || null); } catch (e) { return setStatus("⛔ O servidor recusou o nome da sala. Só o dono da sala permanente pode renomear.", 4500); }
+  if (roomMeta) roomMeta.title = t; showRoomTitle(); if (hostUI && hostUI.titleIn) hostUI.titleIn.value = t;
+  setStatus(t ? "🏠 Sala renomeada: " + t : "Nome da sala removido.", 3000);
+}
 function renderHostPanel() {
   if (!hostUI) return;
+  if (hostUI.titleIn && document.activeElement !== hostUI.titleIn) hostUI.titleIn.value = (roomMeta && roomMeta.title) || "";
   const kind = isPermRoom() ? "Sala permanente" : "Sala temporária";
   hostUI.info.textContent = "";
-  const head = gpEl("div", "row"); head.append(gpEl("b", "", kind), badge(ROLE_LABEL[myRole()] || "Convidado", isHost() ? "host" : ""));
+  const head = gpEl("div", "row"); head.append(gpEl("b", "", kind + (isPermRoom() && roomMeta && roomMeta.title ? " · " + roomMeta.title : "")), badge(ROLE_LABEL[myRole()] || "Convidado", isHost() ? "host" : ""));
   if (!isPermRoom()) head.append(gpEl("span", "muted", "Código: " + roomIdNow()), copyBtn("Copiar código", () => roomIdNow()));
   hostUI.info.appendChild(head);
   hostUI.info.appendChild(gpEl("div", "muted", isPermRoom()
@@ -3437,6 +3516,49 @@ function afterMoveDesk(nx, ny) {
 }
 /* rotas por clique nunca passam por cima de cadeiras de mesa (senão cada passagem tentaria "sentar") */
 const walkBlockedTo = (tx, ty) => (x, y) => tileBlocked(x, y) || (!!deskAtTile(x, y) && !(x === tx && y === ty));
+/* =========================================================
+   TELA INICIAL: o mapa do jogo desfocado ao fundo (câmera passeando devagar) e um quadro no centro com
+   "Entrar na conta" ou "Jogar sem login". Só depois vem a tela de nome, personagem e sala.
+   O fundo é o próprio desenhista do jogo (frame), sem ninguém na casa. Ao entrar na sala o fundo some e o jogo assume.
+   ========================================================= */
+let titleOn = false, titleZoomSaved = null, loginFromTitle = false;
+/* o mapa acompanha o mouse de leve (paralaxe): posição do ponteiro de -1 a 1, suavizada a cada quadro */
+let titleMx = 0, titleMy = 0, titleSx = 0, titleSy = 0;
+addEventListener("pointermove", e => {
+  if (!titleOn) return;
+  titleMx = Math.max(-1, Math.min(1, e.clientX / Math.max(1, innerWidth) * 2 - 1)); titleMy = Math.max(-1, Math.min(1, e.clientY / Math.max(1, innerHeight) * 2 - 1));
+  const st = document.documentElement.style; st.setProperty("--tpx", (titleMx * 14).toFixed(1)); st.setProperty("--tpy", (titleMy * 9).toFixed(1));   // deslize suave do fundo (CSS)
+}, { passive: true });
+/* ponto (em pixels do mundo) para onde a câmera olha: um passeio lento pela casa + o desvio do mouse */
+function titleTarget(now) {
+  const t = now / 1000; titleSx += (titleMx - titleSx) * .05; titleSy += (titleMy - titleSy) * .05;
+  const p = P(22 + 15 * Math.sin(t * .045), 11 + 5.5 * Math.sin(t * .031 + 1.3), 20);
+  return [p[0] + titleSx * 34, p[1] + titleSy * 20];
+}
+function titleStart() {
+  titleOn = true; titleZoomSaved = zoomT;
+  document.body.classList.add("title"); $("app").hidden = false;
+  zoom = zoomT = 1.1; K = zoom / ART;
+  resizeView(); startLoop();
+}
+function titleStop() {
+  if (!titleOn) return;
+  titleOn = false; document.body.classList.remove("title"); $("title").hidden = true;
+  document.documentElement.style.removeProperty("--tpx"); document.documentElement.style.removeProperty("--tpy");
+  if (titleZoomSaved != null) { zoom = zoomT = titleZoomSaved; K = zoom / ART; }
+}
+/* passo 1 (quadro central) ↔ passo 2 (nome, personagem e sala) */
+function showTitle() { $("login").hidden = true; $("title").hidden = false; loginFromTitle = true; try { $("tGuest").focus({ preventScroll: true }); } catch (e) { /* sem foco */ } }
+function showLogin(tab) {
+  $("title").hidden = true; $("login").hidden = false; $("btnBack").hidden = !loginFromTitle;
+  if (tab) selectTab(tab); try { scrollTo(0, 0); } catch (e) { /* sem rolagem */ }
+}
+$("tLogin").onclick = () => showLogin("acct");
+$("tGuest").onclick = () => showLogin("temp");
+$("btnBack").onclick = showTitle;
+addEventListener("resize", () => { if (titleOn) resizeView(); });
+/* convite no endereço ou recado de uma saída anterior: vai direto à tela de entrada, onde a mensagem aparece */
+setTimeout(() => { titleStart(); if (inviteIn || loginMsg) showLogin(); else showTitle(); }, 0);       // depois de todos os módulos carregarem (o laço de desenho vem depois)
 /* =========================================================
    VOZ E VÍDEO (WebRTC). Escritórios, quartos, banheiro, cinema e reuniões:
    todos que estão dentro do cômodo se ouvem. Sala e cozinha: só quem está perto.
@@ -4479,6 +4601,7 @@ function drawMess(key, m, near) {
 function frame() {
   const now = Date.now(), dtMs = Math.min(100, now - lastFrame); lastFrame = now;
   const f = 1 - Math.exp(-dtMs / 70);
+  if (titleOn) { path = []; holdVec = null; keys.length = 0; }                  // na tela inicial ninguém anda
   if (me.act && me.act.until && now > me.act.until) endAct();
   if (!me.act && path.length && now - lastStep > 125) { const nx = path[0][0], ny = path[0][1]; path.shift(); if (!stepTo(nx, ny, [nx - me.x, ny - me.y], now)) path = []; }
   else if (!me.act && !path.length && now - lastStep > 125) {
@@ -4487,7 +4610,7 @@ function frame() {
 
   /* zoom e câmera (em unidades do mundo; K = pixels de arte por unidade) */
   zoom += (zoomT - zoom) * .2; if (Math.abs(zoomT - zoom) < .002) zoom = zoomT; K = zoom / ART;
-  const vw = LW / K, vh = LH / K, mp = players[uid], tp = P((mp ? mp.rx : me.x) + .5, (mp ? mp.ry : me.y) + .5, 20);
+  const vw = LW / K, vh = LH / K, mp = players[uid], tp = titleOn ? titleTarget(now) : P((mp ? mp.rx : me.x) + .5, (mp ? mp.ry : me.y) + .5, 20);
   let cx = tp[0] - vw / 2, cy = tp[1] - vh / 2;
   cx = vw >= WORLD_W ? (WORLD_W - vw) / 2 : Math.max(0, Math.min(WORLD_W - vw, cx));
   cy = vh >= WORLD_H ? (WORLD_H - vh) / 2 : Math.max(0, Math.min(WORLD_H - vh, cy));
@@ -4629,10 +4752,13 @@ function frame() {
     }
   });
 }
+let loopOn = false, loopN = 0;
 function loop() {
-  try { frame(); } catch (e) { console.error(e); }
   requestAnimationFrame(loop);
+  if (titleOn && (loopN++ & 1)) return;                               // fundo da tela inicial a 30 quadros por segundo (o desfoque pesa)
+  try { frame(); } catch (e) { console.error(e); }
 }
+function startLoop() { if (!loopOn) { loopOn = true; requestAnimationFrame(loop); } }
 /* =========================================================
    POLÍTICA DE PRIVACIDADE (janela sobre o login e o jogo; o texto está em src/head.html)
    ========================================================= */

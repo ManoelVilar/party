@@ -343,5 +343,27 @@ console.log("\n== escritório reservado / agentes trabalhando");
   check("convidado não move o personagem de outro", U(livre, conv, rp(PERM, "players/dono"), { x: 1, y: 1 }), false);
 }
 
+/* ================= nome da sala permanente ================= */
+console.log("\n== renomear a sala permanente");
+{
+  const db = full({ [PERM]: permRoom({ acl: { ...baseAcl } }) });
+  check("o dono dá nome à sala permanente", W(db, dono, rp(PERM, "meta/title"), "Casa do Manoel"), true);
+  check("o dono troca o nome (já existindo)", W(full({ [PERM]: { ...permRoom({ acl: { ...baseAcl } }), meta: { ...meta("perm", "dono"), title: "Antigo" } } }), dono, rp(PERM, "meta/title"), "Novo"), true);
+  check("o dono tira o nome", W(full({ [PERM]: { ...permRoom({ acl: { ...baseAcl } }), meta: { ...meta("perm", "dono"), title: "Antigo" } } }), dono, rp(PERM, "meta/title"), null), true);
+  check("nome vazio é recusado (use remover)", W(db, dono, rp(PERM, "meta/title"), ""), false);
+  check("nome com mais de 30 caracteres é recusado", W(db, dono, rp(PERM, "meta/title"), "x".repeat(31)), false);
+  check("nome com 30 caracteres passa", W(db, dono, rp(PERM, "meta/title"), "x".repeat(30)), true);
+  check("nome que não é texto é recusado", W(db, dono, rp(PERM, "meta/title"), 123), false);
+  check("co-anfitrião não renomeia", W(db, coan, rp(PERM, "meta/title"), "Minha"), false);
+  check("membro não renomeia", W(db, user2, rp(PERM, "meta/title"), "Minha"), false);
+  check("convidado não renomeia", W(db, conv, rp(PERM, "meta/title"), "Minha"), false);
+  check("agente de IA não renomeia", W(db, agente, rp(PERM, "meta/title"), "Minha"), false);
+  check("estranho não renomeia", W(db, estranho, rp(PERM, "meta/title"), "Minha"), false);
+  const t = mk({ rooms: { [TEMP]: { meta: meta("temp", "estranho"), players: { estranho: player() } } } });
+  check("sala temporária não tem nome (nem o dono muda)", W(t, estranho, rp(TEMP, "meta/title"), "Festa"), false);
+  check("o dono não muda o dono pelo nome da sala", W(db, dono, rp(PERM, "meta/owner"), "estranho"), false);
+  check("quem tem acesso lê o nome", Rd(db, conv, rp(PERM, "meta/title")), true);
+}
+
 console.log(`\n${passed} passaram, ${failed} falharam.`);
 process.exit(failed ? 1 : 0);

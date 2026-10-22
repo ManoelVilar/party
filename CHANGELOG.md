@@ -5,9 +5,11 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [0.5.0] — 2026-10-21
 
 ### Adicionado
+- **Tela inicial** estilo jogo: o mapa da casa desenhado ao fundo, desfocado e passeando devagar (e deslizando de leve conforme você mexe o mouse), com um quadro no centro: **Jogar sem login** ou **Entrar na conta**. Só depois vêm nome, personagem e sala (o fundo desfocado continua nessas telas, inclusive na de criar conta). Link de convite pula a tela inicial. Em `src/js/05e_title.js`.
+- **Renomear a sala permanente**: o dono dá (ou tira) um nome de até 30 caracteres pela janela 🔑 Sala ou pela tela da conta; o nome aparece no topo para todos. Validado no servidor (`meta/title`, só o dono da sala permanente); o código e o link da sala não mudam.
 - **Escritórios tech (hacker/gamer)**: cada escritório tem agora 4 mesas gamer (tela ultrawide com código que acende ao sentar, torre com RGB, teclado, cadeira gamer), racks de servidor, neon e piso escuro (também no tema de Natal). O agente de IA agora caminha pela faixa livre da porta, sem atravessar mesas.
 - **Gatos: fome e sede com mais consequência** — o tempo passa de verdade (até 8 h de ausência): o gato come e bebe do que os potes tinham e, sem comida, a fome acumula (sem acidentes enquanto ninguém olha). Com fome ou sede ≥ 92 o gato fica **fraco**: anda devagar, recusa brincar e o bem-estar despenca; petisco, comida e água o recuperam.
-- **Reposição automática dos potes** (botão 🤖 no painel dos gatos, guardado em `care/auto`): enche o pote quando baixa de 20%; a ração sai do estoque da despensa, a água é grátis.
+- **Reposição automática** (botão 🤖 no painel dos gatos, guardado em `care/auto`): enche o pote quando baixa de 20% (a ração sai do estoque da despensa, a água é grátis) e limpa as caixas de areia sujas (gasta 1 saco). Na ausência o gato também usa a caixa de areia, em vez de voltar apertado.
 - **Avisos**: pote "acabando" antes de zerar, estoque de ração baixo, bolinha vermelha no botão Gatos e título da aba (😿) quando há urgência; o painel mostra o nível dos potes.
 - **Contas** (e-mail/senha e Google) e **sala permanente por conta**: fixa, privada, volta sempre ao mesmo lugar e nunca é apagada. Salas temporárias continuam sem login.
 - **Convites** com papel e validade (`#sala=...&convite=...`), co-anfitriões, convidados, revogação e janela **🔑 Sala** (pessoas, escritórios, mesas, agentes).
