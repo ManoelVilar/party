@@ -114,6 +114,8 @@ const rules = {
           owner: { ".validate": "newData.isString() && newData.val() === auth.uid" },
           created: { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
           seen: { ".write": `${MEMBER} && newData.val() === now`, ".validate": "newData.isNumber()" },
+          /* nome da sala: só o dono da sala permanente muda (criar, trocar ou apagar) */
+          title: { ".write": `auth != null && ${IS_OWNER} && ${kind} === 'perm'`, ".validate": str(1, 30) },
           "$other": { ".validate": false }
         },
 

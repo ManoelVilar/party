@@ -5,6 +5,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [0.5.0] — 2026-10-21
 
 ### Adicionado
+- **Renomear a sala permanente**: o dono dá (ou tira) um nome de até 30 caracteres pela janela 🔑 Sala ou pela tela da conta; o nome aparece no topo para todos. Validado no servidor (`meta/title`, só o dono da sala permanente); o código e o link da sala não mudam.
 - **Escritórios tech (hacker/gamer)**: cada escritório tem agora 4 mesas gamer (tela ultrawide com código que acende ao sentar, torre com RGB, teclado, cadeira gamer), racks de servidor, neon e piso escuro (também no tema de Natal). O agente de IA agora caminha pela faixa livre da porta, sem atravessar mesas.
 - **Gatos: fome e sede com mais consequência** — o tempo passa de verdade (até 8 h de ausência): o gato come e bebe do que os potes tinham e, sem comida, a fome acumula (sem acidentes enquanto ninguém olha). Com fome ou sede ≥ 92 o gato fica **fraco**: anda devagar, recusa brincar e o bem-estar despenca; petisco, comida e água o recuperam.
 - **Reposição automática** (botão 🤖 no painel dos gatos, guardado em `care/auto`): enche o pote quando baixa de 20% (a ração sai do estoque da despensa, a água é grátis) e limpa as caixas de areia sujas (gasta 1 saco). Na ausência o gato também usa a caixa de areia, em vez de voltar apertado.

@@ -146,10 +146,37 @@ with sync_playwright() as p:
     C.evaluate(f"__fbSet('rooms/{perm}/players/agente1', null)"); C.wait_for_timeout(600)
     ok(G.evaluate("!officeAgentWork('esc2')") and G.evaluate("canEnterOffice('esc2')"), "o agente sai (desconectou): o escritório destranca sozinho")
 
+    # ---------- renomear a sala permanente ----------
+    ok(C.evaluate("$('roomTitle').hidden"), "sem nome definido, o topo não mostra nome da sala")
+    C.click("#btnRoom"); C.wait_for_timeout(300)
+    ok(C.evaluate("!!hostUI.titleIn"), "a dona vê o campo 'Nome da sala'")
+    C.fill("#hostBody input[aria-label='Nome da sala']", "  Casa   da <b>Dona</b>  "); C.click("text=Salvar nome"); C.wait_for_timeout(500)
+    ok(K.evaluate(f"__fbroot.rooms['{perm}'].meta.title") == "Casa da bDona/b", "o nome é gravado limpo (sem marcação e sem espaços sobrando)")
+    ok("Casa da bDona/b" in C.evaluate("$('roomTitle').textContent") and C.evaluate("!$('roomTitle').hidden"), "o nome aparece no topo da tela")
+    ok("Casa da bDona/b" in G.evaluate("$('roomTitle').textContent"), "quem está na sala vê o novo nome na hora")
+    C.click("#hostClose"); G.click("#btnRoom"); G.wait_for_timeout(300)
+    ok(G.evaluate("!hostUI.titleIn") and "Casa da bDona/b" in G.inner_text("#hostBody"), "o convidado vê o nome, mas não tem o campo para renomear")
+    G.click("#hostClose")
+    C.click("#btnRoom"); C.wait_for_timeout(300); C.click("text=Tirar nome"); C.wait_for_timeout(500)
+    ok(K.evaluate(f"!__fbroot.rooms['{perm}'].meta.title") and C.evaluate("$('roomTitle').hidden"), "'Tirar nome' remove o nome")
+    C.fill("#hostBody input[aria-label='Nome da sala']", "x" * 50); C.press("#hostBody input[aria-label='Nome da sala']", "Enter"); C.wait_for_timeout(500)
+    ok(len(K.evaluate(f"__fbroot.rooms['{perm}'].meta.title")) == 30, "nome muito longo é cortado em 30 caracteres")
+    C.click("#hostClose")
+    ok(K.evaluate("!Object.keys(__fbroot.rooms['sala-guarda-1'].meta).includes('title')") and K.evaluate("$('roomTitle').hidden"), "sala temporária não tem nome")
+
     # ---------- anfitrião expulsa / revoga ----------
     uG = G.evaluate("uid")
     C.evaluate(f"revoke('{uG}')"); G.wait_for_timeout(1500)
     ok(K.evaluate(f"!(__fbroot.rooms['{perm}'].players && __fbroot.rooms['{perm}'].players['{uG}'])"), "revogar o acesso tira a pessoa da sala")
+
+    # ---------- renomear pela tela da conta (sem entrar na sala) ----------
+    C.click("#btnLeave"); C.wait_for_timeout(1200); C.click("#tabAcct"); C.wait_for_timeout(400)
+    ok(C.evaluate("!$('rowRename').hidden"), "conta confirmada vê o campo para renomear a sala")
+    ok(C.evaluate("$('acctRoomName').value") == "x" * 30, "o campo mostra o nome atual da sala")
+    C.fill("#acctRoomName", "Minha casa"); C.click("#btnRoomRename"); C.wait_for_timeout(500)
+    ok(K.evaluate(f"__fbroot.rooms['{perm}'].meta.title") == "Minha casa" and "salvo" in C.inner_text("#acctMsg"), "renomear pela tela da conta grava o nome e avisa")
+    C.fill("#inName", "Dona"); C.click("#btnEnterPerm"); C.wait_for_timeout(1300)
+    ok("Minha casa" in C.evaluate("$('roomTitle').textContent"), "ao entrar na sala o nome novo aparece no topo")
 
     ok(not errors, "nenhum erro de JavaScript: " + "; ".join(errors[:3]))
     print(f"\n{passed} verificações passaram.")

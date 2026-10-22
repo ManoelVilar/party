@@ -106,6 +106,7 @@
   #app { display:grid; gap:8px; padding:8px; max-width:1180px; margin:0 auto; }
   .top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 10px; }
   .top .room { font-weight:700; margin-right:auto; color:var(--accent); }
+  .top .roomtitle { font-size:.85rem; opacity:.85; max-width:34ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .top .who { color:var(--muted); font-size:.85rem; }
   #videos { display:flex; gap:8px; overflow-x:auto; min-height:44px; align-items:center; padding-bottom:2px; }
   #vhint { color:var(--muted); font-size:.85rem; padding:6px 2px; }
@@ -362,6 +363,10 @@
         <div class="coderow">
           <button type="button" id="btnEnterPerm" class="gold">ENTRAR NA MINHA SALA</button>
         </div>
+        <div class="coderow" id="rowRename">
+          <input type="text" id="acctRoomName" maxlength="30" placeholder="Nome da minha sala" aria-label="Nome da minha sala" autocomplete="off">
+          <button type="button" id="btnRoomRename">Renomear</button>
+        </div>
         <div class="coderow">
           <button type="button" id="btnMailVerify" hidden>Reenviar e-mail de confirmação</button>
           <button type="button" id="btnMailCheck" hidden>Já confirmei</button>
@@ -379,6 +384,7 @@
 <section id="app" hidden>
   <div class="top panel">
     <span class="room" id="roomLabel"></span>
+    <span class="roomtitle" id="roomTitle" hidden></span>
     <span class="who" id="who"></span>
     <button id="btnMic" class="off">Mic</button>
     <button id="btnCam" class="off">Câmera</button>
@@ -2965,9 +2971,25 @@ function renderAcct() {
   $("acctState").textContent = ok ? "Conta confirmada. Sua sala permanente fica guardada nesta conta: você volta a ela quando quiser, de qualquer aparelho."
     : "Falta confirmar o e-mail: abra a mensagem que enviamos, toque no link e depois em “Já confirmei”.";
   $("btnEnterPerm").disabled = !ok; $("btnMailVerify").hidden = ok; $("btnMailCheck").hidden = ok;
+  $("rowRename").hidden = !ok; loadAcctRoom(u);
   $("acctSec").textContent = isGoogle(u) ? "Seu acesso é protegido pela verificação em duas etapas da sua conta Google (configure em myaccount.google.com/security)."
     : "Use uma senha longa e só sua. A verificação em duas etapas por aplicativo autenticador ainda não está disponível para contas com senha.";
 }
+/* nome da sala permanente na tela da conta: lê o nome atual e permite renomear sem entrar na sala */
+let acctRoomFor = "";
+async function loadAcctRoom(u) {
+  if (!u.emailVerified || acctRoomFor === u.uid || !fbInit()) return; acctRoomFor = u.uid;
+  try {
+    const room = (await db.ref("users/" + u.uid + "/room").once("value")).val(); if (!room) return;
+    const t = (await db.ref("rooms/" + room + "/meta/title").once("value")).val();
+    if (typeof t === "string" && document.activeElement !== $("acctRoomName")) $("acctRoomName").value = t.slice(0, 30);
+  } catch (e) { acctRoomFor = ""; }
+}
+$("btnRoomRename").onclick = () => acctRun(async () => {
+  const t = cleanTitle($("acctRoomName").value), room = await ensurePermRoom();
+  await db.ref("rooms/" + room + "/meta/title").set(t || null); $("acctRoomName").value = t;
+}, "Nome da sala salvo.");
+$("acctRoomName").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("btnRoomRename").click(); } });
 async function acctRun(fn, okMsg) {
   acctNote("");
   if (!fbInit()) return acctNote("O Firebase não carregou. Confira a conexão e recarregue.", "bad");
@@ -3015,7 +3037,7 @@ $("btnMailCheck").onclick = () => acctRun(async () => {
   await fbUser.reload(); await fbUser.getIdToken(true); renderAcct();
   if (!fbUser.emailVerified) throw { message: "Ainda não confirmado. Abra o link do e-mail e tente de novo." };
 }, "E-mail confirmado!");
-$("btnOut").onclick = () => acctRun(async () => { await firebase.auth().signOut(); acctMode("in", false); selectTab("temp"); });
+$("btnOut").onclick = () => acctRun(async () => { acctRoomFor = ""; $("acctRoomName").value = ""; await firebase.auth().signOut(); acctMode("in", false); selectTab("temp"); });
 
 /* ---------- link de convite: #sala=<sala>&convite=<token> (o token fica no fragmento, que não vai para o servidor do site) ---------- */
 (() => {
@@ -3147,7 +3169,13 @@ function enforceLock() {
 function cleanMeta(v) {
   if (!v || typeof v !== "object") return null;
   const n = x => typeof x === "number" ? x : 0;
-  return { kind: v.kind === "perm" ? "perm" : "temp", owner: String(v.owner || "").slice(0, 64), created: n(v.created), seen: n(v.seen) };
+  return { kind: v.kind === "perm" ? "perm" : "temp", owner: String(v.owner || "").slice(0, 64), created: n(v.created), seen: n(v.seen), title: cleanTitle(v.title) };
+}
+/* nome da sala permanente (até 30 caracteres, sem marcação) */
+const cleanTitle = v => typeof v === "string" ? v.replace(/[\u0000-\u001f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 30) : "";
+function showRoomTitle() {
+  const t = roomMeta && roomMeta.kind === "perm" ? roomMeta.title : "", el = $("roomTitle");
+  el.textContent = t ? "🏠 " + t : ""; el.hidden = !t;
 }
 function cleanAcl(v) {
   if (!v || typeof v !== "object" || !ROLE_LABEL[v.role] || v.role === "owner") return null;
@@ -3161,7 +3189,7 @@ function kicked(msg) {
 function initAccess() {
   roomRef.child("meta").on("value", s => {
     const m = cleanMeta(s.val());
-    if (m) roomMeta = m;
+    if (m) { roomMeta = m; showRoomTitle(); }
     else if (playersReady && !leaving && roomMeta && roomMeta.kind !== "perm") ensureMeta();           // sala temporária apagada enquanto estávamos aqui (limpeza): recria
     if (!$("hostModal").hidden) renderHostPanel();
   });
@@ -3246,6 +3274,14 @@ function buildHostPanel() {
   hostBody.textContent = "";
   const sec = (title, id) => { const s = gpEl("section"); s.appendChild(gpEl("h3", "", title)); const c = gpEl("div"); c.id = id; s.appendChild(c); hostBody.appendChild(s); return s; };
   hostUI = { info: gpEl("div") }; hostBody.appendChild(hostUI.info);
+  if (isRoomOwner() && isPermRoom()) {                                                       // renomear a sala permanente (o campo não é refeito a cada atualização)
+    const s0 = gpEl("section"); s0.appendChild(gpEl("h3", "", "Nome da sala"));
+    const r0 = gpEl("div", "row"), inp = document.createElement("input"); inp.type = "text"; inp.maxLength = 30; inp.placeholder = "Ex.: Casa do Manoel"; inp.setAttribute("aria-label", "Nome da sala");
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveRoomTitle(inp.value); } });
+    r0.append(inp, mkBtn("Salvar nome", "primary", () => saveRoomTitle(inp.value)), mkBtn("Tirar nome", "", () => saveRoomTitle("")));
+    s0.appendChild(r0); s0.appendChild(gpEl("div", "muted", "Aparece no topo da tela para todos que entram na sala. O link e o código da sala não mudam."));
+    hostBody.appendChild(s0); hostUI.titleIn = inp;
+  }
   hostUI.here = sec("Na sala agora", "hpHere").lastChild;
   hostUI.offices = sec("Escritórios", "hpOff").lastChild;
   hostUI.desks = sec("Mesas dos escritórios", "hpDesk").lastChild;
@@ -3294,11 +3330,18 @@ async function makeAgentInvite(name, offices, chat, claimMs, lifeMs) {
   const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = JSON.stringify(cred, null, 2);
   out.textContent = ""; out.append(gpEl("div", "muted", "Salve como credencial.json e rode: node agent/party-agent.mjs credencial.json (veja docs/AGENTES.md). A credencial é de uso único: depois que o agente conectar, ela não funciona mais."), ta, copyBtn("Copiar credencial", () => ta.value));
 }
+async function saveRoomTitle(v) {
+  const t = cleanTitle(v);
+  try { await roomRef.child("meta/title").set(t || null); } catch (e) { return setStatus("⛔ O servidor recusou o nome da sala. Só o dono da sala permanente pode renomear.", 4500); }
+  if (roomMeta) roomMeta.title = t; showRoomTitle(); if (hostUI && hostUI.titleIn) hostUI.titleIn.value = t;
+  setStatus(t ? "🏠 Sala renomeada: " + t : "Nome da sala removido.", 3000);
+}
 function renderHostPanel() {
   if (!hostUI) return;
+  if (hostUI.titleIn && document.activeElement !== hostUI.titleIn) hostUI.titleIn.value = (roomMeta && roomMeta.title) || "";
   const kind = isPermRoom() ? "Sala permanente" : "Sala temporária";
   hostUI.info.textContent = "";
-  const head = gpEl("div", "row"); head.append(gpEl("b", "", kind), badge(ROLE_LABEL[myRole()] || "Convidado", isHost() ? "host" : ""));
+  const head = gpEl("div", "row"); head.append(gpEl("b", "", kind + (isPermRoom() && roomMeta && roomMeta.title ? " · " + roomMeta.title : "")), badge(ROLE_LABEL[myRole()] || "Convidado", isHost() ? "host" : ""));
   if (!isPermRoom()) head.append(gpEl("span", "muted", "Código: " + roomIdNow()), copyBtn("Copiar código", () => roomIdNow()));
   hostUI.info.appendChild(head);
   hostUI.info.appendChild(gpEl("div", "muted", isPermRoom()

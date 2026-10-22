@@ -106,6 +106,7 @@
   #app { display:grid; gap:8px; padding:8px; max-width:1180px; margin:0 auto; }
   .top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 10px; }
   .top .room { font-weight:700; margin-right:auto; color:var(--accent); }
+  .top .roomtitle { font-size:.85rem; opacity:.85; max-width:34ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .top .who { color:var(--muted); font-size:.85rem; }
   #videos { display:flex; gap:8px; overflow-x:auto; min-height:44px; align-items:center; padding-bottom:2px; }
   #vhint { color:var(--muted); font-size:.85rem; padding:6px 2px; }
@@ -362,6 +363,10 @@
         <div class="coderow">
           <button type="button" id="btnEnterPerm" class="gold">ENTRAR NA MINHA SALA</button>
         </div>
+        <div class="coderow" id="rowRename">
+          <input type="text" id="acctRoomName" maxlength="30" placeholder="Nome da minha sala" aria-label="Nome da minha sala" autocomplete="off">
+          <button type="button" id="btnRoomRename">Renomear</button>
+        </div>
         <div class="coderow">
           <button type="button" id="btnMailVerify" hidden>Reenviar e-mail de confirmação</button>
           <button type="button" id="btnMailCheck" hidden>Já confirmei</button>
@@ -379,6 +384,7 @@
 <section id="app" hidden>
   <div class="top panel">
     <span class="room" id="roomLabel"></span>
+    <span class="roomtitle" id="roomTitle" hidden></span>
     <span class="who" id="who"></span>
     <button id="btnMic" class="off">Mic</button>
     <button id="btnCam" class="off">Câmera</button>
