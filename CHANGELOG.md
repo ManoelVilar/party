@@ -26,6 +26,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Política de privacidade atualizada (contas, convites, agentes, limpeza).
 
 ### Corrigido
+- **Gatos: fome, sede, banheiro e energia nunca subiam.** O valor gravado no banco volta arredondado para quem roda os gatos e apagava o pouco que as necessidades sobem a cada gravação (menos de 0,5), então elas só mudavam em saltos (comer, dormir, ficar fora da sala). Agora quem roda os gatos guarda os valores com casas decimais. Com isso a higiene da casa (caixas de areia, sujeira, acidentes) passa a funcionar de verdade.
+- **Gatos: ritmo ajustado.** Como o ritmo original nunca tinha sido visto em jogo, ficou pesado demais (gato com fome a cada ~15 min). Agora: fome 1,5/min, sede 2,0/min, banheiro 1,6 e 1,0/min, energia 1,2/min, cada gato com o seu ritmo (Sombra tem mais fome, Neblina mais sede) e valores iniciais diferentes.
 - Sala temporária podia ser recriada vazia ao sair; escritas de presença depois de sair; registro de mesa solto por chave errada.
 
 ### Notas
