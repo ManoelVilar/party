@@ -37,6 +37,20 @@
   h1 { margin:0; font-size:2rem; letter-spacing:2px; color:var(--accent); text-shadow:3px 3px 0 var(--line); }
   img.pix, canvas.pix { image-rendering:pixelated; }
 
+  /* tela inicial: mapa desfocado ao fundo e quadro no centro */
+  body.title #app { display:block; padding:0; max-width:none; margin:0; }
+  body.title #app > *:not(#stage) { display:none !important; }
+  body.title #stage { position:fixed; inset:0; z-index:0; border:0; box-shadow:none; pointer-events:none; background:#0e0a18; }
+  body.title #stage > *:not(#cv) { display:none !important; }
+  body.title canvas#cv { width:100%; height:100%; filter:blur(5px) brightness(.62) saturate(1.1); transform:translate(calc(var(--tpx, 0) * -1px), calc(var(--tpy, 0) * -1px)) scale(1.06); transition:transform .35s ease-out; }
+  #title { position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:16px; overflow:auto; background:radial-gradient(ellipse at center, rgba(10,6,20,.1) 20%, rgba(10,6,20,.62) 100%); }
+  .tbox { width:min(420px,100%); display:grid; gap:12px; text-align:center; padding:22px 20px; }
+  .tlogo { font-size:clamp(2.6rem,12vw,4rem); letter-spacing:5px; line-height:1; color:var(--accent); text-shadow:4px 4px 0 var(--line), 0 0 28px rgba(255,209,102,.35); padding:6px 0 2px; }
+  .tsub { margin:0 0 6px; font-size:.95rem; }
+  .tbtn { width:100%; padding:14px 10px; font-size:1.1rem; }
+  .tnote { margin:4px 0 0; font-size:.78rem; }
+  .backbtn { padding:3px 10px; font-size:.85rem; }
+  body.title #login { position:relative; z-index:6; }
   #login { max-width:920px; margin:0 auto; padding:18px 12px; }
   #login .panel { display:grid; gap:12px; }
   #err { color:var(--bad); min-height:1.2em; font-size:.9rem; }
@@ -308,8 +322,19 @@
 </head>
 <body>
 
-<section id="login">
+<section id="title" aria-label="Tela inicial" hidden>
+  <div class="tbox panel">
+    <div class="tlogo">PARTY</div>
+    <p class="muted tsub">Espaço pixel para festas, encontros e reuniões</p>
+    <button type="button" id="tGuest" class="gold tbtn">Jogar sem login</button>
+    <button type="button" id="tLogin" class="tbtn">Entrar na conta</button>
+    <p class="muted tnote">Com uma conta você tem uma sala permanente só sua. Sem login, você joga numa sala temporária com um código.</p>
+  </div>
+</section>
+
+<section id="login" hidden>
   <div class="panel">
+    <div><button type="button" id="btnBack" class="backbtn">← Voltar</button></div>
     <h1>PARTY</h1>
     <p class="muted" style="margin:0">Um espaço pixel para festas, encontros com amigos e reuniões. Crie seu personagem, entre e converse por voz e vídeo quando chegar perto de alguém.</p>
     <div class="chips"><span>🎉 Festa e amigos</span><span>🎬 Cinema e jogos de gatos</span><span>💼 Reuniões com porta e slides</span></div>
@@ -2487,7 +2512,7 @@ const keys = [];
 const cv = $("cv"); cv.width = LW * 3; cv.height = LH * 3; const mctx = cv.getContext("2d");
 /* tamanho da "tela de arte": fixo no modo normal, acompanha a janela em tela cheia */
 function resizeView() {
-  const full = document.body.classList.contains("full");
+  const full = document.body.classList.contains("full") || titleOn;             // a tela inicial usa o mesmo tamanho do jogo em tela cheia
   let w = Math.round(VW / ART), h = Math.round(VH / ART);
   if (full) {
     if (Math.min(innerWidth, innerHeight) < 600) { /* celular: cada pixel de arte ≈ 2,4 px de tela, qualquer orientação, sem esticar */
@@ -2554,7 +2579,7 @@ $("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Ger
 /* o que o servidor precisa saber de nós (usado ao entrar e ao voltar da queda) */
 function selfState() { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, acct: myAcct(), csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 3 }; }
 function startGame(name, room) {
-  myName = name; $("login").hidden = true; $("app").hidden = false; enterLayout();
+  myName = name; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
   let tries = 0;
   do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30);
@@ -2626,7 +2651,7 @@ function startGame(name, room) {
   });
   initAccess(); initDesks(); initRooms(); initGames();
   renderCatPanel("rebuild");
-  setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); requestAnimationFrame(loop);
+  setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); startLoop();
 }
 
 /* ---------- colisão e portas com permissão ---------- */
@@ -2965,13 +2990,14 @@ function renderAcct() {
   const u = isRealUser(fbUser) ? fbUser : null;
   $("acctOut").hidden = !!u; $("acctIn").hidden = !u;
   if (firstAuth) { firstAuth = false; if (u && !inviteIn) selectTab("acct"); }
-  if (!u) return;
+  if (!u) { $("tLogin").textContent = "Entrar na conta"; return; }
   $("acctWho").textContent = "Conectado como " + (u.displayName || u.email || "sua conta");
   const ok = !!u.emailVerified;
   $("acctState").textContent = ok ? "Conta confirmada. Sua sala permanente fica guardada nesta conta: você volta a ela quando quiser, de qualquer aparelho."
     : "Falta confirmar o e-mail: abra a mensagem que enviamos, toque no link e depois em “Já confirmei”.";
   $("btnEnterPerm").disabled = !ok; $("btnMailVerify").hidden = ok; $("btnMailCheck").hidden = ok;
   $("rowRename").hidden = !ok; loadAcctRoom(u);
+  $("tLogin").textContent = "Minha conta e sala";
   $("acctSec").textContent = isGoogle(u) ? "Seu acesso é protegido pela verificação em duas etapas da sua conta Google (configure em myaccount.google.com/security)."
     : "Use uma senha longa e só sua. A verificação em duas etapas por aplicativo autenticador ainda não está disponível para contas com senha.";
 }
@@ -3130,7 +3156,8 @@ $("btnEnter").onclick = () => enter("temp");
 $("btnEnterPerm").onclick = () => enter("perm");
 $("btnEnterInvite").onclick = () => enter("invite");
 fbInit();
-try { const m = sessionStorage.getItem("pt_msg"); if (m) { sessionStorage.removeItem("pt_msg"); errBox(m); } } catch (e) {}
+let loginMsg = false;
+try { const m = sessionStorage.getItem("pt_msg"); if (m) { sessionStorage.removeItem("pt_msg"); loginMsg = true; errBox(m); } } catch (e) {}
 /* =========================================================
    ACESSO NA SALA: papéis, escritório reservado, convites, agentes e saída
    Papéis: dono (rooms/<sala>/meta/owner), co-anfitrião, membro, convidado e agente de IA (rooms/<sala>/acl/<uid>.role).
@@ -3489,6 +3516,49 @@ function afterMoveDesk(nx, ny) {
 }
 /* rotas por clique nunca passam por cima de cadeiras de mesa (senão cada passagem tentaria "sentar") */
 const walkBlockedTo = (tx, ty) => (x, y) => tileBlocked(x, y) || (!!deskAtTile(x, y) && !(x === tx && y === ty));
+/* =========================================================
+   TELA INICIAL: o mapa do jogo desfocado ao fundo (câmera passeando devagar) e um quadro no centro com
+   "Entrar na conta" ou "Jogar sem login". Só depois vem a tela de nome, personagem e sala.
+   O fundo é o próprio desenhista do jogo (frame), sem ninguém na casa. Ao entrar na sala o fundo some e o jogo assume.
+   ========================================================= */
+let titleOn = false, titleZoomSaved = null, loginFromTitle = false;
+/* o mapa acompanha o mouse de leve (paralaxe): posição do ponteiro de -1 a 1, suavizada a cada quadro */
+let titleMx = 0, titleMy = 0, titleSx = 0, titleSy = 0;
+addEventListener("pointermove", e => {
+  if (!titleOn) return;
+  titleMx = Math.max(-1, Math.min(1, e.clientX / Math.max(1, innerWidth) * 2 - 1)); titleMy = Math.max(-1, Math.min(1, e.clientY / Math.max(1, innerHeight) * 2 - 1));
+  const st = document.documentElement.style; st.setProperty("--tpx", (titleMx * 14).toFixed(1)); st.setProperty("--tpy", (titleMy * 9).toFixed(1));   // deslize suave do fundo (CSS)
+}, { passive: true });
+/* ponto (em pixels do mundo) para onde a câmera olha: um passeio lento pela casa + o desvio do mouse */
+function titleTarget(now) {
+  const t = now / 1000; titleSx += (titleMx - titleSx) * .05; titleSy += (titleMy - titleSy) * .05;
+  const p = P(22 + 15 * Math.sin(t * .045), 11 + 5.5 * Math.sin(t * .031 + 1.3), 20);
+  return [p[0] + titleSx * 34, p[1] + titleSy * 20];
+}
+function titleStart() {
+  titleOn = true; titleZoomSaved = zoomT;
+  document.body.classList.add("title"); $("app").hidden = false;
+  zoom = zoomT = 1.1; K = zoom / ART;
+  resizeView(); startLoop();
+}
+function titleStop() {
+  if (!titleOn) return;
+  titleOn = false; document.body.classList.remove("title"); $("title").hidden = true;
+  document.documentElement.style.removeProperty("--tpx"); document.documentElement.style.removeProperty("--tpy");
+  if (titleZoomSaved != null) { zoom = zoomT = titleZoomSaved; K = zoom / ART; }
+}
+/* passo 1 (quadro central) ↔ passo 2 (nome, personagem e sala) */
+function showTitle() { $("login").hidden = true; $("title").hidden = false; loginFromTitle = true; try { $("tGuest").focus({ preventScroll: true }); } catch (e) { /* sem foco */ } }
+function showLogin(tab) {
+  $("title").hidden = true; $("login").hidden = false; $("btnBack").hidden = !loginFromTitle;
+  if (tab) selectTab(tab); try { scrollTo(0, 0); } catch (e) { /* sem rolagem */ }
+}
+$("tLogin").onclick = () => showLogin("acct");
+$("tGuest").onclick = () => showLogin("temp");
+$("btnBack").onclick = showTitle;
+addEventListener("resize", () => { if (titleOn) resizeView(); });
+/* convite no endereço ou recado de uma saída anterior: vai direto à tela de entrada, onde a mensagem aparece */
+setTimeout(() => { titleStart(); if (inviteIn || loginMsg) showLogin(); else showTitle(); }, 0);       // depois de todos os módulos carregarem (o laço de desenho vem depois)
 /* =========================================================
    VOZ E VÍDEO (WebRTC). Escritórios, quartos, banheiro, cinema e reuniões:
    todos que estão dentro do cômodo se ouvem. Sala e cozinha: só quem está perto.
@@ -4531,6 +4601,7 @@ function drawMess(key, m, near) {
 function frame() {
   const now = Date.now(), dtMs = Math.min(100, now - lastFrame); lastFrame = now;
   const f = 1 - Math.exp(-dtMs / 70);
+  if (titleOn) { path = []; holdVec = null; keys.length = 0; }                  // na tela inicial ninguém anda
   if (me.act && me.act.until && now > me.act.until) endAct();
   if (!me.act && path.length && now - lastStep > 125) { const nx = path[0][0], ny = path[0][1]; path.shift(); if (!stepTo(nx, ny, [nx - me.x, ny - me.y], now)) path = []; }
   else if (!me.act && !path.length && now - lastStep > 125) {
@@ -4539,7 +4610,7 @@ function frame() {
 
   /* zoom e câmera (em unidades do mundo; K = pixels de arte por unidade) */
   zoom += (zoomT - zoom) * .2; if (Math.abs(zoomT - zoom) < .002) zoom = zoomT; K = zoom / ART;
-  const vw = LW / K, vh = LH / K, mp = players[uid], tp = P((mp ? mp.rx : me.x) + .5, (mp ? mp.ry : me.y) + .5, 20);
+  const vw = LW / K, vh = LH / K, mp = players[uid], tp = titleOn ? titleTarget(now) : P((mp ? mp.rx : me.x) + .5, (mp ? mp.ry : me.y) + .5, 20);
   let cx = tp[0] - vw / 2, cy = tp[1] - vh / 2;
   cx = vw >= WORLD_W ? (WORLD_W - vw) / 2 : Math.max(0, Math.min(WORLD_W - vw, cx));
   cy = vh >= WORLD_H ? (WORLD_H - vh) / 2 : Math.max(0, Math.min(WORLD_H - vh, cy));
@@ -4681,10 +4752,13 @@ function frame() {
     }
   });
 }
+let loopOn = false, loopN = 0;
 function loop() {
-  try { frame(); } catch (e) { console.error(e); }
   requestAnimationFrame(loop);
+  if (titleOn && (loopN++ & 1)) return;                               // fundo da tela inicial a 30 quadros por segundo (o desfoque pesa)
+  try { frame(); } catch (e) { console.error(e); }
 }
+function startLoop() { if (!loopOn) { loopOn = true; requestAnimationFrame(loop); } }
 /* =========================================================
    POLÍTICA DE PRIVACIDADE (janela sobre o login e o jogo; o texto está em src/head.html)
    ========================================================= */

@@ -54,13 +54,14 @@ function renderAcct() {
   const u = isRealUser(fbUser) ? fbUser : null;
   $("acctOut").hidden = !!u; $("acctIn").hidden = !u;
   if (firstAuth) { firstAuth = false; if (u && !inviteIn) selectTab("acct"); }
-  if (!u) return;
+  if (!u) { $("tLogin").textContent = "Entrar na conta"; return; }
   $("acctWho").textContent = "Conectado como " + (u.displayName || u.email || "sua conta");
   const ok = !!u.emailVerified;
   $("acctState").textContent = ok ? "Conta confirmada. Sua sala permanente fica guardada nesta conta: você volta a ela quando quiser, de qualquer aparelho."
     : "Falta confirmar o e-mail: abra a mensagem que enviamos, toque no link e depois em “Já confirmei”.";
   $("btnEnterPerm").disabled = !ok; $("btnMailVerify").hidden = ok; $("btnMailCheck").hidden = ok;
   $("rowRename").hidden = !ok; loadAcctRoom(u);
+  $("tLogin").textContent = "Minha conta e sala";
   $("acctSec").textContent = isGoogle(u) ? "Seu acesso é protegido pela verificação em duas etapas da sua conta Google (configure em myaccount.google.com/security)."
     : "Use uma senha longa e só sua. A verificação em duas etapas por aplicativo autenticador ainda não está disponível para contas com senha.";
 }
@@ -219,4 +220,5 @@ $("btnEnter").onclick = () => enter("temp");
 $("btnEnterPerm").onclick = () => enter("perm");
 $("btnEnterInvite").onclick = () => enter("invite");
 fbInit();
-try { const m = sessionStorage.getItem("pt_msg"); if (m) { sessionStorage.removeItem("pt_msg"); errBox(m); } } catch (e) {}
+let loginMsg = false;
+try { const m = sessionStorage.getItem("pt_msg"); if (m) { sessionStorage.removeItem("pt_msg"); loginMsg = true; errBox(m); } } catch (e) {}

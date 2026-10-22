@@ -16,7 +16,7 @@ const keys = [];
 const cv = $("cv"); cv.width = LW * 3; cv.height = LH * 3; const mctx = cv.getContext("2d");
 /* tamanho da "tela de arte": fixo no modo normal, acompanha a janela em tela cheia */
 function resizeView() {
-  const full = document.body.classList.contains("full");
+  const full = document.body.classList.contains("full") || titleOn;             // a tela inicial usa o mesmo tamanho do jogo em tela cheia
   let w = Math.round(VW / ART), h = Math.round(VH / ART);
   if (full) {
     if (Math.min(innerWidth, innerHeight) < 600) { /* celular: cada pixel de arte ≈ 2,4 px de tela, qualquer orientação, sem esticar */
@@ -83,7 +83,7 @@ $("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Ger
 /* o que o servidor precisa saber de nós (usado ao entrar e ao voltar da queda) */
 function selfState() { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, acct: myAcct(), csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 3 }; }
 function startGame(name, room) {
-  myName = name; $("login").hidden = true; $("app").hidden = false; enterLayout();
+  myName = name; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
   let tries = 0;
   do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30);
@@ -155,7 +155,7 @@ function startGame(name, room) {
   });
   initAccess(); initDesks(); initRooms(); initGames();
   renderCatPanel("rebuild");
-  setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); requestAnimationFrame(loop);
+  setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); startLoop();
 }
 
 /* ---------- colisão e portas com permissão ---------- */

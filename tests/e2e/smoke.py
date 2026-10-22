@@ -16,7 +16,7 @@ def new_page(ctx):
         elif "gstatic.com/firebasejs" in u: r.fulfill(body="", content_type="application/javascript")
         elif u.startswith("http://localhost"): r.continue_()
         else: r.abort()
-    pg.route("**/*", route); pg.goto(URL); pg.wait_for_timeout(400)
+    pg.route("**/*", route); pg.goto(URL); pg.wait_for_timeout(500); pg.locator("#tGuest").is_visible() and pg.click("#tGuest")
     return pg
 
 def enter(pg, name, room):

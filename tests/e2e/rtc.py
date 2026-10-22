@@ -11,7 +11,7 @@ def mk(ctx,name,x,y):
         elif 'gstatic.com/firebasejs' in u: r.fulfill(body='',content_type='application/javascript')
         elif u.startswith('http://localhost'): r.continue_()
         else: r.abort()
-    pg.route('**/*',route); pg.goto(PARTY_URL)
+    pg.route('**/*',route); pg.goto(PARTY_URL); pg.wait_for_timeout(500); pg.locator("#tGuest").is_visible() and pg.click("#tGuest")
     pg.fill('#inName',name); pg.fill('#inRoom','rtc-test'); pg.click('#btnEnter'); pg.wait_for_timeout(1200)
     pg.evaluate(f"me.x={x};me.y={y};meRef.update({{x:{x},y:{y}}});path=[]")
     return pg
