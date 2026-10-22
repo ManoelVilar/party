@@ -125,6 +125,7 @@ function startGame(name, room) {
     const v = s.val() || {}, now = Date.now();
     for (const id in CATS) if (v[id]) {
       const n = v[id], c = cats[id] || { rx: n.x, ry: n.y, fx: n.x, fy: n.y, t0: 0 };
+      if (catSimRunning(id)) CAT_STATS.forEach(k => delete n[k]);
       if (cats[id] && (n.x !== c.x || n.y !== c.y)) { c.fx = c.rx; c.fy = c.ry; c.t0 = now; }
       Object.assign(c, n); if (n.sub === undefined) c.sub = null; cats[id] = c;
     }

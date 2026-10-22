@@ -150,8 +150,11 @@ function syncStats(id, c, now) {
 
 /* ---------- comportamento (máquina de estados; só o jogador mais antigo na casa a executa) ---------- */
 const catSim = {};
-const isOwner = () => {                                              // quem "roda" os gatos: o menor id entre as abas visíveis (aba oculta é freada pelo navegador e os gatos travariam)
-  const all = Object.keys(players); if (!all.length) return true;
+/* quem roda os gatos é a fonte das necessidades: o eco das próprias gravações (arredondadas e de até 3 s atrás) não pode sobrescrever o valor em memória, senão a fome nunca sobe */
+const CAT_STATS = ["hunger", "thirst", "energy", "bladder", "bowel", "well", "ts"];
+const catSimRunning = id => !!(runCatAI.was && catSim[id]);
+const isOwner = () => {                                              // quem "roda" os gatos: o menor id entre as abas visíveis (aba oculta é freada pelo navegador e os gatos travariam). Agentes de IA não rodam os gatos (nem podem gravar neles)
+  const all = Object.keys(players).filter(id => id === uid || players[id].acct !== "agent"); if (!all.length) return true;
   const vis = all.filter(id => players[id].vis !== false);
   return (vis.length ? vis : all).sort()[0] === uid;
 };

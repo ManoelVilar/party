@@ -2,6 +2,12 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Corrigido
+- **Gatos congelados com gente na sala**: quem roda os gatos recebia de volta o eco das próprias gravações (arredondadas e de até 3 s atrás) e voltava as necessidades ao valor antigo. Fome, sede, energia e banheiro não mudavam, os gatos não comiam, não usavam a caixa de areia, não faziam sujeira e a higiene da casa ficava parada. Agora o dono ignora o eco das necessidades.
+- Um agente de IA na sala podia ser "eleito" para rodar os gatos (ele não roda nem pode gravar neles) e os gatos paravam.
+
 ## [0.5.0] — 2026-10-21
 
 ### Adicionado

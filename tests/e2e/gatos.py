@@ -12,6 +12,11 @@ with sync_playwright() as p:
     K = mk(ctx); temp(K, "Ana", "sala-gatos-1234")
     K.evaluate("window.__sim = (kw) => { const c = Object.assign({ hunger: 30, thirst: 25, energy: 85, bladder: 15, bowel: 10, well: 85, ts: Date.now() }, kw); return c; }")
 
+    # ---------- com gente na sala as necessidades sobem (o eco arredondado do banco não pode congelá-las) ----------
+    K.wait_for_timeout(1500); h0 = K.evaluate("[cats.sombra.hunger, cats.sombra.thirst]"); K.wait_for_timeout(8000); h1 = K.evaluate("[cats.sombra.hunger, cats.sombra.thirst]")
+    ok(h1[0] - h0[0] > .25 and h1[1] - h0[1] > .35, "fome e sede sobem com a sala cheia (%.2f → %.2f, %.2f → %.2f)" % (h0[0], h1[0], h0[1], h1[1]))
+    ok(K.evaluate("(() => { players['0-agente'] = { acct: 'agent', vis: true, x: 1, y: 1 }; const r = isOwner(); delete players['0-agente']; return r; })()"), "agente de IA na sala não 'rouba' a simulação dos gatos")
+
     # ---------- tempo real: o gato vive o tempo em que ninguém estava ----------
     r = K.evaluate("""() => {
       resSet('racao1', 0); resSet('agua1', 0);
