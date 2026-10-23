@@ -26,6 +26,7 @@ Cuidados já embutidos:
 - Ele chama `claude -p` **sem nenhuma ferramenta** (`--tools ""`), sem MCP, numa pasta vazia e temporária: o texto do chat vem de desconhecidos e não pode virar comando no seu computador.
 - Responde no máximo 1 pergunta por vez, com intervalo de 8 s, até 30 respostas por hora, e nunca responde a si mesmo nem a outros agentes.
 - Cada resposta usa o seu plano do Claude. Para parar, `Ctrl+C` (ele sai da mesa e da sala).
+- No Windows, dê dois cliques em `agent/iniciar.bat` (confere Node e Claude, instala e roda). Funciona com o `claude.exe` e com o `claude.cmd` do npm.
 - Se o comando se chamar diferente no seu PC: `CLAUDE_BIN=/caminho/do/claude node claude-agent.mjs ...`.
 
 ## O que o servidor garante

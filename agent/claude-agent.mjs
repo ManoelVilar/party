@@ -7,7 +7,7 @@
    Uso:   cd agent && npm install && node claude-agent.mjs credencial.json [--mesa N] [--modelo sonnet] [--persona "texto"] [--todas]
    Como biblioteca:  import { ClaudeChat } from "./claude-agent.mjs"  (o `ask` é trocável: os testes usam um `claude` falso). */
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,13 +40,17 @@ export const quebra = (texto, max = 120, partes = 2) => {
 export function askClaude(prompt, sistema, opt = {}) {
   const bin = opt.bin || process.env.CLAUDE_BIN || "claude";
   const args = ["-p", "--tools", "", "--strict-mcp-config", "--disable-slash-commands", "--no-session-persistence",
-    "--max-turns", "1", "--output-format", "text", "--append-system-prompt", sistema];
+    "--max-turns", "1", "--output-format", "text", "--append-system-prompt-file", "sistema.txt"];     // o texto vai por arquivo: sem problema de aspas no Windows
   if (opt.modelo) args.push("--model", opt.modelo);
   return new Promise((resolve, reject) => {
     const dir = mkdtempSync(join(tmpdir(), "party-claude-"));
+    writeFileSync(join(dir, "sistema.txt"), sistema);
     const fim = () => { try { rmSync(dir, { recursive: true, force: true }); } catch (e) { /* ok */ } };
     let out = "", err = "", done = false;
-    const p = spawn(bin, args, { cwd: dir, stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, NO_COLOR: "1" } });
+    const aspas = a => /^[\w.\-]+$/.test(a) ? a : '"' + a.replace(/"/g, '\\"') + '"';
+    const viaShell = process.platform === "win32" && !/\.exe$/i.test(bin);                           // no Windows o claude instalado pelo npm é um .cmd, que só abre por um shell
+    const p = viaShell ? spawn('"' + bin + '"', args.map(aspas), { cwd: dir, stdio: ["pipe", "pipe", "pipe"], shell: true, env: { ...process.env, NO_COLOR: "1" } })
+      : spawn(bin, args, { cwd: dir, stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, NO_COLOR: "1" } });
     const to = setTimeout(() => { if (!done) { done = true; p.kill("SIGKILL"); fim(); reject(new Error("o Claude demorou demais")); } }, opt.timeoutMs || 90000);
     p.stdout.on("data", d => { out += d; }); p.stderr.on("data", d => { err += d; });
     p.on("error", e => { if (done) return; done = true; clearTimeout(to); fim(); reject(new Error(e.code === "ENOENT" ? 'comando "' + bin + '" não encontrado (o Claude está instalado? veja docs/AGENTES.md)' : e.message)); });

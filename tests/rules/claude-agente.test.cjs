@@ -53,7 +53,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   fs.writeFileSync(fake, `#!/usr/bin/env node
 const a = process.argv.slice(2); let inp = ""; process.stdin.on("data", d => inp += d).on("end", () => {
   const i = a.indexOf("--tools");
-  const seguro = a.includes("-p") && i >= 0 && a[i + 1] === "" && a.includes("--strict-mcp-config") && a.includes("--no-session-persistence") && a.includes("--append-system-prompt");
+  const seguro = a.includes("-p") && i >= 0 && a[i + 1] === "" && a.includes("--strict-mcp-config") && a.includes("--no-session-persistence") && a.includes("--append-system-prompt-file") && require("fs").readFileSync("sistema.txt","utf8") === "sistema";
   if (process.env.FAKE_FAIL) { console.error("boom"); process.exit(3); }
   if (process.env.FAKE_SLOW) return setTimeout(() => {}, 60000);
   console.log((seguro ? "SEGURO " : "INSEGURO ") + "cwd=" + (process.cwd() === require("os").tmpdir() ? "tmp" : require("fs").readdirSync(".").length + "arquivos") + " | " + inp.split(String.fromCharCode(10)).filter(l => l.includes("Conv:")).pop());
@@ -61,7 +61,7 @@ const a = process.argv.slice(2); let inp = ""; process.stdin.on("data", d => inp
   fs.chmodSync(fake, 0o755);
   process.env.CLAUDE_BIN = fake;
   const r1 = await askClaude("Conv: oi", "sistema");
-  check("askClaude passa --tools '' e demais travas, prompt via stdin, pasta vazia", /^SEGURO cwd=0arquivos \| Conv: oi/.test(r1), r1);
+  check("askClaude passa --tools '' e demais travas, prompt via stdin, pasta só com o sistema.txt", /^SEGURO cwd=1arquivos \| Conv: oi/.test(r1), r1);
   process.env.FAKE_FAIL = "1"; let e1 = null; try { await askClaude("x", "s"); } catch (e) { e1 = e; } delete process.env.FAKE_FAIL;
   check("askClaude: falha do claude vira erro", !!e1 && /código 3/.test(e1.message));
   process.env.FAKE_SLOW = "1"; let e2 = null; try { await askClaude("x", "s", { timeoutMs: 300 }); } catch (e) { e2 = e; } delete process.env.FAKE_SLOW;
