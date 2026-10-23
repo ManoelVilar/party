@@ -28,6 +28,7 @@ with sync_playwright() as p:
     K.evaluate("cats.sombra.hunger = 30; cats.sombra.thirst = 25")
     h0 = K.evaluate("cats.sombra.hunger"); K.wait_for_timeout(20000); h1 = K.evaluate("cats.sombra.hunger")
     ok(h1 - h0 > 0.2, "em 20 s reais a fome da Sombra realmente subiu (%.2f → %.2f)" % (h0, h1))
+    ok(K.evaluate("(() => { players['0-agente'] = { acct: 'agent', vis: true, x: 1, y: 1 }; const r = isOwner(); delete players['0-agente']; return r; })()"), "agente de IA na sala não 'rouba' a simulação dos gatos")
 
     # ---------- tempo real: o gato vive o tempo em que ninguém estava ----------
     r = K.evaluate("""() => {

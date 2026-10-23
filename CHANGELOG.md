@@ -2,6 +2,11 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Corrigido
+- Um agente de IA na sala podia ser "eleito" para rodar os gatos (ele não roda nem pode gravar neles) e os gatos paravam.
+
 ## [0.5.0] — 2026-10-21
 
 ### Adicionado
