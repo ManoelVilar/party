@@ -12,9 +12,22 @@ with sync_playwright() as p:
     K = mk(ctx); temp(K, "Ana", "sala-gatos-1234")
     K.evaluate("window.__sim = (kw) => { const c = Object.assign({ hunger: 30, thirst: 25, energy: 85, bladder: 15, bowel: 10, well: 85, ts: Date.now() }, kw); return c; }")
 
-    # ---------- com gente na sala as necessidades sobem (o eco arredondado do banco não pode congelá-las) ----------
-    K.wait_for_timeout(1500); h0 = K.evaluate("[cats.sombra.hunger, cats.sombra.thirst]"); K.wait_for_timeout(8000); h1 = K.evaluate("[cats.sombra.hunger, cats.sombra.thirst]")
-    ok(h1[0] - h0[0] > .25 and h1[1] - h0[1] > .35, "fome e sede sobem com a sala cheia (%.2f → %.2f, %.2f → %.2f)" % (h0[0], h1[0], h0[1], h1[1]))
+    # ---------- as necessidades realmente sobem com o tempo (o eco arredondado do banco não pode apagar o avanço) ----------
+    K.wait_for_timeout(1500)
+    r = K.evaluate("""async () => {
+      const c = cats.sombra; c.hunger = 41.4; syncStats('sombra', c, Date.now()); await new Promise(r => setTimeout(r, 300));
+      const eco = c.hunger;
+      const t0 = c.hunger, t1 = c.thirst; stepStats(c, { id: 'sombra', act: null }, 10);       // 10 min
+      return { eco, dh: c.hunger - t0, dt: c.thirst - t1, own: catOwnsStats('sombra') };
+    }""")
+    ok(r["own"], "quem roda os gatos guarda as necessidades com casas decimais")
+    ok(abs(r["eco"] - 41.4) < 0.1, "o eco arredondado do banco não sobrescreve o valor local (%.2f)" % r["eco"])
+    ok(abs(r["dh"] - 10 * 1.5 * 1.15) < 0.05, "a fome da Sombra sobe no ritmo dela (%.1f em 10 min)" % r["dh"])
+    r2 = K.evaluate("(() => { const c = { hunger: 10, thirst: 10, bladder: 10, bowel: 10, energy: 80, well: 80 }; stepStats(c, { id: 'neblina', act: null }, 10); return [c.hunger - 10, c.thirst - 10]; })()")
+    ok(r2[0] < 10 * 1.5 and r2[1] > 10 * 2.0, "cada gato tem seu ritmo (Neblina: menos fome, mais sede)")
+    K.evaluate("cats.sombra.hunger = 30; cats.sombra.thirst = 25")
+    h0 = K.evaluate("cats.sombra.hunger"); K.wait_for_timeout(20000); h1 = K.evaluate("cats.sombra.hunger")
+    ok(h1 - h0 > 0.2, "em 20 s reais a fome da Sombra realmente subiu (%.2f → %.2f)" % (h0, h1))
     ok(K.evaluate("(() => { players['0-agente'] = { acct: 'agent', vis: true, x: 1, y: 1 }; const r = isOwner(); delete players['0-agente']; return r; })()"), "agente de IA na sala não 'rouba' a simulação dos gatos")
 
     # ---------- tempo real: o gato vive o tempo em que ninguém estava ----------
@@ -65,8 +78,9 @@ with sync_playwright() as p:
     ok(r["s2"] > r["s1"] * 1.5, "gato fraco anda mais devagar")
     ok(r["mood"] == "fraco", "o painel mostra 'fraco'")
     ok(r["w2"] < r["w1"] - 10, "passando do limite o bem-estar-alvo despenca")
-    K.evaluate("cats.sombra.x = cats.sombra.x ?? 12; cats.sombra.hunger = 95; me.x = cats.sombra.x; me.y = cats.sombra.y; for (const k in catCooldown) delete catCooldown[k];")
-    ok("fraco demais" in K.evaluate("(() => { catAction('sombra', 'play'); return $('status').textContent; })()"), "gato fraco recusa brincar e explica o motivo")
+    ok("fraco demais" in K.evaluate("""(() => {
+      cats.sombra.hunger = 95; cats.sombra.st = 'sit'; me.x = cats.sombra.x; me.y = cats.sombra.y; for (const k in catCooldown) delete catCooldown[k];
+      catAction('sombra', 'play'); return $('status').textContent; })()"""), "gato fraco recusa brincar e explica o motivo")
     ok(K.evaluate("(cats.sombra.play || 0) === 0 || cats.sombra.play < Date.now() - 5000"), "a brincadeira nem é enviada")
     K.evaluate("cats.sombra.hunger = 30")
 

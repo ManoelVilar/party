@@ -5,7 +5,6 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Corrigido
-- **Gatos congelados com gente na sala**: quem roda os gatos recebia de volta o eco das próprias gravações (arredondadas e de até 3 s atrás) e voltava as necessidades ao valor antigo. Fome, sede, energia e banheiro não mudavam, os gatos não comiam, não usavam a caixa de areia, não faziam sujeira e a higiene da casa ficava parada. Agora o dono ignora o eco das necessidades.
 - Um agente de IA na sala podia ser "eleito" para rodar os gatos (ele não roda nem pode gravar neles) e os gatos paravam.
 
 ## [0.5.0] — 2026-10-21
@@ -13,6 +12,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ### Adicionado
 - **Tela inicial** estilo jogo: o mapa da casa desenhado ao fundo, desfocado e passeando devagar (e deslizando de leve conforme você mexe o mouse), com um quadro no centro: **Jogar sem login** ou **Entrar na conta**. Só depois vêm nome, personagem e sala (o fundo desfocado continua nessas telas, inclusive na de criar conta). Link de convite pula a tela inicial. Em `src/js/05e_title.js`.
 - **Renomear a sala permanente**: o dono dá (ou tira) um nome de até 30 caracteres pela janela 🔑 Sala ou pela tela da conta; o nome aparece no topo para todos. Validado no servidor (`meta/title`, só o dono da sala permanente); o código e o link da sala não mudam.
+- **Agente com o seu Claude** (`agent/claude-agent.mjs`): usa o `claude` instalado no terminal (seu login) para conversar no chat da sala quando alguém o chama pelo nome. Roda sem ferramentas e numa pasta vazia (o chat não é confiável), com cooldown e limite por hora. Teste com `claude` falso em `tests/rules/claude-agente.test.cjs`.
 - **Escritórios tech (hacker/gamer)**: cada escritório tem agora 4 mesas gamer (tela ultrawide com código que acende ao sentar, torre com RGB, teclado, cadeira gamer), racks de servidor, neon e piso escuro (também no tema de Natal). O agente de IA agora caminha pela faixa livre da porta, sem atravessar mesas.
 - **Gatos: fome e sede com mais consequência** — o tempo passa de verdade (até 8 h de ausência): o gato come e bebe do que os potes tinham e, sem comida, a fome acumula (sem acidentes enquanto ninguém olha). Com fome ou sede ≥ 92 o gato fica **fraco**: anda devagar, recusa brincar e o bem-estar despenca; petisco, comida e água o recuperam.
 - **Reposição automática** (botão 🤖 no painel dos gatos, guardado em `care/auto`): enche o pote quando baixa de 20% (a ração sai do estoque da despensa, a água é grátis) e limpa as caixas de areia sujas (gasta 1 saco). Na ausência o gato também usa a caixa de areia, em vez de voltar apertado.
@@ -32,6 +32,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - Política de privacidade atualizada (contas, convites, agentes, limpeza).
 
 ### Corrigido
+- **Gatos: fome, sede, banheiro e energia nunca subiam.** O valor gravado no banco volta arredondado para quem roda os gatos e apagava o pouco que as necessidades sobem a cada gravação (menos de 0,5), então elas só mudavam em saltos (comer, dormir, ficar fora da sala). Agora quem roda os gatos guarda os valores com casas decimais. Com isso a higiene da casa (caixas de areia, sujeira, acidentes) passa a funcionar de verdade.
+- **Gatos: ritmo ajustado.** Como o ritmo original nunca tinha sido visto em jogo, ficou pesado demais (gato com fome a cada ~15 min). Agora: fome 1,5/min, sede 2,0/min, banheiro 1,6 e 1,0/min, energia 1,2/min, cada gato com o seu ritmo (Sombra tem mais fome, Neblina mais sede) e valores iniciais diferentes.
 - Sala temporária podia ser recriada vazia ao sair; escritas de presença depois de sair; registro de mesa solto por chave errada.
 
 ### Notas

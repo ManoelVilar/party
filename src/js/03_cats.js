@@ -3,11 +3,11 @@
    ========================================================= */
 /* Para adicionar outro gato basta uma linha aqui: toda a lógica é compartilhada. */
 const CATS = {
-  sombra:  { name: "Sombra",  kind: "black", x: 12, y: 11 },
-  neblina: { name: "Neblina", kind: "tabby", x: 24, y: 10 }
+  sombra:  { name: "Sombra",  kind: "black", x: 12, y: 11, r: { hunger: 1.15, thirst: .9, bladder: 1.05, bowel: .9 }, start: { hunger: 34, thirst: 22, bladder: 12, bowel: 14 } },
+  neblina: { name: "Neblina", kind: "tabby", x: 24, y: 10, r: { hunger: .9, thirst: 1.1, bladder: .9, bowel: 1.1 }, start: { hunger: 26, thirst: 30, bladder: 18, bowel: 6 } }
 };
 const CAT_STEP = 380;                                                   // ms por casa andada
-const CAT_RATES = { hunger: 3.0, thirst: 4.0, bladder: 3.2, bowel: 2.0, energyDown: 2.0, energyUp: 12 };   // por minuto real
+const CAT_RATES = { hunger: 1.5, thirst: 2.0, bladder: 1.6, bowel: 1.0, energyDown: 1.2, energyUp: 12 };   // por minuto real (cada gato tem seu ritmo: campo r em CATS)
 const CAT_OFFLINE_MAX = 8 * 60;                                         // minutos de "ausência" que o gato vive enquanto ninguém está na sala
 const POTE_BAIXO = 20;                                                  // % do pote em que a reposição automática age e o aviso "acabando" aparece
 const ACC_CD = 5 * 60000;                                               // intervalo mínimo entre "acidentes" de um gato
@@ -137,9 +137,9 @@ function wellTarget(c) {
   return clamp(t, 5, 100);
 }
 function stepStats(c, a, dt) {
-  const sl = !!(a.act && a.act.type === "sleep");
-  c.hunger = clamp(c.hunger + CAT_RATES.hunger * dt * (sl ? .4 : 1)); c.thirst = clamp(c.thirst + CAT_RATES.thirst * dt * (sl ? .4 : 1));
-  c.bladder = clamp(c.bladder + CAT_RATES.bladder * dt * (sl ? .3 : 1)); c.bowel = clamp(c.bowel + CAT_RATES.bowel * dt * (sl ? .3 : 1));
+  const sl = !!(a.act && a.act.type === "sleep"), r = (a.id && CATS[a.id] && CATS[a.id].r) || {}, f = k => r[k] || 1;
+  c.hunger = clamp(c.hunger + CAT_RATES.hunger * f("hunger") * dt * (sl ? .4 : 1)); c.thirst = clamp(c.thirst + CAT_RATES.thirst * f("thirst") * dt * (sl ? .4 : 1));
+  c.bladder = clamp(c.bladder + CAT_RATES.bladder * f("bladder") * dt * (sl ? .3 : 1)); c.bowel = clamp(c.bowel + CAT_RATES.bowel * f("bowel") * dt * (sl ? .3 : 1));
   c.energy = clamp(c.energy + (sl ? CAT_RATES.energyUp : -CAT_RATES.energyDown) * dt);
   c.well = clamp(c.well + (wellTarget(c) - c.well) * Math.min(1, dt * .25));       // muda devagar: nada de punição instantânea
 }
@@ -150,9 +150,10 @@ function syncStats(id, c, now) {
 
 /* ---------- comportamento (máquina de estados; só o jogador mais antigo na casa a executa) ---------- */
 const catSim = {};
-/* quem roda os gatos é a fonte das necessidades: o eco das próprias gravações (arredondadas e de até 3 s atrás) não pode sobrescrever o valor em memória, senão a fome nunca sobe */
-const CAT_STATS = ["hunger", "thirst", "energy", "bladder", "bowel", "well", "ts"];
-const catSimRunning = id => !!(runCatAI.was && catSim[id]);
+const CAT_STAT_KEYS = ["hunger", "thirst", "energy", "bladder", "bowel", "well"];
+/* só quem roda os gatos altera as necessidades. O valor gravado no banco é arredondado e volta para cá como "eco" a cada gravação:
+   se ele sobrescrevesse o valor local, o pouco que as necessidades sobem por gravação (menos de 0,5) se perderia e a fome, a sede e o banheiro nunca avançariam. */
+const catOwnsStats = id => runCatAI.was === true && !!catSim[id];
 const isOwner = () => {                                              // quem "roda" os gatos: o menor id entre as abas visíveis (aba oculta é freada pelo navegador e os gatos travariam). Agentes de IA não rodam os gatos (nem podem gravar neles)
   const all = Object.keys(players).filter(id => id === uid || players[id].acct !== "agent"); if (!all.length) return true;
   const vis = all.filter(id => players[id].vis !== false);
@@ -178,7 +179,7 @@ function freeAdj(id, c, x, y) {
   return best;
 }
 function seedCat(id, now) {
-  const d = CATS[id]; saveCat(id, { x: d.x, y: d.y, dir: "d", st: "sit", sub: null, hunger: 30, thirst: 25, energy: 85, bladder: 15, bowel: 10, well: 85, ts: now });
+  const d = CATS[id]; const s0 = d.start || {}; saveCat(id, { x: d.x, y: d.y, dir: "d", st: "sit", sub: null, hunger: s0.hunger || 30, thirst: s0.thirst || 25, energy: 85, bladder: s0.bladder || 15, bowel: s0.bowel || 10, well: 85, ts: now });
 }
 /* o tempo passa de verdade: ao voltar, o gato viveu o que daria (até 8 h). Come e bebe do que os potes tinham; sem comida, a fome acumula. Sem acidentes enquanto ninguém olha. */
 function offlineCatch(c, a, now) {
@@ -203,7 +204,7 @@ function offlineCatch(c, a, now) {
   c.bladder = Math.min(c.bladder, 90); c.bowel = Math.min(c.bowel, 90);
 }
 function initSim(id, c, now) {
-  const a = { path: [], next: 0, until: now + 2000, act: null, goal: null, arriveAt: 0, last: now, syncAt: 0, petSeen: c.pet || 0, treatSeen: c.treat || 0, playSeen: c.play || 0, callSeen: (c.call && c.call.t) || 0, accSince: 0, lastAcc: 0, lastPet: 0 };
+  const a = { id, path: [], next: 0, until: now + 2000, act: null, goal: null, arriveAt: 0, last: now, syncAt: 0, petSeen: c.pet || 0, treatSeen: c.treat || 0, playSeen: c.play || 0, callSeen: (c.call && c.call.t) || 0, accSince: 0, lastAcc: 0, lastPet: 0 };
   c.hunger = num(c.hunger, 30); c.thirst = num(c.thirst, 25); c.energy = num(c.energy, 85); c.bladder = num(c.bladder, 15); c.bowel = num(c.bowel, 10); c.well = num(c.well, 85);
   offlineCatch(c, a, now);
   if (c.st === "sleep") a.act = { type: "sleep", end: now + 120000 }; else if (c.st !== "sit") saveCat(id, { st: "sit", sub: null });

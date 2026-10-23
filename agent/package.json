@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "bin": { "party-agent": "./party-agent.mjs" },
+  "bin": { "party-agent": "./party-agent.mjs", "party-claude": "./claude-agent.mjs" },
   "dependencies": { "firebase": "^10.12.2" },
   "engines": { "node": ">=18" }
 }
