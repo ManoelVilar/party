@@ -9,6 +9,7 @@ node scripts/gera-regras.mjs --check
 node tests/rules/rules.test.cjs
 node tests/rules/acesso.test.cjs
 node tests/rules/agente.test.cjs
+node tests/rules/claude-agente.test.cjs
 node tests/limpeza.test.mjs
 PORT=8765
 if ! curl -s -o /dev/null "localhost:$PORT"; then

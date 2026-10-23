@@ -92,7 +92,7 @@ export class PartyAgent {
     await this.io.push(this.room + "/chat", { name: this.acl.name, color: "#8a6bff", text: t, ts: this.io.serverTime() });
     await this.io.update(this.room + "/players/" + this.uid, { say: t, sayTs: this.io.now() });
   }
-  onChat(cb) { return this.io.onChild(this.room + "/chat", m => { if (m && m.text) cb({ nome: clean(m.name, 14), texto: clean(m.text, 120) }); }); }
+  onChat(cb) { return this.io.onChild(this.room + "/chat", m => { if (m && m.text) cb({ nome: clean(m.name, 14), texto: clean(m.text, 120), cor: m.color }); }); }
   async close() {
     this.timers.forEach(clearInterval);
     try { await this.leaveDesk(); } catch (e) { /* já caiu */ }
