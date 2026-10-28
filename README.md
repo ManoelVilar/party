@@ -12,7 +12,7 @@ Espaço virtual em **pixel art isométrica** para festas, encontros com amigos e
 |---|---|
 | **Personagem** | Criador completo (corpo, rosto, cabelo, roupas, acessórios, fantasias, conjuntos), guarda-roupa dentro do jogo, conjuntos salvos |
 | **Espaços** | Sala, cozinha, quartos, banheiro, 2 escritórios tech com 4 mesas gamer cada, **cinema** e **sala de reuniões** |
-| **Voz e vídeo** | WebRTC direto entre os participantes (malha), ativado por **proximidade** na sala/cozinha e por **cômodo** nos demais |
+| **Voz e vídeo** | WebRTC direto entre os participantes (malha), ativado por **proximidade** na sala/cozinha e por **cômodo** nos demais; **mixer 🎚 Vozes** com volume individual da voz e da transmissão de cada pessoa e botão de mutar (só para você) |
 | **Transmissão** | Compartilhar tela, vídeo local ou slides (PDF/imagens) no telão do cinema e da sala de reuniões; modo **sentado** (tela cheia ao sentar na cadeira) |
 | **YouTube** | Vídeo sincronizado para todos no cinema |
 | **Reuniões** | Levantar a mão (✋), "Dar a palavra" (só quem apresenta), chat da reunião |
