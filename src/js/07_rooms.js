@@ -192,7 +192,7 @@ function buildRoomPanel() {
     '<div class="rpgrid" id="rpBody"><div><div class="viewer"><div id="vIdle" class="vmsg"></div><div id="ytWrap" hidden><div id="ytbox"></div></div>' +
     '<video id="bview" autoplay playsinline hidden></video><video id="vidLocal" controls playsinline hidden></video><canvas id="slideCanvas" width="1600" height="900" hidden></canvas>' +
     '<div id="vLoad" class="vmsg" hidden>Carregando...</div><button id="ytKick" class="primary" hidden style="inset:auto 8px 8px auto;width:auto;height:auto;z-index:3"></button>' +
-    '<div id="vHands" class="vhands" hidden></div><div id="vToast" class="vtoast" hidden></div><div class="vtool"><button id="vHand2" type="button" title="Levantar a mão (H)">✋</button><button id="vFull" type="button" title="Tela cheia (F)">⛶ Tela cheia</button></div>' +
+    '<div id="vHands" class="vhands" hidden></div><div id="vToast" class="vtoast" hidden></div><div class="vtool"><span id="vVolBox" class="vvol" hidden><button id="vMute" type="button">🔈</button><input type="range" id="vVol" min="0" max="100" step="5" value="100" aria-label="Volume da transmissão (só para você)" title="Volume da transmissão (só para você)"></span><button id="vHand2" type="button" title="Levantar a mão (H)">✋</button><button id="vFull" type="button" title="Tela cheia (F)">⛶ Tela cheia</button></div>' +
     '<div class="vbar" id="vBar"><button id="vPrev" type="button">◀</button><b id="vPage" class="panel" style="padding:4px 12px"></b><button id="vNext" type="button">▶</button><button id="vHand" type="button">✋ Mão</button><button id="vExit" type="button" class="no">Sair</button></div><div class="vcap" id="vCap2"></div></div><div id="vCaption" class="muted" style="margin-top:4px;font-size:.85rem"></div></div>' +
     '<div class="rpctl"><div class="tabs" id="rpTabs"></div>' +
     '<div class="pane" id="pane-yt"><div class="row"><input type="url" id="ytUrl" placeholder="Cole o link do YouTube"><button id="ytGo" class="primary">Carregar</button></div>' +
@@ -220,6 +220,10 @@ function buildRoomPanel() {
   $("ytPlay").onclick = () => { if (cinema.src !== "yt") return rpErr("Carregue um vídeo primeiro."); cinemaSet({ state: cinema.state === "play" ? "pause" : "play", pos: ytPos() }); };
   $("ytBack").onclick = () => { if (cinema.src === "yt") cinemaSet({ pos: Math.max(0, ytPos() - 10), state: cinema.state }); };
   $("ytFwd").onclick = () => { if (cinema.src === "yt") cinemaSet({ pos: ytPos() + 10, state: cinema.state }); };
+  const bcNow = () => { const r = roomOf(me.x, me.y), id = roomBroadcaster(r); return id && id !== uid ? id : null; };   // de quem é o som na tela grande
+  $("vMute").onclick = () => { const id = bcNow(); if (id) setMix(id, { m: !mixOf(id, true).m }, true); };
+  $("vVol").oninput = () => liveVol($("bview"), $("vVol").value / 100);
+  $("vVol").onchange = () => { const id = bcNow(); if (id) setMix(id, { v: $("vVol").value / 100 }, true); };
   $("ytVol").oninput = () => { try { if (yt && ytReady) yt.setVolume(+$("ytVol").value); } catch (e) {} };
   $("ytEnd").onclick = () => { cinemaSet({ src: null, id: null, state: "stop", pos: 0 }); };
   $("vidFile").onchange = e => {
@@ -312,7 +316,9 @@ function updateViewer() {
   else if (r === "reu" && viewPref === "vid" && $("vidLocal").src) { mode = "vid"; cap = "Vídeo local (só você vê). Use Transmitir para a sala."; }
   else if (r === "reu" && viewPref === "sld" && slides.length) { mode = "sld"; cap = "Apresentação local (só você vê). Use Transmitir para a sala."; }
   if (mode === "b" && bstream && bprev) { show.b.muted = true; if (show.b.srcObject !== bstream) { show.b.srcObject = bstream; } if (show.b.paused) { const pr0 = show.b.play(); if (pr0 && pr0.catch) pr0.catch(() => {}); } }   // prévia da própria tela (sem eco)
+  else if (mode === "b") applyMixB(bid);                                        // volume/mudo que eu dei para a transmissão dessa pessoa
   else show.b.muted = false;
+  $("vVolBox").hidden = !(mode === "b" && !bstream);
   for (const k in show) show[k].hidden = k !== mode;
   if (mode === "idle") show.idle.textContent = idle;
   $("vCaption").textContent = cap; const vc2 = $("vCap2"); if (vc2) vc2.textContent = cap;

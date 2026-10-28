@@ -143,6 +143,8 @@
   .mxnm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.9rem; }
   .mxnm small { color:var(--muted); }
   .mxrow .mxmute { min-width:44px; min-height:40px; padding:2px 8px; font-size:1.05rem; }
+  .mxbc { grid-column:1 / -1; display:grid; grid-template-columns:1fr auto; gap:4px 8px; align-items:center; border-top:2px dashed var(--line); padding-top:6px; margin-top:2px; }
+  .mxbc.muted-on .mxmute { border-color:#c0475e; }
   .mxvol { grid-column:1 / -1; display:flex; align-items:center; gap:8px; font-size:.82rem; }
   .mxvol input { flex:1; min-width:0; height:32px; } .mxvol b { min-width:4ch; text-align:right; }
   #status { background:#2f3f8a; border:3px solid var(--line); padding:6px 10px; font-size:.95rem; box-shadow:3px 3px 0 var(--line); }
@@ -185,6 +187,9 @@
   .viewer video, .viewer canvas { object-fit:contain; background:#000; }
   .viewer > .vtool { inset:8px 8px auto auto; width:auto; height:auto; z-index:4; display:flex; gap:6px; }
   .viewer > .vtool button { padding:4px 10px; opacity:.9; }
+  .viewer > .vtool .vvol { display:flex; align-items:center; gap:4px; background:rgba(18,10,28,.75); border:2px solid var(--line); padding:0 6px 0 0; }
+  .viewer > .vtool .vvol[hidden] { display:none; }
+  .viewer > .vtool .vvol button { border:0; min-width:40px; } .viewer > .vtool .vvol input { width:90px; height:28px; }
   .viewer > .vbar { inset:auto 0 14px 0; width:auto; height:auto; z-index:4; display:none; justify-content:center; align-items:center; gap:10px; pointer-events:none; }
   .viewer > .vbar > * { pointer-events:auto; }
   .viewer > .vhands { inset:8px auto auto 8px; width:auto; height:auto; z-index:5; display:flex; flex-direction:column; gap:6px; pointer-events:none; }
