@@ -128,6 +128,23 @@
   .vt .ph { position:absolute; inset:0; display:grid; place-items:center; font-size:2.2rem; font-weight:700; background:linear-gradient(135deg,#4b366e,#2a1b40); }
   .vt video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .vt .nm { position:absolute; left:4px; bottom:4px; background:rgba(18,10,28,.8); padding:1px 6px; font-size:.78rem; }
+  .vt .mt { position:absolute; top:3px; right:3px; width:30px; height:30px; padding:0; font-size:.95rem; line-height:1; background:rgba(18,10,28,.75); border-width:2px; opacity:.8; }
+  .vt.silenced .mt { opacity:1; background:#7a2238; }
+  .vt.silenced video { filter:grayscale(.7); }
+  #mixpanel { position:fixed; right:8px; top:56px; z-index:72; width:min(360px,calc(100vw - 16px)); max-height:calc(100vh - 70px); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; }
+  #mixpanel[hidden] { display:none; }
+  .mxhead { display:flex; align-items:center; justify-content:space-between; gap:8px; } .mxhead b { color:var(--accent); }
+  .mxhead button { width:36px; height:36px; padding:0; }
+  .mxnote { font-size:.8rem; }
+  #mixList { display:grid; gap:6px; }
+  .mxrow { display:grid; grid-template-columns:1fr auto; gap:4px 8px; align-items:center; padding:6px 8px; border:2px solid var(--line); background:rgba(0,0,0,.25); }
+  .mxrow.far { opacity:.6; }
+  .mxrow.muted-on { border-color:#c0475e; }
+  .mxnm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.9rem; }
+  .mxnm small { color:var(--muted); }
+  .mxrow .mxmute { min-width:44px; min-height:40px; padding:2px 8px; font-size:1.05rem; }
+  .mxvol { grid-column:1 / -1; display:flex; align-items:center; gap:8px; font-size:.82rem; }
+  .mxvol input { flex:1; min-width:0; height:32px; } .mxvol b { min-width:4ch; text-align:right; }
   #status { background:#2f3f8a; border:3px solid var(--line); padding:6px 10px; font-size:.95rem; box-shadow:3px 3px 0 var(--line); }
   .pr { display:flex; gap:8px; align-items:center; flex-wrap:wrap; background:#5a3a8a; border:3px solid var(--line); padding:6px 10px; margin-bottom:6px; }
   .pr span { margin-right:auto; }
@@ -413,6 +430,7 @@
     <span class="who" id="who"></span>
     <button id="btnMic" class="off">Mic</button>
     <button id="btnCam" class="off">Câmera</button>
+    <button id="btnMix" title="Volume da voz de cada pessoa e mutar" aria-pressed="false">🎚 Vozes</button>
     <button id="btnWard">Guarda-roupa</button>
     <button id="btnCatsT">Gatos</button>
     <button id="btnChatT">Chat</button>
@@ -438,6 +456,11 @@
   </div>
   <div id="catpanel" class="panel"></div>
   <div id="roompanel" class="panel" hidden></div>
+  <div id="mixpanel" class="panel" hidden role="dialog" aria-label="Volume das vozes">
+    <div class="mxhead"><b>🎚 Volume das vozes</b><button id="mixClose" type="button" aria-label="Fechar">✕</button></div>
+    <div class="muted mxnote">Só muda o que <b>você</b> ouve; ninguém fica sabendo. Fica salvo neste aparelho.</div>
+    <div id="mixList"></div>
+  </div>
   <div id="gamepanel" class="panel" hidden></div>
   <div class="panel" id="chatpanel">
     <div id="log"></div>
@@ -455,7 +478,7 @@
 
     <h3>O que fica no seu aparelho</h3>
     <ul>
-      <li>Nome, código da sala, personagem, roupas salvas, zoom e a escolha do tema de Natal, no armazenamento local do navegador (<code>localStorage</code>).</li>
+      <li>Nome, código da sala, personagem, roupas salvas, zoom, a escolha do tema de Natal e o volume/mudo que você deu a cada pessoa, no armazenamento local do navegador (<code>localStorage</code>).</li>
       <li>Um identificador criado pelo Firebase Authentication, no armazenamento do navegador: anônimo em salas temporárias (sem e-mail, telefone nem senha) ou o da sua conta, se você entrar nela.</li>
       <li>O jogo <b>não define cookies</b> e não usa publicidade nem estatísticas de acesso. Para apagar tudo, limpe os dados do site no navegador.</li>
     </ul>

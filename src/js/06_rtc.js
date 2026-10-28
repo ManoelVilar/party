@@ -238,7 +238,10 @@ function updateTiles() {
   $("vhint").hidden = want.length > 0;
   want.forEach(id => {
     let e2 = box2.querySelector('.vt[data-id="' + id + '"]');
-    if (!e2) { e2 = document.createElement("div"); e2.className = "vt"; e2.dataset.id = id; e2.innerHTML = '<div class="ph"></div><video autoplay playsinline></video><div class="nm"></div>'; box2.appendChild(e2); }
+    if (!e2) {
+      e2 = document.createElement("div"); e2.className = "vt"; e2.dataset.id = id; e2.innerHTML = '<div class="ph"></div><video autoplay playsinline></video><div class="nm"></div>'; box2.appendChild(e2);
+      if (id !== "__me") { const mt = document.createElement("button"); mt.type = "button"; mt.className = "mt"; mt.onclick = ev => { ev.stopPropagation(); setMix(id, { m: !mixOf(id).m }); }; e2.appendChild(mt); }
+    }
     const v = e2.querySelector("video"), ph = e2.querySelector(".ph"), nm = e2.querySelector(".nm");
     let camOn, micOn, name;
     if (id === "__me") { if (v.srcObject !== localStream) v.srcObject = localStream; v.muted = true; v.style.transform = "scaleX(-1)"; camOn = trackOn("video"); micOn = trackOn("audio"); name = "Você"; }
@@ -246,6 +249,7 @@ function updateTiles() {
       const p = players[id] || {}, st = cameraStreamOf(id);
       if (st && v.srcObject !== st) { v.srcObject = st; const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
       camOn = p.cam === true; micOn = p.mic === true; name = p.name || "?";
+      applyMixTo(e2, id, name);
     }
     const cs = id === "__me" ? "connected" : (peers[id] ? peers[id].pc.connectionState : "");
     const stt = cs === "connected" ? "" : cs === "failed" ? " ⚠ sem conexão" : cs === "disconnected" ? " ⚠ caiu" : " …";
@@ -253,4 +257,59 @@ function updateTiles() {
     e2.classList.toggle("hand", hand);
     ph.textContent = (name[0] || "?").toUpperCase(); v.style.visibility = camOn ? "visible" : "hidden"; nm.textContent = (hand ? "✋ " : "") + (live ? "📡 " : "") + name + (micOn ? "" : " 🔇") + stt;
   });
+  if (!$("mixpanel").hidden) renderMix();
 }
+
+/* ---------- volume de cada pessoa (mixer): só muda o que EU ouço; salvo neste aparelho, por jogador ---------- */
+const MIX = (() => { try { const o = JSON.parse(store.get("nc_mix") || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } })();
+const VOL_OK = (() => { try { const a = document.createElement("audio"); a.volume = .5; return a.volume === .5; } catch (e) { return false; } })();   // iPhone/iPad: volume do elemento é só leitura (dá para mutar, não para baixar)
+function mixOf(id) { const m = MIX[id] || {}, v = Number(m.v); return { v: v >= 0 && v <= 1 ? v : 1, m: m.m === true }; }
+function setMix(id, patch) {
+  const cur = Object.assign(mixOf(id), patch); cur.v = Math.round(clamp(cur.v, 0, 1) * 100) / 100;
+  if (cur.v === 1 && !cur.m) delete MIX[id]; else MIX[id] = cur;
+  store.set("nc_mix", JSON.stringify(MIX));
+  const e2 = $("videos").querySelector('.vt[data-id="' + id + '"]'); if (e2) applyMixTo(e2, id, (players[id] && players[id].name) || "?");
+  if (!$("mixpanel").hidden) renderMix(true);
+}
+function applyMixTo(e2, id, name) {
+  const v = e2.querySelector("video"), mt = e2.querySelector(".mt"), m = mixOf(id);
+  v.muted = m.m || m.v === 0; if (VOL_OK) v.volume = m.v;
+  e2.classList.toggle("silenced", m.m);
+  if (mt) { mt.textContent = m.m ? "🔇" : "🔈"; const t = (m.m ? "Desmutar " : "Mutar ") + name; mt.title = t; mt.setAttribute("aria-label", t); mt.setAttribute("aria-pressed", String(m.m)); }
+}
+/* lista todos do espaço (quem está perto primeiro): dá para mutar alguém antes mesmo de chegar perto */
+let mixSig = "";
+function renderMix(force) {
+  const list = $("mixList"), ids = Object.keys(players).filter(id => id !== uid && players[id]);
+  ids.sort((a, b) => (peers[b] ? 1 : 0) - (peers[a] ? 1 : 0) || String(players[a].name || "").localeCompare(String(players[b].name || ""), "pt-BR"));
+  const sig = ids.map(id => id + ":" + (players[id].name || "") + ":" + (peers[id] ? 1 : 0)).join("|");
+  if (!force && sig === mixSig) return; mixSig = sig;
+  list.textContent = "";
+  if (!ids.length) { list.appendChild(gpEl("div", "muted", "Ninguém mais no espaço agora.")); return; }
+  if (!VOL_OK) list.appendChild(gpEl("div", "muted mxnote", "Neste aparelho o navegador não deixa mudar o volume de cada pessoa; dá para mutar."));
+  ids.forEach(id => {
+    const p = players[id], name = p.name || "?", m = mixOf(id), near = !!peers[id];
+    const row = gpEl("div", "mxrow" + (near ? "" : " far") + (m.m ? " muted-on" : ""));
+    const nm = gpEl("span", "mxnm", name + " "); nm.appendChild(gpEl("small", "", near ? (p.mic === true ? "· falando com você" : "· mic desligado") : "· longe"));
+    const mb = gpEl("button", "mxmute" + (m.m ? " no" : ""), m.m ? "🔇" : "🔈"); mb.type = "button";
+    mb.title = (m.m ? "Desmutar " : "Mutar ") + name; mb.setAttribute("aria-label", mb.title); mb.setAttribute("aria-pressed", String(m.m));
+    mb.onclick = () => setMix(id, { m: !m.m });
+    row.append(nm, mb);
+    if (VOL_OK) {
+      const vb = gpEl("label", "mxvol"), r = document.createElement("input"), pct = gpEl("b", "", Math.round(m.v * 100) + "%");
+      r.type = "range"; r.min = "0"; r.max = "100"; r.step = "5"; r.value = String(Math.round(m.v * 100)); r.disabled = m.m; r.setAttribute("aria-label", "Volume de " + name);
+      r.oninput = () => { pct.textContent = r.value + "%"; const e2 = $("videos").querySelector('.vt[data-id="' + id + '"] video'); if (e2) { e2.volume = r.value / 100; e2.muted = r.value === "0"; } };
+      r.onchange = () => setMix(id, { v: r.value / 100 });
+      vb.append(gpEl("span", "", "🔉"), r, pct); row.appendChild(vb);
+    }
+    list.appendChild(row);
+  });
+}
+function toggleMix(open) {
+  const box = $("mixpanel"), show = open === undefined ? box.hidden : open;
+  box.hidden = !show; $("btnMix").setAttribute("aria-pressed", String(show)); $("btnMix").classList.toggle("on", show);
+  if (show) renderMix(true);
+}
+$("btnMix").onclick = () => toggleMix();
+$("mixClose").onclick = () => toggleMix(false);
+setInterval(() => { if (!$("mixpanel").hidden) renderMix(); }, 1500);              // gente entrando/saindo do espaço sem mudar as conexões

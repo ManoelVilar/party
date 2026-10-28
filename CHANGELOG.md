@@ -2,6 +2,11 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Adicionado
+- **Mixer de vozes** (botão 🎚 Vozes): volume individual (0–100%) da voz de cada pessoa do espaço e botão para **mutar** alguém, inclusive antes de chegar perto. Cada quadradinho de vídeo também tem um botão 🔈/🔇 para mutar na hora. Só muda o que você ouve (nada vai para o servidor) e fica salvo no aparelho (`nc_mix`). No iPhone/iPad o navegador não deixa mudar o volume de cada pessoa; mutar funciona. Teste em `tests/e2e/mix.py`.
+
 ## [0.5.0] — 2026-10-21
 
 ### Adicionado
