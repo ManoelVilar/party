@@ -44,6 +44,7 @@
   body.title #stage > *:not(#cv) { display:none !important; }
   body.title canvas#cv { width:100%; height:100%; filter:blur(5px) brightness(.62) saturate(1.1); transform:translate(calc(var(--tpx, 0) * -1px), calc(var(--tpy, 0) * -1px)) scale(1.06); transition:transform .35s ease-out; }
   #title { position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:16px; overflow:auto; background:radial-gradient(ellipse at center, rgba(10,6,20,.1) 20%, rgba(10,6,20,.62) 100%); }
+  .tbusy { color:var(--accent); margin:0; } .tbox.busy > .tbtn, .tbox.busy > .tnote, .tbox.busy > .tsub { display:none; }
   .tbox { width:min(420px,100%); display:grid; gap:12px; text-align:center; padding:22px 20px; }
   .tlogo { font-size:clamp(2.6rem,12vw,4rem); letter-spacing:5px; line-height:1; color:var(--accent); text-shadow:4px 4px 0 var(--line), 0 0 28px rgba(255,209,102,.35); padding:6px 0 2px; }
   .tsub { margin:0 0 6px; font-size:.95rem; }
@@ -214,20 +215,6 @@
   .viewer > .vtoast[hidden] { display:none; }
   @keyframes vhb { 50% { transform:translateY(-3px); } }
   #vHand.on { background:#ffd166; color:#2b1b3a; }
-  /* modo sentado: vídeo na janela inteira + miniaturas das câmeras ao lado */
-  .viewer > .vcap { inset:auto auto 14px 14px; width:auto; height:auto; z-index:3; display:none; background:rgba(18,10,28,.8); padding:2px 10px; font-size:.9rem; pointer-events:none; }
-  .viewer.theater > .vcap { display:block; }
-  .viewer.theater { position:fixed; left:0; top:0; bottom:0; right:196px; width:auto; height:auto; aspect-ratio:auto; border:0; background:#000; z-index:50; }
-  .viewer.theater > .vbar { display:flex; }
-  .viewer.theater > .vtool { opacity:.6; } .viewer.theater > .vtool:hover { opacity:1; }
-  .viewer.theater > .vhands { top:64px; }
-  body.theater #roompanel { background:none; border:0; box-shadow:none; padding:0; z-index:55; }
-  body.theater #roompanel .rphead, body.theater #roompanel .rpctl, body.theater #vCaption { display:none; }
-  body.theater #videos { position:fixed; top:0; right:0; bottom:0; left:auto; width:196px; z-index:60; flex-direction:column; align-items:stretch; justify-content:flex-start; overflow-y:auto; overflow-x:hidden; padding:8px; gap:8px; background:#0b0713; border-left:3px solid var(--line); max-height:none; min-height:0; }
-  body.theater #videos .vt { width:100%; height:auto; aspect-ratio:4/3; }
-  body.theater #vhint { display:none; }
-  body.theater .top, body.theater #status, body.theater #prompts, body.theater #chatpanel { z-index:70; }
-  body.theater .top { left:calc((100vw - 196px) / 2); max-width:calc(100vw - 196px - 300px); }   /* centralizada na área à esquerda da coluna de vídeos */
   .vt.hand { outline:3px solid #ffd166; outline-offset:-3px; }
   .viewer:fullscreen { width:100vw; height:100vh; aspect-ratio:auto; border:0; background:#000; }
   .viewer:fullscreen > .vbar { display:flex; }
@@ -291,9 +278,6 @@
     body.full #gamepanel, body.full #gamepanel.gp-wide { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
     .gp-cell { width:58px; height:58px; } .gp-board { grid-template-columns:repeat(3,58px); }
     body.full #roompanel, body.full #roompanel.rpcompact { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
-    body.theater #videos { width:104px; padding:6px; gap:6px; top:0; }
-    body.theater #videos .vt { width:100%; height:auto; }
-    body.theater .top { left:calc(74px + env(safe-area-inset-left)); right:118px; max-width:none; }
   }
   @media (orientation:landscape) and (max-height:520px) {
     body.full #actions { left:calc(196px + env(safe-area-inset-left)); bottom:calc(8px + env(safe-area-inset-bottom)); }
@@ -360,6 +344,7 @@
   <div class="tbox panel">
     <div class="tlogo">PARTY</div>
     <p class="muted tsub">Espaço pixel para festas, encontros e reuniões</p>
+    <p id="tBusy" class="tbusy" role="status" hidden>Voltando para a sua sala…</p>
     <button type="button" id="tGuest" class="gold tbtn">Jogar sem login</button>
     <button type="button" id="tLogin" class="tbtn">Entrar na conta</button>
     <p class="muted tnote">Com uma conta você tem uma sala permanente só sua. Sem login, você joga numa sala temporária com um código.</p>
@@ -455,7 +440,7 @@
     <button id="btnNatal" title="Ligar/desligar o tema de Natal" aria-pressed="false">🎄 Natal</button>
     <button id="btnFull" title="Tela cheia (F)">Tela cheia</button>
     <button id="btnRoom" title="Sala: convites, agentes de IA, escritórios e mesas">🔑 Sala</button>
-    <button id="btnLeave" class="no" title="Sair da sala">Sair</button>
+    <button id="btnLeave" class="no" title="Sair da sala e desconectar">Sair da sala</button>
   </div>
   <div id="videos"><div id="vhint">Ative mic e câmera e chegue perto de alguém para conversar.</div></div>
   <div id="status" hidden></div>
@@ -510,7 +495,7 @@
 
     <h3>O que fica no seu aparelho</h3>
     <ul>
-      <li>Nome, código da sala, personagem, roupas salvas, zoom, a escolha do tema de Natal e o volume/mudo que você deu a cada pessoa, no armazenamento local do navegador (<code>localStorage</code>).</li>
+      <li>Nome, código da sala (para voltar sozinho à sala ao recarregar a página, até você clicar em “Sair da sala”), personagem, roupas salvas, zoom, a escolha do tema de Natal e o volume/mudo que você deu a cada pessoa, no armazenamento local do navegador (<code>localStorage</code>).</li>
       <li>Um identificador criado pelo Firebase Authentication, no armazenamento do navegador: anônimo em salas temporárias (sem e-mail, telefone nem senha) ou o da sua conta, se você entrar nela.</li>
       <li>O jogo <b>não define cookies</b> e não usa publicidade nem estatísticas de acesso. A única exceção é o player do YouTube da <b>jukebox</b>, que só é carregado quando alguém pede uma música do YouTube e pode definir cookies do próprio YouTube. Para apagar tudo, limpe os dados do site no navegador.</li>
     </ul>

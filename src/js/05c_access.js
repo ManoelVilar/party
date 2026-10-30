@@ -107,7 +107,7 @@ function healPresence(now) {
 
 /* ---------- sair ---------- */
 async function leaveRoom(msg) {
-  if (leaving) return; leaving = true;
+  if (leaving) return; leaving = true; autoClear();                                          // saiu de propósito (ou foi removido): não volta sozinho
   try {
     if (myDesk) await releaseDesk();
     await meRef.remove();

@@ -40,4 +40,9 @@ $("tGuest").onclick = () => showLogin("temp");
 $("btnBack").onclick = showTitle;
 addEventListener("resize", () => { if (titleOn) resizeView(); });
 /* convite no endereço ou recado de uma saída anterior: vai direto à tela de entrada, onde a mensagem aparece */
-setTimeout(() => { titleStart(); if (inviteIn || loginMsg) showLogin(); else showTitle(); }, 0);       // depois de todos os módulos carregarem (o laço de desenho vem depois)
+setTimeout(() => {
+  titleStart();
+  if (inviteIn || loginMsg) { autoClear(); showLogin(); return; }
+  showTitle();
+  const s = autoSaved(); if (s) autoEnter(s);                                                // não clicou em "Sair da sala": volta sozinho para onde estava
+}, 0);       // depois de todos os módulos carregarem (o laço de desenho vem depois)

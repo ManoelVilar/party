@@ -142,16 +142,9 @@ async function drawSlide() {
   const vp2 = $("vPage"); if (vp2) vp2.textContent = (slideIdx + 1) + " / " + slides.length;
 }
 const viewerEl = () => document.querySelector("#roompanel .viewer");
-const viewerFS = () => { const f = document.fullscreenElement || document.webkitFullscreenElement; return !!(f && (f === viewerEl() || (theaterOn && f === document.documentElement))); };
+const viewerFS = () => { const f = document.fullscreenElement || document.webkitFullscreenElement; return !!(f && f === viewerEl()); };
 async function toggleViewerFull() {
   const el = viewerEl(); if (!el) return;
-  if (theaterOn) {                                                   // modo sentado: a página inteira (vídeo + miniaturas) vai para a tela cheia do navegador
-    try {
-      if (document.fullscreenElement || document.webkitFullscreenElement) { if (document.exitFullscreen) await document.exitFullscreen(); else document.webkitExitFullscreen(); }
-      else { const d = document.documentElement; if (d.requestFullscreen) await d.requestFullscreen(); else if (d.webkitRequestFullscreen) d.webkitRequestFullscreen(); }
-    } catch (e) { setStatus("Não foi possível usar a tela cheia do navegador aqui. Use F11.", 4000); }
-    updateViewer(); return;
-  }
   try {
     if (viewerFS()) { if (document.exitFullscreen) await document.exitFullscreen(); else document.webkitExitFullscreen(); }
     else if (el.requestFullscreen) await el.requestFullscreen(); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
@@ -160,28 +153,12 @@ async function toggleViewerFull() {
 }
 /* setas / espaço / PageUp/PageDown passam os slides em tela cheia; Esc sai (o navegador cuida) */
 addEventListener("keydown", e => {
-  if (theaterOn ? !(bstream && viewPref === "sld") : !viewerFS()) return;      // sentado: setas só passam slides para quem apresenta (para os outros, andar levanta da cadeira)
+  if (!viewerFS()) return;
   const nxt = ["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(e.key), prv = ["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(e.key);
   if (nxt || prv) { e.preventDefault(); slideGo(nxt ? 1 : -1); } else if (e.key === "f" || e.key === "F") toggleViewerFull();
 }, true);
 const slideGo = d => { if (!slides.length) return; slideIdx = Math.max(0, Math.min(slides.length - 1, slideIdx + d)); drawSlide(); };
 
-/* ---------- MODO SENTADO: ao sentar numa cadeira do cinema/reunião com transmissão ao vivo, o vídeo ocupa a janela inteira
-   (igual ao telão, só que grande) e as câmeras dos participantes viram miniaturas ao lado. Levantou ou saiu da sala: volta à tela pequena. ---------- */
-let theaterOn = false, theaterOff = false;
-function theaterWanted() {
-  const r = roomOf(me.x, me.y); if (r !== "cin" && r !== "reu") return false;
-  const p = players[uid]; if (!p || p._stk !== "sit" || Date.now() - (p._stT || 0) < 450) return false;
-  return !!(bstream || roomBroadcaster(r));
-}
-function updateTheater() {
-  const p = players[uid]; if (!p || p._stk !== "sit") theaterOff = false;       // levantou: libera para a próxima vez que sentar
-  const want = !theaterOff && theaterWanted(); if (want === theaterOn) return;
-  theaterOn = want; document.body.classList.toggle("theater", want);
-  const v = viewerEl(); if (v) v.classList.toggle("theater", want);
-  if (!want) { const f = document.fullscreenElement || document.webkitFullscreenElement; if (f === document.documentElement) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {} } }
-  rosterSig = ""; renderRoster(); updateViewer(); updateTiles();
-}
 /* ---------- painel ---------- */
 function rpErr(msg) { document.querySelectorAll("#roompanel .err").forEach(e => { e.textContent = typeof msg === "string" ? msg : ""; }); if (msg) console.warn("[painel]", msg); }
 function setLoading(on) { const l = $("vLoad"); if (l) l.hidden = !on; }
@@ -193,7 +170,7 @@ function buildRoomPanel() {
     '<video id="bview" autoplay playsinline hidden></video><video id="vidLocal" controls playsinline hidden></video><canvas id="slideCanvas" width="1600" height="900" hidden></canvas>' +
     '<div id="vLoad" class="vmsg" hidden>Carregando...</div><button id="ytKick" class="primary" hidden style="inset:auto 8px 8px auto;width:auto;height:auto;z-index:3"></button>' +
     '<div id="vHands" class="vhands" hidden></div><div id="vToast" class="vtoast" hidden></div><div class="vtool"><span id="vVolBox" class="vvol" hidden><button id="vMute" type="button">🔈</button><input type="range" id="vVol" min="0" max="100" step="5" value="100" aria-label="Volume da transmissão (só para você)" title="Volume da transmissão (só para você)"></span><button id="vHand2" type="button" title="Levantar a mão (H)">✋</button><button id="vFull" type="button" title="Tela cheia (F)">⛶ Tela cheia</button></div>' +
-    '<div class="vbar" id="vBar"><button id="vPrev" type="button">◀</button><b id="vPage" class="panel" style="padding:4px 12px"></b><button id="vNext" type="button">▶</button><button id="vHand" type="button">✋ Mão</button><button id="vExit" type="button" class="no">Sair</button></div><div class="vcap" id="vCap2"></div></div><div id="vCaption" class="muted" style="margin-top:4px;font-size:.85rem"></div></div>' +
+    '<div class="vbar" id="vBar"><button id="vPrev" type="button">◀</button><b id="vPage" class="panel" style="padding:4px 12px"></b><button id="vNext" type="button">▶</button><button id="vHand" type="button">✋ Mão</button><button id="vExit" type="button">↙ Voltar à janela</button></div></div><div id="vCaption" class="muted" style="margin-top:4px;font-size:.85rem"></div></div>' +
     '<div class="rpctl"><div class="tabs" id="rpTabs"></div>' +
     '<div class="pane" id="pane-yt"><div class="row"><input type="url" id="ytUrl" placeholder="Cole o link do YouTube"><button id="ytGo" class="primary">Carregar</button></div>' +
     '<div class="row"><button id="ytBack">−10s</button><button id="ytPlay">Play/Pausa</button><button id="ytFwd">+10s</button><input type="range" id="ytVol" min="0" max="100" value="80" title="Volume (só para você)"></div>' +
@@ -212,7 +189,7 @@ function buildRoomPanel() {
     viewPref = "yt"; cinemaSet({ src: "yt", id, state: "play", pos: 0 }); setLoading(true); setTimeout(() => setLoading(false), 6000);
   };
   $("handBtn").onclick = toggleHand;
-  $("vFull").onclick = toggleViewerFull; $("vHand").onclick = toggleHand; $("vHand2").onclick = toggleHand; $("vExit").onclick = () => { if (theaterOn) { theaterOff = true; updateTheater(); } else toggleViewerFull(); };
+  $("vFull").onclick = toggleViewerFull; $("vHand").onclick = toggleHand; $("vHand2").onclick = toggleHand; $("vExit").onclick = toggleViewerFull;
   $("vPrev").onclick = () => slideGo(-1); $("vNext").onclick = () => slideGo(1);
   $("slideCanvas").addEventListener("click", e => { const r = e.currentTarget.getBoundingClientRect(); slideGo(e.clientX - r.left < r.width * .3 ? -1 : 1); });
   $("ytKick").onclick = () => { try { if (yt && ytReady) { yt.unMute(); yt.setVolume(+$("ytVol").value); yt.playVideo(); } } catch (e) {} ytAutoMuted = false; ytStuck = 0; $("ytKick").hidden = true; };
@@ -321,15 +298,14 @@ function updateViewer() {
   $("vVolBox").hidden = !(mode === "b" && !bstream);
   for (const k in show) show[k].hidden = k !== mode;
   if (mode === "idle") show.idle.textContent = idle;
-  $("vCaption").textContent = cap; const vc2 = $("vCap2"); if (vc2) vc2.textContent = cap;
+  $("vCaption").textContent = cap;
   $("vPrev").hidden = $("vNext").hidden = $("vPage").hidden = mode !== "sld" && !(bstream && viewPref === "sld");
-  $("vFull").textContent = viewerFS() ? "Sair da tela cheia" : "⛶ Tela cheia";
+  $("vFull").textContent = viewerFS() ? "↙ Voltar à janela" : "⛶ Tela cheia";
   if (mode !== "b" && show.b.srcObject) show.b.srcObject = null;
 }
 /* o painel completo (transmitir tela, slides, vídeo) só aparece para quem está no PC da sala; os demais veem só o vídeo */
 function updateRoomPanel() {
   const r = roomOf(me.x, me.y), panel = $("roompanel"), inRoom = r === "cin" || r === "reu";
-  updateTheater();
   if (!inRoom) {
     if (!panel.hidden) { panel.hidden = true; if (bstream) stopBroadcast(true); try { if (yt && ytReady) yt.pauseVideo(); } catch (e) {} const v = $("vidLocal"); if (v) v.pause(); }
     rpRoom = null; if (myHand()) { meRef.update({ hand: null }); if (players[uid]) players[uid].hand = null; } return;

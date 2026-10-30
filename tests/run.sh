@@ -22,10 +22,11 @@ python3 smoke.py
 python3 jogos.py
 python3 gatos.py
 python3 jukebox.py
+python3 reconectar.py
 python3 contas.py
 # grava as escritas reais do cliente e confere contra as regras do Firebase
 python3 record_ops.py
 (cd "$ROOT" && node tests/rules/replay.cjs)
 if [ "${1:-}" = "--all" ]; then
-  for t in th1 door2 cat3 own vid1 rtc4 mix; do echo; echo "== cenário $t (observacional)"; python3 $t.py; done
+  for t in door2 cat3 own vid1 rtc4 mix; do echo; echo "== cenário $t (observacional)"; python3 $t.py; done
 fi
