@@ -1,5 +1,5 @@
 (function(){
-  const root={}; const ls=[]; let pushN=0;
+  const root={}; const ls=[]; let pushN=0; const PUSHID=Math.random().toString(36).slice(2,5);
   const split=p=>p.split("/").filter(Boolean);
   const get=(p)=>{let n=root;for(const k of split(p)){if(n==null||typeof n!=="object")return null;n=n[k];}return n===undefined?null:n;};
   const clone=v=>v==null?null:JSON.parse(JSON.stringify(v));
@@ -19,7 +19,7 @@
     set:v=>{logOp("set",path,v);setv(path,v);return Promise.resolve();},
     update:o=>{logOp("update",path,o);for(const k in o){setv(path+"/"+k,o[k]);}return Promise.resolve();},
     remove:()=>{logOp("set",path,null);setv(path,null);return Promise.resolve();},
-    push:v=>{const k="k"+(++pushN).toString().padStart(6,"0");const r=ref(path+"/"+k);if(v!==undefined){logOp("set",path+"/"+k,v);setv(path+"/"+k,v);}r.key=k;return r;},
+    push:v=>{const k="k"+Date.now()+String(++pushN).padStart(4,"0")+PUSHID;const r=ref(path+"/"+k);if(v!==undefined){logOp("set",path+"/"+k,v);setv(path+"/"+k,v);}r.key=k;return r;},
     on:(ev,cb)=>{const l={p:path,ev,cb,seen:new Set()};ls.push(l);
       if(ev==="value"){ if(path===".info/serverTimeOffset")setTimeout(()=>cb({val:()=>0}),0); else if(path===".info/connected"){conn.push(cb);setTimeout(()=>cb({val:()=>true}),0);} else setTimeout(()=>cb(snap(path)),0);}
       else if(ev==="child_added"){const v=get(path);if(v)for(const k in v){l.seen.add(k);setTimeout(()=>cb(snap(path+"/"+k)),0);}}

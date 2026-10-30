@@ -38,6 +38,16 @@ with sync_playwright() as p:
     A.evaluate("callCat('sombra')")
     A.evaluate("cinemaSet({ src:'yt', id:'dQw4w9WgXcQ', state:'play', pos:0 })"); A.evaluate("cinemaSet({ state:'pause', pos: 12 })")
     A.evaluate("cinemaSet({ src:null, id:null, state:'stop', pos:0 })")
+    # jukebox: as escritas reais do cliente (fila, avanço do líder, pausa, retomada, duração, parar) com a rede de busca simulada
+    A.evaluate("window.fetch = async () => ({ ok: true, json: async () => ({ data: [{ id: 'Dz4Ab', title: 'Lofi', user: { name: 'DJ' }, duration: 90, is_streamable: true }] }) })")
+    A.evaluate("jAdd('lofi')"); A.wait_for_timeout(1800)
+    A.evaluate("jAdd('outra')"); A.wait_for_timeout(500)
+    A.evaluate("jReqSend('pause')"); A.wait_for_timeout(1400)
+    A.evaluate("jReqSend('resume')"); A.wait_for_timeout(1400)
+    A.evaluate("roomRef.child('jukebox/now/dur').set(90)"); A.wait_for_timeout(300)
+    A.evaluate("jReqSend('skip')"); A.wait_for_timeout(1400)
+    A.evaluate("jReqSend('clear')"); A.wait_for_timeout(1200)
+    A.evaluate("jReqSend('stop')"); A.wait_for_timeout(1200)
     B.evaluate("toggleHand()"); B.wait_for_timeout(200); A.evaluate(f"lowerHand('{uB}')")
     A.evaluate("meRef.update({ look: myLook })")
     # porta da sala de reuniões: A entra, B bate, A permite
