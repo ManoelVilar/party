@@ -339,6 +339,87 @@
             ".validate": false
           }
         },
+        "jukebox": {
+          ".read": "auth != null && !(root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').exists() && root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').val() <= now) && ((!$room.matches(/^perm-/) && root.child('rooms/'+$room+'/meta/kind').val() !== 'perm') || root.child('rooms/'+$room+'/meta/owner').val() === auth.uid || root.child('rooms/'+$room+'/acl/'+auth.uid+'/role').exists())",
+          ".write": "auth != null && !(root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').exists() && root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').val() <= now) && ((!$room.matches(/^perm-/) && root.child('rooms/'+$room+'/meta/kind').val() !== 'perm') || root.child('rooms/'+$room+'/meta/owner').val() === auth.uid || root.child('rooms/'+$room+'/acl/'+auth.uid+'/role').exists()) && root.child('rooms/'+$room+'/acl/'+auth.uid+'/role').val() !== 'agent'",
+          "now": {
+            ".validate": "newData.hasChildren(['src', 'ref', 'title', 'seq', 't0'])",
+            "src": {
+              ".validate": "newData.isString() && newData.val().matches(/^(yt|au)$/)"
+            },
+            "ref": {
+              ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{3,16}$/)"
+            },
+            "title": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 90"
+            },
+            "by": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+            },
+            "seq": {
+              ".validate": "newData.isNumber()"
+            },
+            "t0": {
+              ".validate": "newData.isNumber()"
+            },
+            "pause": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "dur": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 86400"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "queue": {
+            "$q": {
+              ".validate": "newData.hasChildren(['src', 'ref', 'title', 'ts'])",
+              "src": {
+                ".validate": "newData.isString() && newData.val().matches(/^(yt|au)$/)"
+              },
+              "ref": {
+                ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{3,16}$/)"
+              },
+              "title": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 90"
+              },
+              "by": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+              },
+              "dur": {
+                ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 86400"
+              },
+              "ts": {
+                ".validate": "newData.isNumber()"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "req": {
+            ".validate": "newData.hasChildren(['t', 'ts'])",
+            "t": {
+              ".validate": "newData.isString() && newData.val().matches(/^(skip|pause|resume|stop|clear|end)$/)"
+            },
+            "seq": {
+              ".validate": "newData.isNumber()"
+            },
+            "by": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+            },
+            "ts": {
+              ".validate": "newData.isNumber()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
         "knocks": {
           ".read": "auth != null && !(root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').exists() && root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').val() <= now) && ((!$room.matches(/^perm-/) && root.child('rooms/'+$room+'/meta/kind').val() !== 'perm') || root.child('rooms/'+$room+'/meta/owner').val() === auth.uid || root.child('rooms/'+$room+'/acl/'+auth.uid+'/role').exists())",
           "esc1": {

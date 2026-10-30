@@ -86,6 +86,31 @@ check("coloca vídeo no cinema", me(A).update(R + "/cinema", { src: "yt", id: "d
 check("cinema com campo desconhecido é recusado", me(A).update(R + "/cinema", { evil: "x" }), false);
 check("sem login não mexe no cinema", me(null).update(R + "/cinema", { state: "play" }), false);
 
+/* jukebox */
+const jNow = { src: "au", ref: "Dz4Ab", title: "Lofi — DJ", by: "Ana", seq: NOW, t0: NOW, dur: 90 };
+const jQ = { src: "yt", ref: "dQw4w9WgXcQ", title: "Um vídeo", by: "Ana", ts: NOW };
+check("jukebox: toca uma música (now)", me(A).write(R + "/jukebox/now", jNow), true);
+const withJ = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { jukebox: { now: { src: "yt", ref: "dQw4w9WgXcQ", title: "Um vídeo", by: "Ana", seq: NOW, t0: NOW } } } } }, NOW);
+check("jukebox: pausa (now/pause)", me(A, withJ).write(R + "/jukebox/now/pause", 4200), true);
+check("jukebox: informa a duração (now/dur)", me(B, withJ).write(R + "/jukebox/now/dur", 213), true);
+check("jukebox: retoma (t0 novo, pause some)", me(A, withJ).update(R + "/jukebox/now", { t0: NOW + 5, pause: null }), true);
+check("jukebox: pausa negativa é recusada", me(A, withJ).write(R + "/jukebox/now/pause", -5), false);
+check("jukebox: coloca na fila", me(A).write(R + "/jukebox/queue/k1", jQ), true);
+check("jukebox: outro membro também mexe na fila", me(B).write(R + "/jukebox/queue/k2", { ...jQ, title: "Outro" }), true);
+check("jukebox: pede controle (req)", me(B).write(R + "/jukebox/req", { t: "skip", seq: NOW, by: "Beto", ts: NOW }), true);
+check("jukebox: tira da fila", me(B).write(R + "/jukebox/queue/k1", null), true);
+check("jukebox: sem login não lê", me(null).read(R + "/jukebox"), false);
+check("jukebox: sem login não escreve", me(null).write(R + "/jukebox/queue/k1", jQ), false);
+check("jukebox: fonte inventada é recusada", me(A).write(R + "/jukebox/queue/k1", { ...jQ, src: "ftp" }), false);
+check("jukebox: ref com caracteres perigosos é recusada", me(A).write(R + "/jukebox/queue/k1", { ...jQ, ref: "a/../b" }), false);
+check("jukebox: ref curta demais é recusada", me(A).write(R + "/jukebox/queue/k1", { ...jQ, ref: "ab" }), false);
+check("jukebox: título gigante é recusado", me(A).write(R + "/jukebox/queue/k1", { ...jQ, title: "x".repeat(91) }), false);
+check("jukebox: campo desconhecido na fila é recusado", me(A).write(R + "/jukebox/queue/k1", { ...jQ, evil: 1 }), false);
+check("jukebox: now sem seq é recusado", me(A).write(R + "/jukebox/now", { src: "au", ref: "Dz4Ab", title: "x", t0: NOW }), false);
+check("jukebox: duração absurda é recusada", me(A).write(R + "/jukebox/now", { ...jNow, dur: 999999 }), false);
+check("jukebox: pedido de controle inventado é recusado", me(A).write(R + "/jukebox/req", { t: "apagar-tudo", seq: 1, ts: NOW }), false);
+check("jukebox: chave desconhecida na jukebox é recusada", me(A).write(R + "/jukebox/extra", 1), false);
+
 /* jogos nas TVs da sala + placar */
 const RACK = "250250" + "700250".repeat(15);
 const game = { kind: "sinuca", st: "play", p0: "ana", p1: "beto", n0: "Ana", n1: "Beto", t: 0, w: -1, s0: 0, s1: 0, dr: 0, gid: NOW, end: 0, upd: NOW, rev: 0, bl: RACK, bp: RACK, gr: -1, vx: 0, vy: 0, sh: 0, bih: 0, msg: "Ana quebra!" };

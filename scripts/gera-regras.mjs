@@ -272,6 +272,45 @@ const rules = {
           "$other": { ".validate": false }
         },
 
+        /* jukebox: tocando agora (now), fila (queue) e pedidos de controle (req). Todos os membros mexem (agentes de IA, não).
+           src "yt" = YouTube (ref = id de 11 caracteres) · "au" = catálogo aberto (ref = id curto). Texto só é exibido como texto no cliente. */
+        jukebox: {
+          ...readM, ...writeM,
+          now: {
+            ".validate": "newData.hasChildren(['src', 'ref', 'title', 'seq', 't0'])",
+            src: { ".validate": "newData.isString() && newData.val().matches(/^(yt|au)$/)" },
+            ref: { ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{3,16}$/)" },
+            title: { ".validate": str(1, 90) },
+            by: { ".validate": str(1, 14) },
+            seq: { ".validate": "newData.isNumber()" },
+            t0: { ".validate": "newData.isNumber()" },
+            pause: { ".validate": "newData.isNumber() && newData.val() >= 0" },
+            dur: { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 86400" },
+            "$other": { ".validate": false }
+          },
+          queue: {
+            "$q": {
+              ".validate": "newData.hasChildren(['src', 'ref', 'title', 'ts'])",
+              src: { ".validate": "newData.isString() && newData.val().matches(/^(yt|au)$/)" },
+              ref: { ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{3,16}$/)" },
+              title: { ".validate": str(1, 90) },
+              by: { ".validate": str(1, 14) },
+              dur: { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 86400" },
+              ts: { ".validate": "newData.isNumber()" },
+              "$other": { ".validate": false }
+            }
+          },
+          req: {
+            ".validate": "newData.hasChildren(['t', 'ts'])",
+            t: { ".validate": "newData.isString() && newData.val().matches(/^(skip|pause|resume|stop|clear|end)$/)" },
+            seq: { ".validate": "newData.isNumber()" },
+            by: { ".validate": str(1, 14) },
+            ts: { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          },
+          "$other": { ".validate": false }
+        },
+
         /* escritório: "bater na porta" e "passe". O passe só nasce de quem está DENTRO (ou do anfitrião) e nunca com o escritório reservado, a não ser pelo anfitrião. */
         knocks: {
           ...readM,

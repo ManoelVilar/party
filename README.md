@@ -19,6 +19,7 @@ Espaço virtual em **pixel art isométrica** para festas, encontros com amigos e
 | **Portas** | Escritórios e sala de reuniões têm porta: bater, permitir ou recusar |
 | **Gatos** | Sombra e Neblina têm fome, sede, energia, banheiro e bem-estar; ração, areia, carinho, petisco e brincadeira. O tempo corre mesmo com a sala vazia, com fome extrema o gato fica fraco, e os potes podem encher sozinhos (modo automático) |
 | **Chat** | Chat do espaço com hora, reiniciado a cada sessão |
+| **Jukebox** | Música para a sala toda por comandos no chat (`!play nome ou link`, `!fila`, `!pular`, `!pausar`...) e painel de controle; YouTube e catálogo aberto, fila compartilhada, notas saindo do móvel e **dança** perto dele; muda em escritórios, reunião e cinema ([docs](docs/JUKEBOX.md)) |
 | **Código do espaço** | Sala **temporária** sem login (`party-lua-trevo-4821`): quem tem o código entra e ela some quando esvazia |
 | **Contas e sala permanente** | Login com e-mail/senha ou Google; sala fixa e privada por conta, convites com papel e validade, escritórios reservados ao anfitrião e **agentes de IA** externos ([docs](docs/CONTAS.md)) |
 | **Jogos na TV** | Sente no sofá em frente a uma TV da sala para jogar **sinuca (bola 8)** com outra pessoa (o terceiro lugar assiste; a opção só aparece sentado), com placar da dupla e ranking da sala |
@@ -92,7 +93,7 @@ Os testes de navegador **não usam o Firebase real nem rede real**: `tests/e2e/f
 
 - [Arquitetura](docs/ARCHITECTURE.md) — módulos, dados no Firebase, WebRTC, decisões
 - [Firebase](docs/FIREBASE.md) — criar o projeto, regras, restringir a chave
-- [Contas, salas e convites](docs/CONTAS.md) · [Agentes de IA](docs/AGENTES.md) · [Limpeza no servidor](docs/LIMPEZA.md)
+- [Contas, salas e convites](docs/CONTAS.md) · [Agentes de IA](docs/AGENTES.md) · [Jukebox](docs/JUKEBOX.md) · [Limpeza no servidor](docs/LIMPEZA.md)
 - [Deploy](docs/DEPLOY.md) — Netlify, GitHub Pages, TURN
 - [Auditoria do MVP](docs/AUDITORIA-MVP.md) — o que foi revisado, achados, riscos conhecidos
 - [Checklist de lançamento](docs/MVP-CHECKLIST.md) — o que testar em aparelhos reais antes de divulgar

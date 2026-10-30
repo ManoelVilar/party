@@ -28,7 +28,7 @@ function frame() {
   if (!me.act && path.length && now - lastStep > 125) { const nx = path[0][0], ny = path[0][1]; path.shift(); if (!stepTo(nx, ny, [nx - me.x, ny - me.y], now)) path = []; }
   else if (!me.act && !path.length && now - lastStep > 125) {
     const v = holdVec || (keys.length ? KEYV[keys[keys.length - 1]] : null); if (v) stepTo(me.x + v[0], me.y + v[1], v, now);
-  } else if (me.act && me.act.type === "eat" && (path.length || keys.length || holdVec)) { me.act = null; meRef.update({ act: null }); }
+  } else if (me.act && (me.act.type === "eat" || me.act.type === "dance") && (path.length || keys.length || holdVec)) { me.act = null; meRef.update({ act: null }); }
 
   /* zoom e câmera (em unidades do mundo; K = pixels de arte por unidade) */
   zoom += (zoomT - zoom) * .2; if (Math.abs(zoomT - zoom) < .002) zoom = zoomT; K = zoom / ART;
@@ -69,6 +69,7 @@ function frame() {
       if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" || o.t === "neon" || o.t === "gamer" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
       if (!ok) DEF[o.t].draw(o); else if (st === "n") { natalLuzes = 2; try { DEF[o.t].draw(o); } finally { natalLuzes = 0; } }
     } });
+    if (o.t === "jukebox" && jukePlaying()) list.push({ d: d + .08, run: () => jukeNotes(o, now) });
     if (o.t === "chuveiro") list.push({ d: d + .08, run: () => {
       poly([P(o.x + .04, o.y + 1.96, 64), P(o.x + .96, o.y + 1.96, 64), P(o.x + .96, o.y + 1.96, 4), P(o.x + .04, o.y + 1.96, 4)], "rgba(190,230,250,.12)", "rgba(255,255,255,.45)");
       poly([P(o.x + .96, o.y + .04, 64), P(o.x + .96, o.y + 1.96, 64), P(o.x + .96, o.y + 1.96, 4), P(o.x + .96, o.y + .04, 4)], "rgba(150,205,235,.14)", "rgba(255,255,255,.45)");
@@ -126,21 +127,22 @@ function frame() {
       list.push({ d: dd, run: () => drawSleeperPx(lctx, (w[0] - camRX) * K, (w[1] - camRY) * K, K * 2.25, L, now, cv) });
       labels.push(Object.assign(base, { wx: w[0], wy: w[1] - 30, zzz: cv >= 4 })); continue;
     }
+    const dancing = !!act && act.type === "dance" && !moving, bob = dancing ? Math.abs(Math.sin(now / 160)) * 3.5 : 0, sway = dancing ? Math.sin(now / 320) * 3 : 0;
     const showering = stk === "shower", handUp = !!p.hand && ["reu", "cin"].includes(roomOf(p.x, p.y)) && !moving;
     const t2 = now + (id.charCodeAt(0) || 0) * 211;
     if (stk === "sit") { p._lastSit = now; p._seatDir = seat; }
     const rising = stk !== "sit" && p._lastSit && now - p._lastSit < 240;            // levantando da cadeira (anima ao contrário)
     const lvl = sit ? (el < 120 ? 1 : el < 240 ? 2 : 3) : rising ? (now - p._lastSit < 120 ? 2 : 1) : 0, LL = showering ? swimLook(L) : L;
     const fr = moving ? Math.floor(now / 130) % 4 : showering ? Math.floor(now / 220) % 4 : sit && lvl === 3 ? Math.floor(t2 / 520) % 4 : 0;
-    let dir = showering ? "d" : sit ? seat : rising ? p._seatDir : (p.dir || "d"); if (handUp && (dir === "l" || dir === "r")) dir = "d";
+    let dir = dancing ? "d" : showering ? "d" : sit ? seat : rising ? p._seatDir : (p.dir || "d"); if (handUp && (dir === "l" || dir === "r")) dir = "d";
     const sd = sit ? seat : rising ? p._seatDir : null, SO = { d: [0, -.14], u: [0, .14], l: [.14, 0], r: [-.14, 0] }[sd] || [0, 0], so = lvl ? [SO[0] * lvl / 3, SO[1] * lvl / 3] : [0, 0];
     const w = P(p.rx + .5 + so[0], p.ry + .5 + so[1], 0), sh = P(p.rx + .5 + so[0], p.ry + .5 + so[1], 0);
-    const pose = { sit: lvl || false, blink: !moving && !showering && (t2 % 3400) < 150, br: !moving && Math.floor(t2 / 600) % 2 === 1, wash: showering, raise: handUp ? (Math.floor(now / 300) % 2 ? 2 : 1) : 0 };
+    const pose = { sit: lvl || false, blink: !moving && !showering && (t2 % 3400) < 150, br: !moving && Math.floor(t2 / 600) % 2 === 1, wash: showering, raise: dancing ? (Math.floor(now / 230) % 2 ? 2 : 1) : handUp ? (Math.floor(now / 300) % 2 ? 2 : 1) : 0 };
     list.push({ d: p.rx + p.ry + 1.02, run: () => {
       ctx.fillStyle = "rgba(26,16,38,.3)"; ctx.beginPath(); ctx.ellipse(sh[0], sh[1], 10, 4.2, 0, 0, 7); ctx.fill();
-      blitPerson(lctx, (w[0] - camRX) * K, (w[1] - camRY) * K, K * 2.25, LL, dir, fr, pose);
+      blitPerson(lctx, (w[0] + sway - camRX) * K, (w[1] - bob - camRY) * K, K * 2.25, LL, dir, fr, pose);
     }});
-    labels.push(Object.assign(base, { wx: w[0], wy: w[1] - (lvl ? 63 : 76) - (handUp ? 11 : 0), food: act && act.type === "eat" ? act.food : null }));
+    labels.push(Object.assign(base, { wx: w[0], wy: w[1] - (lvl ? 63 : 76) - (handUp ? 11 : 0) - bob, food: act && act.type === "eat" ? act.food : null }));
   }
   list.sort((a, b) => a.d - b.d).forEach(o => o.run());
 

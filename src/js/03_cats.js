@@ -155,7 +155,7 @@ const CAT_STAT_KEYS = ["hunger", "thirst", "energy", "bladder", "bowel", "well"]
    se ele sobrescrevesse o valor local, o pouco que as necessidades sobem por gravação (menos de 0,5) se perderia e a fome, a sede e o banheiro nunca avançariam. */
 const catOwnsStats = id => runCatAI.was === true && !!catSim[id];
 const isOwner = () => {                                              // quem "roda" os gatos: o menor id entre as abas visíveis (aba oculta é freada pelo navegador e os gatos travariam)
-  const all = Object.keys(players); if (!all.length) return true;
+  const all = Object.keys(players).filter(id => players[id].acct !== "agent"); if (!all.length) return true;            // agentes de IA não rodam o jogo
   const vis = all.filter(id => players[id].vis !== false);
   return (vis.length ? vis : all).sort()[0] === uid;
 };

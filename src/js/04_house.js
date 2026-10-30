@@ -139,6 +139,22 @@ const DEF = {
     faceY(x, y, .4, .44, .93, 30, 40, "#6b4423"); faceY(x, y, .56, .6, .93, 30, 40, "#6b4423");
     box(x, y, .15, .1, .45, .5, 72, 80, "#e8d9b8"); box(x, y, .55, .1, .85, .5, 72, 78, "#d9534f");
   }},
+  /* jukebox: caixa de música clássica. Enquanto toca, as luzes do painel dançam e saem notas (veja jukeNotes em 07d_jukebox.js). Animada: não entra no cache de móveis. */
+  jukebox: { solid: true, draw(o) {
+    const x = o.x, y = o.y, on = jukePlaying(), tt = Date.now(), cs = ["#ff4d6d", "#ffd166", "#4dd2ff", "#7cf29a"];
+    if (on) glow(x + .5, y + .7, 40, 46, "rgba(255,120,200,.28)");
+    box(x, y, .08, .18, .92, .82, 0, 10, "#5a2323"); box(x, y, .12, .2, .88, .8, 10, 54, "#7a2e2e");
+    box(x, y, .16, .22, .84, .78, 54, 66, "#7a2e2e"); box(x, y, .26, .26, .74, .74, 66, 74, "#7a2e2e");
+    faceY(x, y, .14, .86, .805, 12, 52, "#2a1414");                                                    // moldura
+    faceY(x, y, .2, .8, .81, 28, 50, "#14121f");                                                       // vitrine
+    for (let i = 0; i < 4; i++) faceY(x, y, .22 + i * .15, .22 + i * .15 + .11, .815, 30, 48, on ? cs[(i + Math.floor(tt / 220)) % 4] : "#3b3550");
+    faceY(x, y, .2, .8, .815, 40, 42, on ? "#ffffff" : "#6d6688");                                      // disco
+    faceY(x, y, .2, .8, .81, 14, 26, "#3a1c1c");                                                       // alto-falante
+    for (let i = 0; i < 5; i++) faceY(x, y, .24, .76, .815, 15 + i * 2.2, 16 + i * 2.2, "#8a5a4a");
+    faceY(x, y, .72, .78, .82, 52, 62, on ? cs[Math.floor(tt / 300) % 4] : "#c9ced6");                  // arco cromado
+    faceY(x, y, .22, .28, .82, 54, 64, on ? cs[(Math.floor(tt / 300) + 2) % 4] : "#c9ced6");
+    faceY(x, y, .3, .7, .82, 68, 72, on ? cs[Math.floor(tt / 260) % 4] : "#c9ced6");
+  }},
   estante: { solid: true, draw(o) {
     if (NATAL && o.y === 9 && (o.x === 14 || o.x === 15)) return drawFireplace(o);             // tema de Natal: lareira
     const x = o.x, y = o.y, cols = ["#d9534f", "#5bc0de", "#f0ad4e", "#5cb85c", "#9b59b6", "#e8e8e8", "#e9a23b"];
@@ -293,7 +309,7 @@ const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o)
   /* sala */
   row("tapete", 4, 10, 5); row("tapete", 4, 11, 5); add("tv", 6, 9); add("mesa", 6, 10); row("sofa", 5, 11, 3, { f: "u" });
   row("tapete2", 18, 10, 5); row("tapete2", 18, 11, 5); add("tv", 20, 9); add("mesa", 20, 10); row("sofa", 19, 11, 3, { f: "u" });
-  row("estante", 14, 9, 2); add("planta", 1, 9); add("planta", 28, 9); add("planta", 1, 12); add("planta", 28, 12); add("luz", 9, 9); add("luz", 26, 9);
+  row("estante", 14, 9, 2); add("jukebox", 12, 9); add("planta", 1, 9); add("planta", 28, 9); add("planta", 1, 12); add("planta", 28, 12); add("luz", 9, 9); add("luz", 26, 9);
   row("tapete", 30, 10, 5); row("tapete", 30, 11, 5); add("tv", 32, 9); add("mesa", 32, 10); row("sofa", 31, 11, 3, { f: "u" });
   row("estante", 38, 9, 2); add("planta", 43, 9); add("planta", 43, 12); add("planta", 30, 9); add("luz", 41, 9); add("caixa_areia", 41, 12, { cid: "cx2" });
   /* quartos e banheiro */

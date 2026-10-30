@@ -155,7 +155,7 @@ function startGame(name, room) {
     pass = s.val() || {};
     DOORS.forEach(d => { const has = !!(pass[d.office] && pass[d.office][uid]); if (has && !lastPassMine[d.office]) setStatus("✅ Pode entrar " + inO(d.office) + "! A porta abriu.", 6000); lastPassMine[d.office] = has; });
   });
-  initAccess(); initDesks(); initRooms(); initGames();
+  initAccess(); initDesks(); initRooms(); initGames(); initJukebox();
   renderCatPanel("rebuild");
   setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); startLoop();
 }
@@ -320,12 +320,13 @@ $("btnWard").onclick = () => { if (near(o => o.t === "guarda")) openWardrobe(); 
 
 function currentActions() {
   const a = [];
-  if (me.act) { if (me.act.type === "sleep") a.push({ k: "wake", l: "☀️ Acordar", fn: wake }); return a; }
+  if (me.act) { if (me.act.type === "sleep") a.push({ k: "wake", l: "☀️ Acordar", fn: wake }); if (me.act.type === "dance") a.push({ k: "undance", l: "🛑 Parar de dançar", fn: endAct }); return a; }
   const gm = gameAction(); if (gm) a.push(gm);
   if (near(o => o.t === "cama")) a.push({ k: "sleep", l: "😴 Dormir", fn: sleep });
   if (near(o => o.t === "chuveiro")) a.push({ k: "shower", l: "🚿 Tomar banho", fn: shower });
   if (near(o => DEF[o.t].food && (o.t !== "mesa" || o.plate))) a.push({ k: "eat", l: "🍽️ Comer", fn: eat });
   if (near(o => o.t === "guarda")) a.push({ k: "ward", l: "👕 Abrir guarda-roupa", fn: openWardrobe });
+  if (nearJuke()) { a.push({ k: "juke", l: "🎵 Usar a jukebox", fn: () => jukePanel(true) }); if (jukePlaying()) a.push({ k: "dance", l: "💃 Dançar", fn: jukeDance }); }
   const pn = near(o => o.t === "painel", 1); if (pn) a.push({ k: "painel", l: pn.kind === "cinema" ? "🎬 Usar o PC do cinema" : "💻 Usar o PC da reunião", fn: () => focusRoomPanel() });
   if (near(o => o.t === "despensa")) a.push({ k: "pantry", l: "📦 Pegar suprimentos", fn: takeSupplies });
   const pr = near(o => o.t === "pote_racao"); if (pr && resOf(pr.cid) < 95) a.push({ k: "food", l: "🥣 Colocar ração (usa 1)", fn: () => refillFood(pr) });
@@ -352,7 +353,7 @@ let actSig = "";
 function refreshActions() {
   const a = currentActions(), sig = a.map(x => x.k + x.l).join("|"); if (sig === actSig) return; actSig = sig;
   const box2 = $("actions"); box2.innerHTML = "";
-  if (!a.length) { const h = document.createElement("span"); h.className = "hint"; h.textContent = "Chegue perto de camas, chuveiro, geladeira, guarda-roupa, painéis, potes, caixas de areia, sujeira, gatos, portas ou da TV (sente no sofá para jogar sinuca) para interagir (tecla E)."; box2.appendChild(h); return; }
+  if (!a.length) { const h = document.createElement("span"); h.className = "hint"; h.textContent = "Chegue perto de camas, chuveiro, geladeira, guarda-roupa, painéis, potes, caixas de areia, sujeira, gatos, portas, jukebox ou da TV (sente no sofá para jogar sinuca) para interagir (tecla E)."; box2.appendChild(h); return; }
   a.forEach(x => { const b = document.createElement("button"); b.className = "primary"; b.textContent = x.l; b.onclick = x.fn; box2.appendChild(b); });
 }
 
@@ -400,10 +401,11 @@ function renderPrompts() {
 const onSayForm = {};
 $("sayForm").onsubmit = e => {
   e.preventDefault();
-  const text = $("inSay").value.trim().slice(0, 120); if (!text || !meRef) return;
+  const raw = $("inSay").value.trim(), text = raw.slice(0, 120); if (!text || !meRef) return;
   if (Date.now() - (onSayForm.last || 0) < 700) return; onSayForm.last = Date.now(); $("inSay").value = "";
   roomRef.child("chat").push({ name: myName, color: myLook.top.color, text, ts: Date.now() + serverOffset });
   meRef.update({ say: text, sayTs: Date.now() });
+  if (raw[0] === "!") jukeCommand(raw);                                                  // comandos da jukebox (!play, !pular...)
 };
 
 /* ---------- ciclo lento ---------- */
