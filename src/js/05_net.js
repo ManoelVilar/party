@@ -39,7 +39,7 @@ async function toggleBrowserFull() {
     else if (document.exitFullscreen) await document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
   } catch (e) { setStatus("Não foi possível entrar em tela cheia (se o jogo está dentro de outra página, abra-o direto no endereço). Use F11.", 5000); }
 }
-const syncFullBtn = () => { const f = !!(document.fullscreenElement || document.webkitFullscreenElement); const b = $("btnFull"); if (b) b.textContent = f ? "Sair da tela cheia" : "Tela cheia"; setTimeout(resizeView, 50); };
+const syncFullBtn = () => { const f = !!(document.fullscreenElement || document.webkitFullscreenElement); const b = $("btnFull"); if (b) b.textContent = f ? "↙ Voltar à janela" : "Tela cheia"; setTimeout(resizeView, 50); };
 document.addEventListener("fullscreenchange", syncFullBtn); document.addEventListener("webkitfullscreenchange", syncFullBtn);
 addEventListener("resize", () => { if (isFull()) resizeView(); });
 addEventListener("orientationchange", () => setTimeout(() => { if (isFull()) resizeView(); }, 250));
@@ -83,7 +83,7 @@ $("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Ger
 /* o que o servidor precisa saber de nós (usado ao entrar e ao voltar da queda) */
 function selfState() { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, acct: myAcct(), csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 3 }; }
 function startGame(name, room) {
-  myName = name; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
+  myName = name; tabInGame = true; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
   let tries = 0;
   do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30);

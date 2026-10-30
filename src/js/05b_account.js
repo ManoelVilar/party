@@ -8,6 +8,7 @@
    ========================================================= */
 const PERM_RE = /^perm-[a-z0-9]{12,24}$/;
 const TOK_RE = /^[A-Za-z0-9]{20,40}$/;
+let authFirstP = Promise.resolve();                                    // resolve quando o Firebase termina de restaurar o login guardado (no recarregar da página)
 let fbUser = null, fbReady = false, roomMeta = null, myAcl = null, inviteIn = null, entering = false;
 const SVT = () => firebase.database.ServerValue.TIMESTAMP;
 const errBox = t => { $("err").textContent = t || ""; };
@@ -22,6 +23,7 @@ function fbInit() {
   try { firebase.initializeApp(firebaseConfig); } catch (e) { if (!/already exists/i.test(String(e && e.message))) return false; }
   fbReady = true; db = firebase.database();
   firebase.auth().onAuthStateChanged(u => { fbUser = u || null; renderAcct(); });
+  authFirstP = new Promise(res => { let un = null; un = firebase.auth().onAuthStateChanged(() => { try { if (un) un(); } catch (e) { /* ok */ } res(); }); });
   return true;
 }
 function authMsg(e) {
@@ -127,7 +129,7 @@ $("btnMailCheck").onclick = () => acctRun(async () => {
   await fbUser.reload(); await fbUser.getIdToken(true); renderAcct();
   if (!fbUser.emailVerified) throw { message: "Ainda não confirmado. Abra o link do e-mail e tente de novo." };
 }, "E-mail confirmado!");
-$("btnOut").onclick = () => acctRun(async () => { acctRoomFor = ""; $("acctRoomName").value = ""; await firebase.auth().signOut(); acctMode("in", false); selectTab("temp"); });
+$("btnOut").onclick = () => acctRun(async () => { autoClear(); acctRoomFor = ""; $("acctRoomName").value = ""; await firebase.auth().signOut(); acctMode("in", false); selectTab("temp"); });
 
 /* ---------- link de convite: #sala=<sala>&convite=<token> (o token fica no fragmento, que não vai para o servidor do site) ---------- */
 (() => {
@@ -145,7 +147,7 @@ $("btnOut").onclick = () => acctRun(async () => { acctRoomFor = ""; $("acctRoomN
 const cleanRoom = v => String(v || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
 async function ensureAnon() {
   if (!fbInit()) throw new Error("O Firebase não carregou. Confira a conexão e recarregue a página.");
-  const a = firebase.auth(); if (a.currentUser) return a.currentUser;
+  await authFirstP; const a = firebase.auth(); if (a.currentUser) return a.currentUser;
   return (await a.signInAnonymously()).user;
 }
 async function ensurePermRoom() {
@@ -196,12 +198,13 @@ function enterMsg(e) {
   if (/permission_denied/i.test(m)) return "O servidor recusou a entrada. Se a sala for privada, peça um convite; se for nova, confira se as regras do Firebase estão publicadas (docs/FIREBASE.md).";
   return m.replace(/^Firebase: /, "").slice(0, 200) || "Não conectou.";
 }
-async function enter(mode) {
+async function enter(mode, saved) {
   if (entering) return;
-  const name = $("inName").value.trim();
+  const name = saved ? saved.name : $("inName").value.trim();
   if (!name) return errBox("Escreva seu nome.");
   let room = "";
-  if (mode === "temp") {
+  if (saved) room = saved.room;                                                     // voltando sozinho depois de recarregar: mesma sala de antes
+  else if (mode === "temp") {
     room = cleanRoom($("inRoom").value);
     if (room.length < 4) return errBox("O código do espaço precisa de 4+ letras ou números.");
     if (room.startsWith("perm-")) return errBox("Códigos que começam com “perm-” são das salas permanentes. Use o link de convite ou outro código.");
@@ -214,7 +217,45 @@ async function enter(mode) {
     else { const u = await ensureAnon(); uid = u.uid; }
     await prepareRoom(room, mode, name);
   } catch (e) { entering = false; return errBox(enterMsg(e)); }
-  entering = false; loginCreator.destroy(); startGame(name, room);
+  entering = false; loginCreator.destroy();
+  store.set("pt_auto", JSON.stringify({ mode: mode === "perm" ? "perm" : "again", room, name }));    // continua conectado ao recarregar, até clicar em "Sair da sala"
+  startGame(name, room);
+}
+/* ---------- continuar conectado ao recarregar a página ---------- */
+function autoSaved() {
+  try {
+    const s = JSON.parse(store.get("pt_auto") || "null");
+    return s && typeof s.name === "string" && s.name.trim() && typeof s.room === "string" && /^[a-z0-9-]{4,40}$/.test(s.room) && (s.mode === "perm" || s.mode === "again") ? s : null;
+  } catch (e) { return null; }
+}
+const autoClear = () => store.set("pt_auto", "");
+/* duas abas do mesmo navegador não disputam o mesmo usuário na sala: se já há uma aba jogando, esta mostra a tela inicial em vez de entrar sozinha */
+const tabCh = typeof BroadcastChannel === "function" ? new BroadcastChannel("party-tab") : null;
+let tabInGame = false;
+if (tabCh) tabCh.onmessage = e => { if (e.data === "who" && tabInGame) tabCh.postMessage("busy"); };
+function otherTabPlaying() {
+  return new Promise(res => {
+    if (!tabCh) return res(false);
+    const h = e => { if (e.data === "busy") { tabCh.removeEventListener("message", h); res(true); } };
+    tabCh.addEventListener("message", h); tabCh.postMessage("who"); setTimeout(() => { tabCh.removeEventListener("message", h); res(false); }, 250);
+  });
+}
+async function autoEnter(s) {
+  if (await otherTabPlaying()) return;                                               // outra aba já está na sala: nada de entrar duas vezes
+  const box = document.querySelector("#title .tbox"); $("tBusy").hidden = false; box.classList.add("busy");
+  let fail = "";
+  try {
+    if (!fbInit()) throw new Error("O Firebase não carregou. Confira a conexão e recarregue a página.");
+    await authFirstP;
+    if (s.mode === "perm" && !isRealUser(fbUser)) fail = "Entre na sua conta de novo para voltar à sua sala.";
+    else {
+      $("inName").value = s.name;
+      await enter(s.mode, s);
+      if (!$("app").hidden) return;                                                  // entrou: o jogo cuida do resto
+    }
+  } catch (e) { fail = enterMsg(e); }
+  autoClear(); $("tBusy").hidden = true; box.classList.remove("busy");
+  showLogin(s.mode === "perm" ? "acct" : "temp"); if (fail) errBox(fail);
 }
 $("btnEnter").onclick = () => enter("temp");
 $("btnEnterPerm").onclick = () => enter("perm");

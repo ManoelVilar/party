@@ -30,7 +30,7 @@
 | `04b_natal.js` | Tema de Natal (opcional, só visual): paletas, árvores, lareira, guirlandas, neve, presentes; `NATAL`/`setNatal()` e o botão 🎄 |
 | `05_net.js` | Layout (`resizeView`, tela cheia), login e código do espaço, `startGame` (todos os *listeners* do Firebase), movimento e colisão, pathfinding (`bfs`), portas com permissão, guarda-roupa, ações contextuais, chat, ciclo lento (`tick`) |
 | `06_rtc.js` | WebRTC: criação de conexões, sinalização, mídia da câmera/mic, **transmissão** (tela/vídeo/slides), qualidade adaptativa, tiles de vídeo |
-| `07_rooms.js` | Cinema e sala de reuniões: YouTube sincronizado, slides/PDF, painel da sala, mão levantada, chat da reunião, **modo sentado** (teatro) |
+| `07_rooms.js` | Cinema e sala de reuniões: YouTube sincronizado, slides/PDF, painel da sala, mão levantada, chat da reunião |
 | `05b_account.js` · `05c_access.js` · `05d_desks.js` | Contas e entrada · papéis, trava de escritório, janela Sala, sair · mesas |
 | `07b_games.js` | Jogos nas TVs da sala: lugares do sofá (`TV_SETS`), painel da sinuca (só sentado), placar da dupla e ranking da sala; imagem do tabuleiro na TV (`tvGameView`) |
 | `07c_sinuca.js` | Sinuca (bola 8): física determinística (`snTick`/`snRun`), regras (`snEvalShot`), codificação das bolas (`snEnc`/`snDec`), mesa em canvas, mira, força e animação das jogadas |

@@ -44,6 +44,7 @@
   body.title #stage > *:not(#cv) { display:none !important; }
   body.title canvas#cv { width:100%; height:100%; filter:blur(5px) brightness(.62) saturate(1.1); transform:translate(calc(var(--tpx, 0) * -1px), calc(var(--tpy, 0) * -1px)) scale(1.06); transition:transform .35s ease-out; }
   #title { position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:16px; overflow:auto; background:radial-gradient(ellipse at center, rgba(10,6,20,.1) 20%, rgba(10,6,20,.62) 100%); }
+  .tbusy { color:var(--accent); margin:0; } .tbox.busy > .tbtn, .tbox.busy > .tnote, .tbox.busy > .tsub { display:none; }
   .tbox { width:min(420px,100%); display:grid; gap:12px; text-align:center; padding:22px 20px; }
   .tlogo { font-size:clamp(2.6rem,12vw,4rem); letter-spacing:5px; line-height:1; color:var(--accent); text-shadow:4px 4px 0 var(--line), 0 0 28px rgba(255,209,102,.35); padding:6px 0 2px; }
   .tsub { margin:0 0 6px; font-size:.95rem; }
@@ -214,20 +215,6 @@
   .viewer > .vtoast[hidden] { display:none; }
   @keyframes vhb { 50% { transform:translateY(-3px); } }
   #vHand.on { background:#ffd166; color:#2b1b3a; }
-  /* modo sentado: vídeo na janela inteira + miniaturas das câmeras ao lado */
-  .viewer > .vcap { inset:auto auto 14px 14px; width:auto; height:auto; z-index:3; display:none; background:rgba(18,10,28,.8); padding:2px 10px; font-size:.9rem; pointer-events:none; }
-  .viewer.theater > .vcap { display:block; }
-  .viewer.theater { position:fixed; left:0; top:0; bottom:0; right:196px; width:auto; height:auto; aspect-ratio:auto; border:0; background:#000; z-index:50; }
-  .viewer.theater > .vbar { display:flex; }
-  .viewer.theater > .vtool { opacity:.6; } .viewer.theater > .vtool:hover { opacity:1; }
-  .viewer.theater > .vhands { top:64px; }
-  body.theater #roompanel { background:none; border:0; box-shadow:none; padding:0; z-index:55; }
-  body.theater #roompanel .rphead, body.theater #roompanel .rpctl, body.theater #vCaption { display:none; }
-  body.theater #videos { position:fixed; top:0; right:0; bottom:0; left:auto; width:196px; z-index:60; flex-direction:column; align-items:stretch; justify-content:flex-start; overflow-y:auto; overflow-x:hidden; padding:8px; gap:8px; background:#0b0713; border-left:3px solid var(--line); max-height:none; min-height:0; }
-  body.theater #videos .vt { width:100%; height:auto; aspect-ratio:4/3; }
-  body.theater #vhint { display:none; }
-  body.theater .top, body.theater #status, body.theater #prompts, body.theater #chatpanel { z-index:70; }
-  body.theater .top { left:calc((100vw - 196px) / 2); max-width:calc(100vw - 196px - 300px); }   /* centralizada na área à esquerda da coluna de vídeos */
   .vt.hand { outline:3px solid #ffd166; outline-offset:-3px; }
   .viewer:fullscreen { width:100vw; height:100vh; aspect-ratio:auto; border:0; background:#000; }
   .viewer:fullscreen > .vbar { display:flex; }
@@ -291,9 +278,6 @@
     body.full #gamepanel, body.full #gamepanel.gp-wide { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
     .gp-cell { width:58px; height:58px; } .gp-board { grid-template-columns:repeat(3,58px); }
     body.full #roompanel, body.full #roompanel.rpcompact { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); top:calc(52px + env(safe-area-inset-top)); width:auto; max-height:calc(100vh - 62px); max-height:calc(100dvh - 62px); }
-    body.theater #videos { width:104px; padding:6px; gap:6px; top:0; }
-    body.theater #videos .vt { width:100%; height:auto; }
-    body.theater .top { left:calc(74px + env(safe-area-inset-left)); right:118px; max-width:none; }
   }
   @media (orientation:landscape) and (max-height:520px) {
     body.full #actions { left:calc(196px + env(safe-area-inset-left)); bottom:calc(8px + env(safe-area-inset-bottom)); }
@@ -360,6 +344,7 @@
   <div class="tbox panel">
     <div class="tlogo">PARTY</div>
     <p class="muted tsub">Espaço pixel para festas, encontros e reuniões</p>
+    <p id="tBusy" class="tbusy" role="status" hidden>Voltando para a sua sala…</p>
     <button type="button" id="tGuest" class="gold tbtn">Jogar sem login</button>
     <button type="button" id="tLogin" class="tbtn">Entrar na conta</button>
     <p class="muted tnote">Com uma conta você tem uma sala permanente só sua. Sem login, você joga numa sala temporária com um código.</p>
@@ -455,7 +440,7 @@
     <button id="btnNatal" title="Ligar/desligar o tema de Natal" aria-pressed="false">🎄 Natal</button>
     <button id="btnFull" title="Tela cheia (F)">Tela cheia</button>
     <button id="btnRoom" title="Sala: convites, agentes de IA, escritórios e mesas">🔑 Sala</button>
-    <button id="btnLeave" class="no" title="Sair da sala">Sair</button>
+    <button id="btnLeave" class="no" title="Sair da sala e desconectar">Sair da sala</button>
   </div>
   <div id="videos"><div id="vhint">Ative mic e câmera e chegue perto de alguém para conversar.</div></div>
   <div id="status" hidden></div>
@@ -510,7 +495,7 @@
 
     <h3>O que fica no seu aparelho</h3>
     <ul>
-      <li>Nome, código da sala, personagem, roupas salvas, zoom, a escolha do tema de Natal e o volume/mudo que você deu a cada pessoa, no armazenamento local do navegador (<code>localStorage</code>).</li>
+      <li>Nome, código da sala (para voltar sozinho à sala ao recarregar a página, até você clicar em “Sair da sala”), personagem, roupas salvas, zoom, a escolha do tema de Natal e o volume/mudo que você deu a cada pessoa, no armazenamento local do navegador (<code>localStorage</code>).</li>
       <li>Um identificador criado pelo Firebase Authentication, no armazenamento do navegador: anônimo em salas temporárias (sem e-mail, telefone nem senha) ou o da sua conta, se você entrar nela.</li>
       <li>O jogo <b>não define cookies</b> e não usa publicidade nem estatísticas de acesso. A única exceção é o player do YouTube da <b>jukebox</b>, que só é carregado quando alguém pede uma música do YouTube e pode definir cookies do próprio YouTube. Para apagar tudo, limpe os dados do site no navegador.</li>
     </ul>
@@ -2611,7 +2596,7 @@ async function toggleBrowserFull() {
     else if (document.exitFullscreen) await document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
   } catch (e) { setStatus("Não foi possível entrar em tela cheia (se o jogo está dentro de outra página, abra-o direto no endereço). Use F11.", 5000); }
 }
-const syncFullBtn = () => { const f = !!(document.fullscreenElement || document.webkitFullscreenElement); const b = $("btnFull"); if (b) b.textContent = f ? "Sair da tela cheia" : "Tela cheia"; setTimeout(resizeView, 50); };
+const syncFullBtn = () => { const f = !!(document.fullscreenElement || document.webkitFullscreenElement); const b = $("btnFull"); if (b) b.textContent = f ? "↙ Voltar à janela" : "Tela cheia"; setTimeout(resizeView, 50); };
 document.addEventListener("fullscreenchange", syncFullBtn); document.addEventListener("webkitfullscreenchange", syncFullBtn);
 addEventListener("resize", () => { if (isFull()) resizeView(); });
 addEventListener("orientationchange", () => setTimeout(() => { if (isFull()) resizeView(); }, 250));
@@ -2655,7 +2640,7 @@ $("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Ger
 /* o que o servidor precisa saber de nós (usado ao entrar e ao voltar da queda) */
 function selfState() { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, acct: myAcct(), csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 3 }; }
 function startGame(name, room) {
-  myName = name; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
+  myName = name; tabInGame = true; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
   let tries = 0;
   do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30);
@@ -3024,6 +3009,7 @@ function tick() {
    ========================================================= */
 const PERM_RE = /^perm-[a-z0-9]{12,24}$/;
 const TOK_RE = /^[A-Za-z0-9]{20,40}$/;
+let authFirstP = Promise.resolve();                                    // resolve quando o Firebase termina de restaurar o login guardado (no recarregar da página)
 let fbUser = null, fbReady = false, roomMeta = null, myAcl = null, inviteIn = null, entering = false;
 const SVT = () => firebase.database.ServerValue.TIMESTAMP;
 const errBox = t => { $("err").textContent = t || ""; };
@@ -3038,6 +3024,7 @@ function fbInit() {
   try { firebase.initializeApp(firebaseConfig); } catch (e) { if (!/already exists/i.test(String(e && e.message))) return false; }
   fbReady = true; db = firebase.database();
   firebase.auth().onAuthStateChanged(u => { fbUser = u || null; renderAcct(); });
+  authFirstP = new Promise(res => { let un = null; un = firebase.auth().onAuthStateChanged(() => { try { if (un) un(); } catch (e) { /* ok */ } res(); }); });
   return true;
 }
 function authMsg(e) {
@@ -3143,7 +3130,7 @@ $("btnMailCheck").onclick = () => acctRun(async () => {
   await fbUser.reload(); await fbUser.getIdToken(true); renderAcct();
   if (!fbUser.emailVerified) throw { message: "Ainda não confirmado. Abra o link do e-mail e tente de novo." };
 }, "E-mail confirmado!");
-$("btnOut").onclick = () => acctRun(async () => { acctRoomFor = ""; $("acctRoomName").value = ""; await firebase.auth().signOut(); acctMode("in", false); selectTab("temp"); });
+$("btnOut").onclick = () => acctRun(async () => { autoClear(); acctRoomFor = ""; $("acctRoomName").value = ""; await firebase.auth().signOut(); acctMode("in", false); selectTab("temp"); });
 
 /* ---------- link de convite: #sala=<sala>&convite=<token> (o token fica no fragmento, que não vai para o servidor do site) ---------- */
 (() => {
@@ -3161,7 +3148,7 @@ $("btnOut").onclick = () => acctRun(async () => { acctRoomFor = ""; $("acctRoomN
 const cleanRoom = v => String(v || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
 async function ensureAnon() {
   if (!fbInit()) throw new Error("O Firebase não carregou. Confira a conexão e recarregue a página.");
-  const a = firebase.auth(); if (a.currentUser) return a.currentUser;
+  await authFirstP; const a = firebase.auth(); if (a.currentUser) return a.currentUser;
   return (await a.signInAnonymously()).user;
 }
 async function ensurePermRoom() {
@@ -3212,12 +3199,13 @@ function enterMsg(e) {
   if (/permission_denied/i.test(m)) return "O servidor recusou a entrada. Se a sala for privada, peça um convite; se for nova, confira se as regras do Firebase estão publicadas (docs/FIREBASE.md).";
   return m.replace(/^Firebase: /, "").slice(0, 200) || "Não conectou.";
 }
-async function enter(mode) {
+async function enter(mode, saved) {
   if (entering) return;
-  const name = $("inName").value.trim();
+  const name = saved ? saved.name : $("inName").value.trim();
   if (!name) return errBox("Escreva seu nome.");
   let room = "";
-  if (mode === "temp") {
+  if (saved) room = saved.room;                                                     // voltando sozinho depois de recarregar: mesma sala de antes
+  else if (mode === "temp") {
     room = cleanRoom($("inRoom").value);
     if (room.length < 4) return errBox("O código do espaço precisa de 4+ letras ou números.");
     if (room.startsWith("perm-")) return errBox("Códigos que começam com “perm-” são das salas permanentes. Use o link de convite ou outro código.");
@@ -3230,7 +3218,45 @@ async function enter(mode) {
     else { const u = await ensureAnon(); uid = u.uid; }
     await prepareRoom(room, mode, name);
   } catch (e) { entering = false; return errBox(enterMsg(e)); }
-  entering = false; loginCreator.destroy(); startGame(name, room);
+  entering = false; loginCreator.destroy();
+  store.set("pt_auto", JSON.stringify({ mode: mode === "perm" ? "perm" : "again", room, name }));    // continua conectado ao recarregar, até clicar em "Sair da sala"
+  startGame(name, room);
+}
+/* ---------- continuar conectado ao recarregar a página ---------- */
+function autoSaved() {
+  try {
+    const s = JSON.parse(store.get("pt_auto") || "null");
+    return s && typeof s.name === "string" && s.name.trim() && typeof s.room === "string" && /^[a-z0-9-]{4,40}$/.test(s.room) && (s.mode === "perm" || s.mode === "again") ? s : null;
+  } catch (e) { return null; }
+}
+const autoClear = () => store.set("pt_auto", "");
+/* duas abas do mesmo navegador não disputam o mesmo usuário na sala: se já há uma aba jogando, esta mostra a tela inicial em vez de entrar sozinha */
+const tabCh = typeof BroadcastChannel === "function" ? new BroadcastChannel("party-tab") : null;
+let tabInGame = false;
+if (tabCh) tabCh.onmessage = e => { if (e.data === "who" && tabInGame) tabCh.postMessage("busy"); };
+function otherTabPlaying() {
+  return new Promise(res => {
+    if (!tabCh) return res(false);
+    const h = e => { if (e.data === "busy") { tabCh.removeEventListener("message", h); res(true); } };
+    tabCh.addEventListener("message", h); tabCh.postMessage("who"); setTimeout(() => { tabCh.removeEventListener("message", h); res(false); }, 250);
+  });
+}
+async function autoEnter(s) {
+  if (await otherTabPlaying()) return;                                               // outra aba já está na sala: nada de entrar duas vezes
+  const box = document.querySelector("#title .tbox"); $("tBusy").hidden = false; box.classList.add("busy");
+  let fail = "";
+  try {
+    if (!fbInit()) throw new Error("O Firebase não carregou. Confira a conexão e recarregue a página.");
+    await authFirstP;
+    if (s.mode === "perm" && !isRealUser(fbUser)) fail = "Entre na sua conta de novo para voltar à sua sala.";
+    else {
+      $("inName").value = s.name;
+      await enter(s.mode, s);
+      if (!$("app").hidden) return;                                                  // entrou: o jogo cuida do resto
+    }
+  } catch (e) { fail = enterMsg(e); }
+  autoClear(); $("tBusy").hidden = true; box.classList.remove("busy");
+  showLogin(s.mode === "perm" ? "acct" : "temp"); if (fail) errBox(fail);
 }
 $("btnEnter").onclick = () => enter("temp");
 $("btnEnterPerm").onclick = () => enter("perm");
@@ -3347,7 +3373,7 @@ function healPresence(now) {
 
 /* ---------- sair ---------- */
 async function leaveRoom(msg) {
-  if (leaving) return; leaving = true;
+  if (leaving) return; leaving = true; autoClear();                                          // saiu de propósito (ou foi removido): não volta sozinho
   try {
     if (myDesk) await releaseDesk();
     await meRef.remove();
@@ -3638,7 +3664,12 @@ $("tGuest").onclick = () => showLogin("temp");
 $("btnBack").onclick = showTitle;
 addEventListener("resize", () => { if (titleOn) resizeView(); });
 /* convite no endereço ou recado de uma saída anterior: vai direto à tela de entrada, onde a mensagem aparece */
-setTimeout(() => { titleStart(); if (inviteIn || loginMsg) showLogin(); else showTitle(); }, 0);       // depois de todos os módulos carregarem (o laço de desenho vem depois)
+setTimeout(() => {
+  titleStart();
+  if (inviteIn || loginMsg) { autoClear(); showLogin(); return; }
+  showTitle();
+  const s = autoSaved(); if (s) autoEnter(s);                                                // não clicou em "Sair da sala": volta sozinho para onde estava
+}, 0);       // depois de todos os módulos carregarem (o laço de desenho vem depois)
 /* =========================================================
    VOZ E VÍDEO (WebRTC). Escritórios, quartos, banheiro, cinema e reuniões:
    todos que estão dentro do cômodo se ouvem. Sala e cozinha: só quem está perto.
@@ -4120,16 +4151,9 @@ async function drawSlide() {
   const vp2 = $("vPage"); if (vp2) vp2.textContent = (slideIdx + 1) + " / " + slides.length;
 }
 const viewerEl = () => document.querySelector("#roompanel .viewer");
-const viewerFS = () => { const f = document.fullscreenElement || document.webkitFullscreenElement; return !!(f && (f === viewerEl() || (theaterOn && f === document.documentElement))); };
+const viewerFS = () => { const f = document.fullscreenElement || document.webkitFullscreenElement; return !!(f && f === viewerEl()); };
 async function toggleViewerFull() {
   const el = viewerEl(); if (!el) return;
-  if (theaterOn) {                                                   // modo sentado: a página inteira (vídeo + miniaturas) vai para a tela cheia do navegador
-    try {
-      if (document.fullscreenElement || document.webkitFullscreenElement) { if (document.exitFullscreen) await document.exitFullscreen(); else document.webkitExitFullscreen(); }
-      else { const d = document.documentElement; if (d.requestFullscreen) await d.requestFullscreen(); else if (d.webkitRequestFullscreen) d.webkitRequestFullscreen(); }
-    } catch (e) { setStatus("Não foi possível usar a tela cheia do navegador aqui. Use F11.", 4000); }
-    updateViewer(); return;
-  }
   try {
     if (viewerFS()) { if (document.exitFullscreen) await document.exitFullscreen(); else document.webkitExitFullscreen(); }
     else if (el.requestFullscreen) await el.requestFullscreen(); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
@@ -4138,28 +4162,12 @@ async function toggleViewerFull() {
 }
 /* setas / espaço / PageUp/PageDown passam os slides em tela cheia; Esc sai (o navegador cuida) */
 addEventListener("keydown", e => {
-  if (theaterOn ? !(bstream && viewPref === "sld") : !viewerFS()) return;      // sentado: setas só passam slides para quem apresenta (para os outros, andar levanta da cadeira)
+  if (!viewerFS()) return;
   const nxt = ["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(e.key), prv = ["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(e.key);
   if (nxt || prv) { e.preventDefault(); slideGo(nxt ? 1 : -1); } else if (e.key === "f" || e.key === "F") toggleViewerFull();
 }, true);
 const slideGo = d => { if (!slides.length) return; slideIdx = Math.max(0, Math.min(slides.length - 1, slideIdx + d)); drawSlide(); };
 
-/* ---------- MODO SENTADO: ao sentar numa cadeira do cinema/reunião com transmissão ao vivo, o vídeo ocupa a janela inteira
-   (igual ao telão, só que grande) e as câmeras dos participantes viram miniaturas ao lado. Levantou ou saiu da sala: volta à tela pequena. ---------- */
-let theaterOn = false, theaterOff = false;
-function theaterWanted() {
-  const r = roomOf(me.x, me.y); if (r !== "cin" && r !== "reu") return false;
-  const p = players[uid]; if (!p || p._stk !== "sit" || Date.now() - (p._stT || 0) < 450) return false;
-  return !!(bstream || roomBroadcaster(r));
-}
-function updateTheater() {
-  const p = players[uid]; if (!p || p._stk !== "sit") theaterOff = false;       // levantou: libera para a próxima vez que sentar
-  const want = !theaterOff && theaterWanted(); if (want === theaterOn) return;
-  theaterOn = want; document.body.classList.toggle("theater", want);
-  const v = viewerEl(); if (v) v.classList.toggle("theater", want);
-  if (!want) { const f = document.fullscreenElement || document.webkitFullscreenElement; if (f === document.documentElement) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {} } }
-  rosterSig = ""; renderRoster(); updateViewer(); updateTiles();
-}
 /* ---------- painel ---------- */
 function rpErr(msg) { document.querySelectorAll("#roompanel .err").forEach(e => { e.textContent = typeof msg === "string" ? msg : ""; }); if (msg) console.warn("[painel]", msg); }
 function setLoading(on) { const l = $("vLoad"); if (l) l.hidden = !on; }
@@ -4171,7 +4179,7 @@ function buildRoomPanel() {
     '<video id="bview" autoplay playsinline hidden></video><video id="vidLocal" controls playsinline hidden></video><canvas id="slideCanvas" width="1600" height="900" hidden></canvas>' +
     '<div id="vLoad" class="vmsg" hidden>Carregando...</div><button id="ytKick" class="primary" hidden style="inset:auto 8px 8px auto;width:auto;height:auto;z-index:3"></button>' +
     '<div id="vHands" class="vhands" hidden></div><div id="vToast" class="vtoast" hidden></div><div class="vtool"><span id="vVolBox" class="vvol" hidden><button id="vMute" type="button">🔈</button><input type="range" id="vVol" min="0" max="100" step="5" value="100" aria-label="Volume da transmissão (só para você)" title="Volume da transmissão (só para você)"></span><button id="vHand2" type="button" title="Levantar a mão (H)">✋</button><button id="vFull" type="button" title="Tela cheia (F)">⛶ Tela cheia</button></div>' +
-    '<div class="vbar" id="vBar"><button id="vPrev" type="button">◀</button><b id="vPage" class="panel" style="padding:4px 12px"></b><button id="vNext" type="button">▶</button><button id="vHand" type="button">✋ Mão</button><button id="vExit" type="button" class="no">Sair</button></div><div class="vcap" id="vCap2"></div></div><div id="vCaption" class="muted" style="margin-top:4px;font-size:.85rem"></div></div>' +
+    '<div class="vbar" id="vBar"><button id="vPrev" type="button">◀</button><b id="vPage" class="panel" style="padding:4px 12px"></b><button id="vNext" type="button">▶</button><button id="vHand" type="button">✋ Mão</button><button id="vExit" type="button">↙ Voltar à janela</button></div></div><div id="vCaption" class="muted" style="margin-top:4px;font-size:.85rem"></div></div>' +
     '<div class="rpctl"><div class="tabs" id="rpTabs"></div>' +
     '<div class="pane" id="pane-yt"><div class="row"><input type="url" id="ytUrl" placeholder="Cole o link do YouTube"><button id="ytGo" class="primary">Carregar</button></div>' +
     '<div class="row"><button id="ytBack">−10s</button><button id="ytPlay">Play/Pausa</button><button id="ytFwd">+10s</button><input type="range" id="ytVol" min="0" max="100" value="80" title="Volume (só para você)"></div>' +
@@ -4190,7 +4198,7 @@ function buildRoomPanel() {
     viewPref = "yt"; cinemaSet({ src: "yt", id, state: "play", pos: 0 }); setLoading(true); setTimeout(() => setLoading(false), 6000);
   };
   $("handBtn").onclick = toggleHand;
-  $("vFull").onclick = toggleViewerFull; $("vHand").onclick = toggleHand; $("vHand2").onclick = toggleHand; $("vExit").onclick = () => { if (theaterOn) { theaterOff = true; updateTheater(); } else toggleViewerFull(); };
+  $("vFull").onclick = toggleViewerFull; $("vHand").onclick = toggleHand; $("vHand2").onclick = toggleHand; $("vExit").onclick = toggleViewerFull;
   $("vPrev").onclick = () => slideGo(-1); $("vNext").onclick = () => slideGo(1);
   $("slideCanvas").addEventListener("click", e => { const r = e.currentTarget.getBoundingClientRect(); slideGo(e.clientX - r.left < r.width * .3 ? -1 : 1); });
   $("ytKick").onclick = () => { try { if (yt && ytReady) { yt.unMute(); yt.setVolume(+$("ytVol").value); yt.playVideo(); } } catch (e) {} ytAutoMuted = false; ytStuck = 0; $("ytKick").hidden = true; };
@@ -4299,15 +4307,14 @@ function updateViewer() {
   $("vVolBox").hidden = !(mode === "b" && !bstream);
   for (const k in show) show[k].hidden = k !== mode;
   if (mode === "idle") show.idle.textContent = idle;
-  $("vCaption").textContent = cap; const vc2 = $("vCap2"); if (vc2) vc2.textContent = cap;
+  $("vCaption").textContent = cap;
   $("vPrev").hidden = $("vNext").hidden = $("vPage").hidden = mode !== "sld" && !(bstream && viewPref === "sld");
-  $("vFull").textContent = viewerFS() ? "Sair da tela cheia" : "⛶ Tela cheia";
+  $("vFull").textContent = viewerFS() ? "↙ Voltar à janela" : "⛶ Tela cheia";
   if (mode !== "b" && show.b.srcObject) show.b.srcObject = null;
 }
 /* o painel completo (transmitir tela, slides, vídeo) só aparece para quem está no PC da sala; os demais veem só o vídeo */
 function updateRoomPanel() {
   const r = roomOf(me.x, me.y), panel = $("roompanel"), inRoom = r === "cin" || r === "reu";
-  updateTheater();
   if (!inRoom) {
     if (!panel.hidden) { panel.hidden = true; if (bstream) stopBroadcast(true); try { if (yt && ytReady) yt.pauseVideo(); } catch (e) {} const v = $("vidLocal"); if (v) v.pause(); }
     rpRoom = null; if (myHand()) { meRef.update({ hand: null }); if (players[uid]) players[uid].hand = null; } return;

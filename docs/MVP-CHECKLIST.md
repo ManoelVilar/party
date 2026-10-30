@@ -27,7 +27,7 @@ Os testes automatizados usam Firebase e mídia simulados. **Este checklist cobre
 - [ ] Bloquear a tela do celular 30 s e voltar → o jogo continua
 
 ## Transmissão (cinema e sala de reuniões)
-- [ ] Compartilhar **tela** (computador): o outro vê no telão pequeno; ao **sentar** vê em tela cheia com miniaturas
+- [ ] Compartilhar **tela** (computador): o outro vê no telão da sala (o botão ⛶ do visor amplia, e ↙ Voltar à janela reduz)
 - [ ] Compartilhar vídeo local e slides (imagens e PDF)
 - [ ] YouTube: todos veem o mesmo ponto do vídeo; pausa/avanço sincronizam
 - [ ] Levantar a mão; só quem apresenta consegue "Dar a palavra"
