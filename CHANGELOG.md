@@ -5,6 +5,12 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Adicionado
+- **Jukebox: busca melhor** — `!play nome` agora pontua os resultados (palavras no título/artista sem ligar para acento, frase inteira, evita remix/cover/vinheta/set longo salvo se pedirem, desempate por popularidade) e avisa como corrigir; novo **`!buscar nome`** lista até 5 opções e `!play 1…5` / `!escolher N` escolhe; busca opcional no **YouTube** com chave própria (`JUKE_YT_KEY`, veja `docs/JUKEBOX.md`).
+- **Gatos mais visíveis** — caixas de areia maiores e laranja sobre um tapete cinza, potes de ração e água maiores sobre tapetinhos, e uma bolinha vermelha "!" pulando quando o pote está quase vazio ou a caixa está suja.
+
+### Alterado
+- **Jukebox saiu da frente do escritório 2**: agora fica na sala em (17,9), entre a estante e a TV. As caixas de areia saíram de trás da parede da frente (banheiro (27,16), sala (41,11)) e os potes foram para um canto livre da cozinha ((26,2) e (27,2)), fora de trás das cadeiras.
+
 - **Mixer de vozes** (botão 🎚 Vozes): volume individual (0–100%) da voz de cada pessoa do espaço e botão para **mutar** alguém, inclusive antes de chegar perto. Cada quadradinho de vídeo também tem um botão 🔈/🔇 para mutar na hora. Só muda o que você ouve (nada vai para o servidor) e fica salvo no aparelho (`nc_mix`). No iPhone/iPad o navegador não deixa mudar o volume de cada pessoa; mutar funciona. Teste em `tests/e2e/mix.py`.
 - **Volume da transmissão** (tela compartilhada, vídeo ou apresentação): controle 🔈 + volume no canto da tela grande (funciona também em tela cheia e sentado) e uma linha 📡 no mixer para quem está transmitindo. É separado da voz da pessoa: dá para baixar a tela e continuar ouvindo quem fala, ou o contrário.
 

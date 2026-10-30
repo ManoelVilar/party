@@ -39,7 +39,7 @@ with sync_playwright() as p:
     A.evaluate("cinemaSet({ src:'yt', id:'dQw4w9WgXcQ', state:'play', pos:0 })"); A.evaluate("cinemaSet({ state:'pause', pos: 12 })")
     A.evaluate("cinemaSet({ src:null, id:null, state:'stop', pos:0 })")
     # jukebox: as escritas reais do cliente (fila, avanço do líder, pausa, retomada, duração, parar) com a rede de busca simulada
-    A.evaluate("window.fetch = async () => ({ ok: true, json: async () => ({ data: [{ id: 'Dz4Ab', title: 'Lofi', user: { name: 'DJ' }, duration: 90, is_streamable: true }] }) })")
+    A.evaluate("window.fetch = async u => ({ ok: true, json: async () => ({ data: [{ id: 'Dz4Ab', title: decodeURIComponent((String(u).match(/query=([^&]*)/) || [0, 'lofi'])[1]), user: { name: 'DJ' }, duration: 90, is_streamable: true }] }) })")
     A.evaluate("jAdd('lofi')"); A.wait_for_timeout(1800)
     A.evaluate("jAdd('outra')"); A.wait_for_timeout(500)
     A.evaluate("jReqSend('pause')"); A.wait_for_timeout(1400)

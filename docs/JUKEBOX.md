@@ -6,7 +6,8 @@ A jukebox fica na **Sala**, entre a TV e a estante. Enquanto toca, as luzes do p
 ## Comandos (digite no chat)
 | Comando | O que faz |
 |---|---|
-| `!play nome da música` | Busca no catálogo aberto e coloca na fila (toca na hora se não houver nada tocando). Também: `!tocar`, `!p` |
+| `!play nome da música` | Busca, escolhe a **melhor** correspondência (veja "Como a busca escolhe") e coloca na fila (toca na hora se não houver nada tocando). Também: `!tocar`, `!p`. Dica: artista + música acerta mais |
+| `!buscar nome da música` | Lista até 5 opções numeradas (com duração) sem adicionar nada. Escolha com `!play 1`…`!play 5` (ou `!escolher 2`); a lista vale por 2 minutos. Também: `!busca`, `!procurar` |
 | `!play https://youtu.be/...` | Link do YouTube (youtube.com, youtu.be, music.youtube.com, shorts). Título vem do YouTube |
 | `!play https://audius.co/...` | Link de uma música do catálogo aberto (Audius) |
 | `!fila` | Mostra o que toca e a ordem da fila |
@@ -38,6 +39,12 @@ Estado em `rooms/<sala>/jukebox`:
 
 Quem executa os pedidos e passa para a próxima música é o **líder** da sala (o mesmo critério dos gatos: menor id entre as pessoas visíveis; agentes de IA nunca são líder). Ele também avança sozinho quando a duração acaba. Um pedido `skip`/`end` só vale se o `seq` for o da música atual, então dois "pular" ao mesmo tempo não pulam duas músicas.
 As regras (`scripts/gera-regras.mjs`) validam tamanhos e formatos (`ref` só letras, números, `_` e `-`); **agentes de IA não escrevem na jukebox**. Textos são mostrados sempre como texto.
+
+## Como a busca escolhe
+- Ignora acentos e maiúsculas; a faixa precisa ter as palavras pedidas no título **ou no nome do artista** (metade delas, ou a palavra inteira se for uma só).
+- Pontua mais quem tem a frase inteira ou o título exato, e rebaixa remix/cover/acelerada/karaokê (a menos que você peça), vinhetas de menos de 45 s e sets de mais de 25 min (a menos que peça "mix", "live", "completo"…). Empate: o mais ouvido.
+- Sem resultado bom, avisa e sugere `!buscar` ou colar um link do YouTube.
+- **YouTube por nome (opcional):** o YouTube não deixa buscar sem chave. Se quiser, crie uma chave grátis da *YouTube Data API v3* no Google Cloud (cota grátis ≈ 100 buscas por dia), **restrinja-a ao site** (referenciador `https://manoelvilar.github.io/*`) e coloque em `JUKE_YT_KEY` (em `src/js/07d_jukebox.js`; depois `node scripts/build.mjs`) ou defina `window.PARTY_YT_KEY`. Com chave, os resultados do YouTube (só vídeos que permitem incorporar) vêm primeiro e o catálogo aberto completa a lista; se a cota acabar ou a chave falhar, volta sozinho para o catálogo aberto. Sem chave nada muda.
 
 ## Limites e privacidade
 - Catálogo aberto: [Audius](https://audius.co) (consulta pelo navegador de quem pediu; o IP dele vai para o Audius). Se a rede/bloqueador impedir, o comando avisa e sugere o link do YouTube.
