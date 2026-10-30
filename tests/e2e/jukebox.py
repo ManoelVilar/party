@@ -2,6 +2,7 @@
 YouTube e catálogo aberto (redes simuladas), painel de controle e dança perto da jukebox.
 Rode com: bash tests/run.sh (usa o fbstub.js no lugar do Firebase)."""
 import os, sys, json, struct
+from urllib.parse import urlparse, parse_qs
 from playwright.sync_api import sync_playwright
 
 URL = os.environ.get("PARTY_URL", "http://localhost:8765/index.html")
@@ -29,6 +30,11 @@ window.YT = { Player: class {
 setTimeout(() => window.onYouTubeIframeAPIReady && window.onYouTubeIframeAPIReady(), 10);
 """
 CORS = {"access-control-allow-origin": "*"}
+def au(i, title, artist, dur, plays): return {"id": i, "title": title, "user": {"name": artist}, "duration": dur, "play_count": plays, "is_streamable": True}
+VARIOS = [au("Rm1xx", "Varios Tema (Remix)", "DJ Quente", 210, 9999), au("In1tr", "Varios Tema Intro", "Banda X", 20, 500), au("Ou1tr", "Outra Coisa", "Alguem", 180, 99999),
+          au("Ao1vv", "Varios Tema Ao Vivo", "Banda X", 240, 10), au("Or1gi", "Varios Tema", "Banda X", 200, 50), au("Or1gi", "Varios Tema", "Banda X", 200, 50)]
+YT_SEARCH = {"items": [{"id": {"videoId": "AAAAAAAAAAA"}, "snippet": {"title": "Varios Tema &amp; Cia (Clipe Oficial)", "channelTitle": "Canal Oficial"}},
+                       {"id": {"videoId": "BBBBBBBBBBB"}, "snippet": {"title": "Varios Tema ao vivo", "channelTitle": "Outro Canal"}}, {"id": {"channelId": "x"}, "snippet": {"title": "canal"}}]}
 SEARCH = {"data": [{"id": "Dz4Ab", "title": "Lofi Test", "user": {"name": "DJ Teste"}, "duration": 90, "is_streamable": True}]}
 
 def mk(ctx, name, room):
@@ -39,9 +45,13 @@ def mk(ctx, name, room):
         if "firebase-app-compat" in u: r.fulfill(body=STUB, content_type="application/javascript")
         elif "gstatic.com/firebasejs" in u: r.fulfill(body="", content_type="application/javascript")
         elif "api.audius.co/v1/tracks/search" in u:
-            q = u.lower()
-            if "naoexiste" in q: r.fulfill(body=json.dumps({"data": []}), content_type="application/json", headers=CORS)
-            else: r.fulfill(body=json.dumps(SEARCH), content_type="application/json", headers=CORS)
+            q = (parse_qs(urlparse(u).query).get("query") or [""])[0]
+            if "naoexiste" in q.lower(): data = {"data": []}
+            elif q == "varios tema": data = {"data": VARIOS}
+            else: data = {"data": [{"id": "Dz4Ab", "title": q.title() + " Test", "user": {"name": "DJ Teste"}, "duration": 90, "is_streamable": True}]}   # o título ecoa o pedido
+            r.fulfill(body=json.dumps(data), content_type="application/json", headers=CORS)
+        elif "googleapis.com/youtube/v3/search" in u:
+            r.fulfill(body=json.dumps(YT_SEARCH), content_type="application/json", headers=CORS)
         elif "api.audius.co/v1/tracks/" in u and "/stream" in u: r.fulfill(body=wav(), content_type="audio/wav", headers=CORS)
         elif "youtube.com/oembed" in u: r.fulfill(body=json.dumps({"title": "Video de Teste"}), content_type="application/json", headers=CORS)
         elif "youtube.com/iframe_api" in u: r.fulfill(body=YT_STUB, content_type="application/javascript")
@@ -67,7 +77,7 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport={"width": 1280, "height": 800})
     ROOM = "party-teste-jukebox-1234"
     A, B = mk(ctx, "Ana", ROOM), mk(ctx, "Beto", ROOM)
-    ok(ev(A, "ITEM['12_9'] && ITEM['12_9'].t === 'jukebox'") and ev(A, "DEF.jukebox.solid === true"), "a jukebox está na sala (12,9) e é um móvel sólido")
+    ok(ev(A, "ITEM['17_9'] && ITEM['17_9'].t === 'jukebox'") and ev(A, "DEF.jukebox.solid === true"), "a jukebox está na sala (17,9) e é um móvel sólido")
     ok(ev(A, "typeof jukePlaying === 'function' && !jukePlaying()"), "começa sem música")
 
     # --- catálogo aberto: busca por nome ---
@@ -95,6 +105,37 @@ with sync_playwright() as p:
     ok("Use: !play" in log(A), "!play sem nada ensina o uso")
     say(A, "!play naoexiste", 1200)
     ok("Não achei" in log(A) and ev(A, "Object.keys(jQueue).length") == 1, "busca sem resultado avisa e não polui a fila")
+    # --- busca melhor: ranking, !buscar e escolha por número ---
+    r = A.evaluate("jSearch('varios tema', 5).then(l => l.map(i => i.title + '|' + i.ref))")
+    ok(r[0].startswith("Varios Tema — Banda X|Or1gi"), "ranking: a faixa que bate com o pedido vem antes do remix mais ouvido (%s)" % r[0])
+    ok(not any("Outra Coisa" in t for t in r), "ranking: faixa que não tem nada a ver com o pedido é descartada")
+    ok(len(r) == 4 and r[-1].startswith("Varios Tema Intro") , "ranking: repetidas somem e a vinheta de 20 s vai pro fim (%s)" % r)
+    ok(ev(A, "jScore({ title: 'Cafe com Leite', user: { name: 'Joao' }, duration: 100 }, 'café com leite') > 10"), "busca ignora acento e maiúsculas")
+    ok(ev(A, "jScore({ title: 'Samba de Roda', user: { name: 'Joao' }, duration: 100 }, 'rock pesado') === null"), "nenhuma palavra em comum: descarta")
+    ok(ev(A, "jScore({ title: 'Artista Cantor', user: { name: 'Banda' }, duration: 100 }, 'cantor') > 0"), "o nome do artista também vale na busca")
+    n0 = ev(A, "Object.keys(jQueue).length")
+    say(A, "!buscar varios tema", 1500)
+    L = log(A).split("!buscar varios tema")[-1]
+    ok("1. Varios Tema — Banda X (3:20)" in L and "Escolha com !play 1" in L, "!buscar lista as opções numeradas com a duração")
+    ok(ev(A, "Object.keys(jQueue).length") == n0, "!buscar só lista: não entra nada na fila")
+    say(A, "!play 2", 1500)
+    ok(wait_for(A, "Object.keys(jQueue).length === %d" % (n0 + 1)) and wait_for(A, "$('log').innerText.includes('Adicionada: Varios Tema Ao Vivo')", 9000), "!play 2 adiciona a segunda opção da lista")
+    say(A, "!play 2", 1500)
+    ok(ev(A, "Object.values(jQueue).filter(i => i.title.startsWith('2 Test')).length") == 1 and ev(A, "jPick === null"), "depois de escolher a lista some: !play 2 vira busca normal")
+    ev(A, "(async () => { const q = await roomRef.child('jukebox/queue').once('value'); const v = q.val() || {}; Object.keys(v).filter(k => v[k].title.startsWith('2 Test') || v[k].title.startsWith('Varios')).forEach(k => roomRef.child('jukebox/queue/' + k).remove()); })()"); A.wait_for_timeout(500)
+    say(A, "!escolher 3", 700)
+    ok("Faça uma busca primeiro" in log(A), "!escolher sem lista avisa o que fazer")
+    say(A, "!buscar naoexiste", 1200)
+    ok("Não achei «naoexiste»" in log(A), "!buscar sem resultado avisa")
+    say(A, "!buscar", 500)
+    ok("Use: !buscar" in log(A), "!buscar sem nome ensina o uso")
+    ev(A, "jPick = { list: [{ src: 'au', ref: 'Dz4Ab', title: 'X' }], ts: Date.now() - 130000 }"); say(A, "!escolher 1", 700)
+    ok(log(A).count("Faça uma busca primeiro") == 2, "a lista de opções vence em 2 minutos")
+    # com chave do YouTube configurada: resultados do YouTube vêm primeiro, com título decodificado
+    ev(A, "window.PARTY_YT_KEY = 'chave-de-teste'")
+    r = A.evaluate("jSearch('varios tema', 5).then(l => l.map(i => i.src + ':' + i.ref + ':' + i.title))")
+    ok(r[0] == "yt:AAAAAAAAAAA:Varios Tema & Cia (Clipe Oficial) — Canal Oficial" and r[1].startswith("yt:BBBBBBBBBBB") and r[2].startswith("au:") and len(r) == 5, "com chave: YouTube primeiro (só vídeos), título legível, catálogo aberto completa (%s)" % r[:3])
+    ev(A, "window.PARTY_YT_KEY = ''")
     say(A, "!batata", 400)
     ok("Comandos" not in log(A).split("!batata")[-1], "!comando desconhecido é só conversa")
 
@@ -105,11 +146,11 @@ with sync_playwright() as p:
     for room, xy in (("reu", (36, 16)), ("cin", (36, 4))):
         ev(A, f"(() => {{ path = []; me.x = {xy[0]}; me.y = {xy[1]}; meRef.update({{ x: {xy[0]}, y: {xy[1]} }}); }})()"); A.wait_for_timeout(1300)
         ok(ev(A, f"roomOf(me.x, me.y) === '{room}'") and ev(A, "jAu.paused"), f"em '{room}' a música não toca")
-    ev(A, "(() => { path = []; me.x = 12; me.y = 11; meRef.update({ x: 12, y: 11 }); })()"); A.wait_for_timeout(1300)
+    ev(A, "(() => { path = []; me.x = 17; me.y = 11; meRef.update({ x: 17, y: 11 }); })()"); A.wait_for_timeout(1300)
     ok(ev(A, "!jAu.paused"), "voltando para a sala a música volta no ponto certo")
     ev(A, "(() => { path = []; me.x = 3; me.y = 16; meRef.update({ x: 3, y: 16 }); })()"); A.wait_for_timeout(1300)
     ok(ev(A, "roomOf(me.x, me.y) === 'q1'") and ev(A, "!jAu.paused"), "no quarto (não é ambiente de som próprio) a música toca")
-    ev(A, "(() => { path = []; me.x = 12; me.y = 11; meRef.update({ x: 12, y: 11 }); })()"); A.wait_for_timeout(800)
+    ev(A, "(() => { path = []; me.x = 17; me.y = 11; meRef.update({ x: 17, y: 11 }); })()"); A.wait_for_timeout(800)
 
     # --- pausar / continuar ---
     say(A, "!pausar", 1500)
@@ -152,7 +193,7 @@ with sync_playwright() as p:
     # --- painel ---
     say(A, "!play d", 1500)
     A.click("#btnJuke"); A.wait_for_timeout(400)
-    ok(ev(A, "!$('jukepanel').hidden") and "Lofi Test" in A.inner_text("#jkTitle"), "o botão 🎵 Jukebox abre o painel com a música atual")
+    ok(ev(A, "!$('jukepanel').hidden") and "A Test" in A.inner_text("#jkTitle"), "o botão 🎵 Jukebox abre o painel com a música atual")
     ok(A.locator("#jkQueue li button").count() == 1, "a fila aparece com botão de tirar")
     A.click("#jkQueue li button"); A.wait_for_timeout(700)
     ok(ev(A, "Object.keys(jQueue).length") == 0, "✕ tira da fila")
@@ -170,9 +211,9 @@ with sync_playwright() as p:
     A.click("#jkClose")
 
     # --- dançar ---
-    ev(A, "(() => { path = []; me.x = 12; me.y = 14; meRef.update({ x: 12, y: 14 }); })()"); A.wait_for_timeout(700)
+    ev(A, "(() => { path = []; me.x = 17; me.y = 14; meRef.update({ x: 17, y: 14 }); })()"); A.wait_for_timeout(700)
     ok("Usar a jukebox" not in A.inner_text("#actions"), "longe da jukebox não há ação")
-    ev(A, "(() => { path = []; me.x = 12; me.y = 10; meRef.update({ x: 12, y: 10 }); })()"); A.wait_for_timeout(800)
+    ev(A, "(() => { path = []; me.x = 17; me.y = 10; meRef.update({ x: 17, y: 10 }); })()"); A.wait_for_timeout(800)
     ok("Usar a jukebox" in A.inner_text("#actions") and "Dançar" in A.inner_text("#actions"), "perto da jukebox tocando: 'Usar a jukebox' e 'Dançar'")
     A.click('#actions button:has-text("Dançar")'); A.wait_for_timeout(700)
     ok(ev(A, "me.act && me.act.type === 'dance'") and ev(B, "(() => { const p = players[Object.keys(players).find(i => players[i].name === 'Ana')]; return !!(p.act && p.act.type === 'dance'); })()"), "o boneco dança e os outros veem")
@@ -182,7 +223,7 @@ with sync_playwright() as p:
     ok(ev(A, "me.act === null"), "parar de dançar")
     A.click('#actions button:has-text("Dançar")'); A.wait_for_timeout(500)
     ev(A, "jReqSend('stop')"); ok(wait_for(A, "jNow === null && !me.act", 6000), "quando a música para, a dança para junto")
-    ev(A, "(() => { path = []; me.x = 12; me.y = 14; meRef.update({ x: 12, y: 14 }); })()"); A.wait_for_timeout(500)
+    ev(A, "(() => { path = []; me.x = 17; me.y = 14; meRef.update({ x: 17, y: 14 }); })()"); A.wait_for_timeout(500)
     ok(ev(A, "jukeDance(), !me.act"), "longe da jukebox não dá para dançar")
 
     # --- líder ---

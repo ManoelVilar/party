@@ -42,6 +42,12 @@ function glow(gx, gy, z, r, rgba) {
 }
 /* cores de neon do escritório (esc1 ciano, esc2 magenta): [borda, claro, brilho no chão, halo] */
 const neonOf = x => x < 9 ? ["#19e6ff", "#8af4ff", "rgba(25,230,255,.13)", "rgba(25,230,255,.26)"] : ["#ff3df0", "#ffa0f7", "rgba(255,61,240,.13)", "rgba(255,61,240,.26)"];
+/* aviso que pula sobre o pote vazio / caixa suja, para dar para ver de longe que o gato precisa de ajuda */
+function alertaMarca(gx, gy, z) {
+  const p = P(gx, gy, z + 3 * Math.abs(Math.sin(Date.now() / 260)));
+  ctx.fillStyle = "#e5484d"; ctx.beginPath(); ctx.arc(p[0], p[1], 6.5, 0, 7); ctx.fill();
+  ctx.fillStyle = "#fff"; ctx.fillRect(p[0] - 1, p[1] - 4, 2, 5); ctx.fillRect(p[0] - 1, p[1] + 2, 2, 2);
+}
 const DEF = {
   /* mesa gamer de escritório tech: tela ultrawide com código (acende quando alguém senta), torre com RGB, teclado e mouse. Cor do neon por escritório. */
   gamer: { solid: true, draw(o) {
@@ -222,22 +228,28 @@ const DEF = {
   }},
   /* ----- cuidados dos gatos ----- */
   pote_racao: { solid: false, draw(o) {
-    const x = o.x, y = o.y, r = resOf(o.cid);
-    ell(x + .5, y + .55, 2, 11, 5.5, "#9aa0aa"); ell(x + .5, y + .55, 3.5, 9.5, 4.6, "#d9534f");
-    if (r >= 5) { ell(x + .5, y + .55, 5.2, 8, 3.4, "#8a5a30"); const n = Math.max(2, Math.round(r / 100 * 6)); for (let i = 0; i < n; i++) ball(x + .5 - .12 + ((i * 29) % 7) * .04, y + .5 + ((i * 17) % 5) * .03, 6.4, (i % 3 - 1) * 2, 1.2, "#b87a3a"); }
-    else ell(x + .5, y + .55, 5, 8, 3.4, "#7a2f2f");
+    const x = o.x, y = o.y, r = resOf(o.cid), cx = x + .5, cy = y + .55;
+    flat(x, y, .08, .1, .92, .9, .2, "#c9a24a"); flat(x, y, .13, .15, .87, .85, .3, "#e3c06a");                       // tapetinho sob o pote
+    ell(cx, cy, 2, 15, 7.5, "#9aa0aa"); ell(cx, cy, 4.5, 13, 6.4, "#d9534f");
+    if (r >= 5) { ell(cx, cy, 7, 11, 4.8, "#8a5a30"); const n = Math.max(3, Math.round(r / 100 * 9)); for (let i = 0; i < n; i++) ball(cx - .16 + ((i * 29) % 7) * .055, y + .5 + ((i * 17) % 5) * .04, 8.6, (i % 3 - 1) * 2.5, 1.7, "#b87a3a"); }
+    else ell(cx, cy, 7, 11, 4.8, "#7a2f2f");
+    if (r < 25) alertaMarca(cx, cy, 24);
   }},
   pote_agua: { solid: false, draw(o) {
-    const x = o.x, y = o.y, r = resOf(o.cid);
-    ell(x + .5, y + .55, 2, 11, 5.5, "#9aa0aa"); ell(x + .5, y + .55, 3.5, 9.5, 4.6, "#4aa3df");
-    if (r >= 5) { ell(x + .5, y + .55, 5.2, 8, 3.4, "#7fcdf5"); ell(x + .4, y + .5, 5.6, 3, 1.2, "#d6f0ff"); } else ell(x + .5, y + .55, 5, 8, 3.4, "#5c7a99");
+    const x = o.x, y = o.y, r = resOf(o.cid), cx = x + .5, cy = y + .55;
+    flat(x, y, .08, .1, .92, .9, .2, "#6fa6d8"); flat(x, y, .13, .15, .87, .85, .3, "#9cc6ec");
+    ell(cx, cy, 2, 15, 7.5, "#9aa0aa"); ell(cx, cy, 4.5, 13, 6.4, "#4aa3df");
+    if (r >= 5) { ell(cx, cy, 7, 11, 4.8, "#7fcdf5"); ell(cx - .1, cy - .05, 7.6, 4, 1.6, "#d6f0ff"); } else ell(cx, cy, 7, 11, 4.8, "#5c7a99");
+    if (r < 25) alertaMarca(cx, cy, 24);
   }},
   caixa_areia: { solid: false, draw(o) {
     const x = o.x, y = o.y, d = resOf(o.cid);
-    box(x, y, .06, .1, .94, .9, 0, 10, "#6f9bd1");
-    flat(x, y, .14, .18, .86, .82, 10.2, d < 30 ? "#eadfb4" : d < 70 ? "#d6c58a" : "#a8905a");
-    const n = Math.round(d / 18); for (let i = 0; i < n; i++) ball(x + .28 + ((i * 37) % 6) * .09, y + .3 + ((i * 53) % 5) * .1, 10.8, 0, 1.6, "#7a5a2a");
-    if (d >= 70) { const t = Date.now() / 300; ctx.strokeStyle = "rgba(150,190,60,.9)"; ctx.lineWidth = 1.2; for (let k = 0; k < 3; k++) { const p = P(x + .3 + k * .2, y + .5, 14); ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.quadraticCurveTo(p[0] + 3 * Math.sin(t + k), p[1] - 5, p[0], p[1] - 11); ctx.stroke(); } }
+    flat(x, y, -.02, .02, 1.02, 1.0, .2, "#8a8f99");                                                              // tapete cinza (destaca a caixa do piso)
+    box(x, y, .04, .06, .96, .94, 0, 15, "#f0902f");
+    box(x, y, .04, .06, .96, .2, 15, 17, "#ffb866"); box(x, y, .04, .8, .96, .94, 15, 17, "#ffb866"); box(x, y, .04, .06, .18, .94, 15, 17, "#ffb866"); box(x, y, .82, .06, .96, .94, 15, 17, "#ffb866");   // borda clara
+    flat(x, y, .18, .2, .82, .8, 15.2, d < 30 ? "#f2e6bb" : d < 70 ? "#d9c68a" : "#a8905a");
+    const n = Math.round(d / 15); for (let i = 0; i < n; i++) ball(x + .26 + ((i * 37) % 6) * .09, y + .3 + ((i * 53) % 5) * .1, 15.8, 0, 2, "#7a5a2a");
+    if (d >= 70) { const t = Date.now() / 300; ctx.strokeStyle = "rgba(150,190,60,.9)"; ctx.lineWidth = 1.4; for (let k = 0; k < 3; k++) { const p = P(x + .3 + k * .2, y + .5, 19); ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.quadraticCurveTo(p[0] + 3 * Math.sin(t + k), p[1] - 5, p[0], p[1] - 11); ctx.stroke(); } alertaMarca(x + .5, y + .5, 38); }
   }},
   /* ----- cinema e reuniões ----- */
   tela: { solid: true, draw(o) {
@@ -305,18 +317,18 @@ const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o)
   add("despensa", 17, 1); row("balcao", 18, 1, 2); add("fogao", 20, 1); add("pia", 21, 1); row("balcao", 22, 1, 2); add("geladeira", 24, 1); add("planta", 28, 1);
   for (let x = 21; x <= 24; x++) { add("mesa", x, 4, { plate: true }); add("mesa", x, 5, { plate: true }); add("cadeira", x, 3, { f: "d" }); add("cadeira", x, 6, { f: "u" }); }
   add("cadeira", 20, 4, { f: "r" }); add("cadeira", 20, 5, { f: "r" }); add("cadeira", 25, 4, { f: "l" }); add("cadeira", 25, 5, { f: "l" });
-  add("planta", 28, 7); add("planta", 17, 7); add("pote_racao", 18, 3, { cid: "racao1" }); add("pote_agua", 19, 3, { cid: "agua1" });
+  add("planta", 28, 7); add("planta", 17, 7); add("pote_racao", 26, 2, { cid: "racao1" }); add("pote_agua", 27, 2, { cid: "agua1" });
   /* sala */
   row("tapete", 4, 10, 5); row("tapete", 4, 11, 5); add("tv", 6, 9); add("mesa", 6, 10); row("sofa", 5, 11, 3, { f: "u" });
   row("tapete2", 18, 10, 5); row("tapete2", 18, 11, 5); add("tv", 20, 9); add("mesa", 20, 10); row("sofa", 19, 11, 3, { f: "u" });
-  row("estante", 14, 9, 2); add("jukebox", 12, 9); add("planta", 1, 9); add("planta", 28, 9); add("planta", 1, 12); add("planta", 28, 12); add("luz", 9, 9); add("luz", 26, 9);
+  row("estante", 14, 9, 2); add("jukebox", 17, 9); add("planta", 1, 9); add("planta", 28, 9); add("planta", 1, 12); add("planta", 28, 12); add("luz", 9, 9); add("luz", 26, 9);
   row("tapete", 30, 10, 5); row("tapete", 30, 11, 5); add("tv", 32, 9); add("mesa", 32, 10); row("sofa", 31, 11, 3, { f: "u" });
-  row("estante", 38, 9, 2); add("planta", 43, 9); add("planta", 43, 12); add("planta", 30, 9); add("luz", 41, 9); add("caixa_areia", 41, 12, { cid: "cx2" });
+  row("estante", 38, 9, 2); add("planta", 43, 9); add("planta", 43, 12); add("planta", 30, 9); add("luz", 41, 9); add("caixa_areia", 41, 11, { cid: "cx2" });
   /* quartos e banheiro */
   add("cama", 2, 14); add("criado", 4, 14); add("luz", 1, 14); row("guarda", 8, 14, 2); add("planta", 9, 18); row("tapete", 3, 17, 4); row("tapete", 3, 18, 4);
   add("cama", 12, 14); add("criado", 14, 14); add("luz", 11, 14); row("guarda", 18, 14, 2); add("planta", 19, 18); row("tapete", 13, 17, 4); row("tapete", 13, 18, 4);
   add("vaso", 21, 14); add("pia", 22, 14); add("pia", 23, 14); add("chuveiro", 28, 14); add("planta", 21, 18); row("tapete2", 24, 16, 2); row("tapete2", 24, 17, 2);
-  add("caixa_areia", 27, 18, { cid: "cx1" });
+  add("caixa_areia", 27, 16, { cid: "cx1" });
   /* cinema */
   add("tela", 33, 1, { w: 8, screen: "cin" });
   for (let y = 3; y <= 6; y++) row("tapete3", 31, y, 12);
