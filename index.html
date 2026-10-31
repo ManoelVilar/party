@@ -336,6 +336,48 @@
   .mbox { width:min(980px,100%); max-height:94vh; overflow:auto; display:grid; gap:10px; }
   .mhead { display:flex; align-items:center; gap:8px; } .mhead b { color:var(--accent); font-size:1.15rem; }
   .mfoot { display:flex; gap:8px; justify-content:flex-end; }
+  /* ---------- modo reunião (estilo Meet) ---------- */
+  #meet { position:fixed; inset:0; z-index:45; display:flex; flex-direction:column; gap:8px; padding:8px; background:#0f0a1a; }
+  #meet[hidden] { display:none; }
+  .mtop { display:flex; align-items:center; gap:10px; flex-wrap:wrap; } .mtop b { color:var(--accent); font-size:1.05rem; }
+  .mmain { position:relative; flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+  #meet.pres .mmain { grid-template-columns:minmax(0,1fr) 250px; }
+  .mstage { position:relative; min-height:0; background:#000; border:3px solid var(--line); overflow:hidden; }
+  .mstage:fullscreen { border:0; } .mstage:-webkit-full-screen { border:0; }
+  .mstage video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
+  .mnote { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:20px; color:var(--muted); pointer-events:none; }
+  .mnote:empty { display:none; }
+  .mcap { position:absolute; left:8px; bottom:8px; z-index:3; background:rgba(18,10,28,.85); padding:3px 10px; font-size:.85rem; max-width:70%; }
+  .mcap:empty { display:none; }
+  .mctl { position:absolute; right:8px; bottom:8px; z-index:3; display:flex; gap:6px; align-items:center; }
+  .mctl > span { display:flex; gap:6px; align-items:center; background:rgba(18,10,28,.85); padding:2px 6px; } .mctl > span[hidden] { display:none; }
+  .mctl button { padding:4px 10px; opacity:.92; }
+  .mside { min-height:0; overflow:auto; }
+  body.meet #meet #videos { position:static; display:grid; gap:8px; max-height:none; min-height:0; overflow:visible; padding:0; align-items:start; align-content:start; }
+  body.meet #meet #vhint { display:none; }
+  body.meet #meet .vt { width:100%; height:auto; aspect-ratio:4/3; box-shadow:none; }
+  body.meet #meet .vt .ph { font-size:2.6rem; } body.meet #meet .vt .nm { font-size:.85rem; }
+  #meet.pres #videos { grid-template-columns:minmax(0,1fr); }
+  #meet:not(.pres) #videos { grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr)); align-content:center; min-height:100%; }
+  #meet:not(.pres) .vt { max-width:calc((100vh - 190px) * 4 / 3); justify-self:center; }
+  .mhands { position:absolute; left:8px; top:8px; z-index:5; display:flex; flex-direction:column; gap:6px; pointer-events:none; max-height:70%; overflow:hidden; }
+  .mhands .vhands { display:flex; flex-direction:column; gap:6px; } .mhands .vhands[hidden] { display:none; }
+  .mhands .vtoast { background:rgba(42,27,64,.95); border:3px solid #ffd166; color:#fff6d8; padding:8px 14px; font-size:1rem; } .mhands .vtoast[hidden] { display:none; }
+  .mchat { position:absolute; right:0; bottom:0; z-index:6; width:min(340px,100%); max-height:60%; display:flex; flex-direction:column; gap:6px; padding:8px; overflow:hidden; }
+  .mchat[hidden] { display:none; } .mchat #meetBox { display:flex; flex-direction:column; gap:6px; min-height:0; } .mchat #meetBox[hidden] { display:none; } .mchat #meetLog { height:200px; }
+  .mbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; padding-top:2px; }
+  .mbar button { padding:8px 14px; } .mbar button.on { background:#2d7a4a; } .mbar button.off { background:#7a2238; }
+  #mHand.on, #mChatBtn.on, #mPresBtn.on { background:#ffd166; color:#2b1b3a; }
+  .mpwrap { position:relative; }
+  .mmenu { position:absolute; bottom:calc(100% + 8px); left:0; z-index:7; display:grid; gap:6px; min-width:260px; padding:8px; }
+  .mmenu[hidden] { display:none; } .mmenu button { text-align:left; }
+  body.meet #roompanel { position:fixed !important; left:-10000px !important; top:0 !important; width:620px !important; }      /* fora da tela, mas ativo: o som da apresentação continua nele */
+  body.meet #catpanel, body.meet #prompts { display:none; }
+  @media (max-width:760px) {
+    #meet.pres .mmain { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 110px; }
+    #meet.pres .mside { overflow-x:auto; overflow-y:hidden; } #meet.pres #videos { grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:120px; }
+    .mbar button span { display:none; } .mbar button { padding:10px 12px; font-size:1.1rem; } .mmenu { position:fixed; left:8px; right:8px; bottom:72px; min-width:0; }
+  }
 </style>
 </head>
 <body>
@@ -433,6 +475,7 @@
     <button id="btnMic" class="off">Mic</button>
     <button id="btnCam" class="off">Câmera</button>
     <button id="btnMix" title="Volume da voz de cada pessoa e mutar" aria-pressed="false">🎚 Vozes</button>
+    <button id="btnMeet" title="Modo reunião: palco grande com a apresentação e as câmeras na lateral" hidden>🖥 Modo reunião</button>
     <button id="btnJuke" title="Jukebox: música para a sala toda (comandos !play, !pular...)" aria-pressed="false">🎵 Jukebox</button>
     <button id="btnWard">Guarda-roupa</button>
     <button id="btnCatsT">Gatos</button>
@@ -459,6 +502,35 @@
   </div>
   <div id="catpanel" class="panel"></div>
   <div id="roompanel" class="panel" hidden></div>
+  <div id="meet" hidden role="dialog" aria-label="Modo reunião">
+    <div class="mtop"><b>🖥 Sala de reuniões</b><span id="mInfo" class="muted"></span></div>
+    <div class="mmain">
+      <div class="mstage" id="mStage" hidden>
+        <video id="mPres" autoplay playsinline muted></video>
+        <div class="mnote" id="mNote"></div>
+        <div class="mctl">
+          <span id="mSldCtl" hidden><button id="mSPrev" type="button" aria-label="Slide anterior">◀</button><b id="mSPage"></b><button id="mSNext" type="button" aria-label="Próximo slide">▶</button></span>
+          <span id="mVidCtl" hidden><button id="mVBack" type="button">−10s</button><button id="mVPlay" type="button">⏯</button><button id="mVFwd" type="button">+10s</button></span>
+          <button id="mSnd" type="button" hidden title="Som da apresentação (só para você)">🔈</button><button id="mFS" type="button" title="Palco em tela cheia">⛶</button>
+        </div>
+        <div class="mcap" id="mCap"></div>
+      </div>
+      <div class="mside" id="mTiles"></div>
+      <div class="mhands" id="mHands"></div>
+      <div class="mchat panel" id="mChat" hidden></div>
+    </div>
+    <div class="mbar">
+      <button id="mMic" type="button" class="off">🎤 <span>Mic</span></button>
+      <button id="mCam" type="button" class="off">📷 <span>Câmera</span></button>
+      <div class="mpwrap"><button id="mPresBtn" type="button" aria-haspopup="true" aria-expanded="false">🖥 <span>Apresentar ▾</span></button>
+        <div id="mMenu" class="mmenu panel" hidden><button type="button" data-k="screen">🖥 Minha tela</button><button type="button" data-k="sld">📊 Slides (PDF ou imagens)…</button><button type="button" data-k="vid">🎞 Vídeo (arquivo)…</button><button type="button" data-k="stop" class="no" hidden>⏹ Parar de apresentar</button></div></div>
+      <button id="mHand" type="button">✋ <span>Levantar a mão</span></button>
+      <button id="mChatBtn" type="button" aria-pressed="false">💬 <span>Chat</span></button>
+      <button id="mMix" type="button">🎚 <span>Vozes</span></button>
+      <button id="mLeave" type="button" class="no">↙ <span>Voltar ao jogo</span></button>
+    </div>
+    <input type="file" id="mSldFile" accept="application/pdf,image/*" multiple hidden><input type="file" id="mVidFile" accept="video/*" hidden>
+  </div>
   <div id="mixpanel" class="panel" hidden role="dialog" aria-label="Volume das vozes">
     <div class="mxhead"><b>🎚 Volume das vozes</b><button id="mixClose" type="button" aria-label="Fechar">✕</button></div>
     <div class="muted mxnote">Só muda o que <b>você</b> ouve; ninguém fica sabendo. Fica salvo neste aparelho.</div>
@@ -2790,6 +2862,7 @@ addEventListener("keydown", e => {
   if (e.key === "+" || e.key === "=") return setZoom(zoomT * 1.15);
   if (e.key === "-" || e.key === "_") return setZoom(zoomT / 1.15);
   if (e.key === "e" || e.key === "E") { const a = currentActions()[0]; if (a) a.fn(); return; }
+  if (meetOn && KEYV[e.key]) return;                                   // no modo reunião as setas/WASD não movem o boneco
   if (!KEYV[e.key]) return; e.preventDefault();
   if (me.act && me.act.type === "sleep") { wake(); return; }
   if (me.act && me.act.type === "shower") return;
@@ -3829,7 +3902,7 @@ function syncMediaButtons() {
   const mic = trackOn("audio"), cam = trackOn("video");
   $("btnMic").className = mic ? "on" : "off"; $("btnMic").textContent = mic ? "Mic ligado" : "Mic desligado";
   $("btnCam").className = cam ? "on" : "off"; $("btnCam").textContent = cam ? "Câmera ligada" : "Câmera desligada";
-  if (meRef) meRef.update({ mic, cam, csid: localStream ? localStream.id : null }); updateTiles();
+  if (meRef) meRef.update({ mic, cam, csid: localStream ? localStream.id : null }); updateTiles(); if (typeof meetOn !== "undefined" && meetOn) meetSync();
 }
 async function toggle(kind) {
   if (me.act && me.act.type === "sleep") return setStatus("Você está dormindo. Acorde primeiro.", 2500);
@@ -4214,7 +4287,7 @@ function setLoading(on) { const l = $("vLoad"); if (l) l.hidden = !on; }
 function buildRoomPanel() {
   rpBuilt = true;
   $("roompanel").innerHTML =
-    '<div class="rphead"><b id="rpTitle"></b><span class="muted" id="rpInfo"></span><button id="rpToggle">Recolher</button></div>' +
+    '<div class="rphead"><b id="rpTitle"></b><span class="muted" id="rpInfo"></span><button id="rpMeet" type="button" title="Modo reunião: palco grande e câmeras na lateral">🖥 Modo reunião</button><button id="rpToggle">Recolher</button></div>' +
     '<div class="rpgrid" id="rpBody"><div><div class="viewer"><div id="vIdle" class="vmsg"></div><div id="ytWrap" hidden><div id="ytbox"></div></div>' +
     '<video id="bview" autoplay playsinline hidden></video><video id="vidLocal" controls playsinline hidden></video><canvas id="slideCanvas" width="1600" height="900" hidden></canvas>' +
     '<div id="vLoad" class="vmsg" hidden>Carregando...</div><button id="ytKick" class="primary" hidden style="inset:auto 8px 8px auto;width:auto;height:auto;z-index:3"></button>' +
@@ -4232,6 +4305,7 @@ function buildRoomPanel() {
     '<div class="row"><button id="sldBc" class="primary">Apresentar para a sala</button><button id="sldStop" class="no">Parar</button></div><div class="muted" style="font-size:.8rem">PDF ou imagens. Setas ou clique passam os slides; "Apresentar" mostra para todos da sala. O botão Tela cheia (no canto do visor) amplia.</div><div class="err"></div></div>' +
     '<div id="handBox"><div class="row"><button id="handBtn" type="button" class="primary">✋ Levantar a mão</button></div><b class="muted" style="font-size:.85rem">Participantes</b><div class="roster" id="roster"></div></div><div id="meetBox" hidden><b class="muted" style="font-size:.85rem">Chat da reunião</b><div id="meetLog"></div>' +
     '<form class="say" id="meetForm"><input id="meetIn" maxlength="200" placeholder="Mensagem para a reunião" autocomplete="off"><button class="primary" type="submit">Enviar</button></form></div></div></div>';
+  $("rpMeet").onclick = meetOpen;
   $("rpToggle").onclick = () => { const b = $("rpBody"); b.hidden = !b.hidden; $("rpToggle").textContent = b.hidden ? "Expandir" : "Recolher"; };
   $("ytGo").onclick = () => {
     rpErr(""); const id = parseYouTube($("ytUrl").value); if (!id) return rpErr("Link inválido. Cole um link do YouTube (youtube.com/watch?v=..., youtu.be/..., shorts).");
@@ -4274,7 +4348,7 @@ function configureForRoom(r) {
   (r === "cin" ? [["scr", "Compartilhar tela"]] : [["scr", "Tela"], ["sld", "Slides"], ["vid", "Vídeo"]]).forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.dataset.p = t[0]; b.textContent = t[1]; b.onclick = () => selectPane(t[0]); tabs.appendChild(b);
   });
-  $("meetBox").hidden = r !== "reu"; selectPane("scr"); rpErr("");
+  $("meetBox").hidden = r !== "reu"; $("rpMeet").hidden = r !== "reu"; selectPane("scr"); rpErr("");
 }
 function renderMeetLog() {
   const box = $("meetLog"); if (!box) return; box.innerHTML = "";
@@ -4355,20 +4429,22 @@ function updateViewer() {
 /* o painel completo (transmitir tela, slides, vídeo) só aparece para quem está no PC da sala; os demais veem só o vídeo */
 function updateRoomPanel() {
   const r = roomOf(me.x, me.y), panel = $("roompanel"), inRoom = r === "cin" || r === "reu";
+  $("btnMeet").hidden = r !== "reu" || meetOn;
   if (!inRoom) {
+    if (meetOn) meetClose();
     if (!panel.hidden) { panel.hidden = true; if (bstream) stopBroadcast(true); try { if (yt && ytReady) yt.pauseVideo(); } catch (e) {} const v = $("vidLocal"); if (v) v.pause(); }
     rpRoom = null; if (myHand()) { meRef.update({ hand: null }); if (players[uid]) players[uid].hand = null; } return;
   }
   const atPC = !!near(o => o.t === "painel", 1), live = !!bstream || !!roomBroadcaster(r);
   const anyHand = Object.keys(players).some(id => players[id].hand && roomOf(players[id].x, players[id].y) === r);
-  const show = atPC || live || anyHand;
+  const show = atPC || live || anyHand || meetOn;
   if (!show) { if (!panel.hidden) panel.hidden = true; return; }
   panel.hidden = false; if (!rpBuilt) buildRoomPanel();
   panel.classList.toggle("rpcompact", !atPC);
   if (rpRoom !== r) { rpRoom = r; rosterSig = ""; configureForRoom(r); applyCinema(); }
   const n = Object.keys(players).filter(id => roomOf(players[id].x, players[id].y) === r).length;
   $("rpInfo").textContent = n + (n === 1 ? " pessoa na sala" : " pessoas na sala");
-  renderRoster(); updateViewer();
+  renderRoster(); updateViewer(); meetTick();
 }
 function focusRoomPanel() { updateRoomPanel(); const p = $("roompanel"); if (!p.hidden) { $("rpBody").hidden = false; $("rpToggle").textContent = "Recolher"; p.scrollIntoView({ behavior: "smooth", block: "center" }); } }
 /* =========================================================
@@ -5126,6 +5202,104 @@ function initJukebox() {
     if (!$("jukepanel").hidden) jRender();
   }, 500);
 }
+/* =========================================================
+   MODO REUNIÃO (estilo Meet) na sala de reuniões
+   - Botão "🖥 Modo reunião" abre uma tela cheia com: palco grande (a apresentação de quem compartilha) + câmeras de todos na lateral;
+     sem apresentação, o palco some e as câmeras viram uma grade. Barra embaixo: mic, câmera, Apresentar (tela / slides / vídeo, dá para
+     trocar a qualquer momento), levantar a mão, chat da reunião, volume das vozes e voltar ao jogo.
+   - Não cria nada novo na rede: reaproveita os quadradinhos de câmera (#videos), a mão levantada, o chat da reunião e a transmissão
+     (startBroadcast/stopBroadcast) que já existiam; só os muda de lugar enquanto o modo está aberto.
+   - O som da apresentação continua saindo do #bview (no painel escondido, fora da tela); o vídeo do palco é sempre mudo.
+   ========================================================= */
+let meetOn = false;
+const meetHome = { videos: $("videos").nextElementSibling };      // onde voltar com os quadradinhos de câmera
+const inMeetRoom = () => roomOf(me.x, me.y) === "reu";
+function meetOpen() {
+  if (!meRef || !inMeetRoom()) return setStatus("Entre na sala de reuniões para usar o modo reunião.", 3000);
+  if (meetOn) return;
+  if (!rpBuilt) buildRoomPanel();
+  if (rpRoom !== "reu") { rpRoom = "reu"; rosterSig = ""; configureForRoom("reu"); }
+  meetOn = true; document.body.classList.add("meet"); $("meet").hidden = false;
+  $("mTiles").appendChild($("videos"));
+  const vh = $("vHands"), vt = $("vToast"), mb = $("meetBox");
+  if (vh) $("mHands").appendChild(vh); if (vt) $("mHands").appendChild(vt); if (mb) { $("mChat").appendChild(mb); mb.hidden = false; }
+  rosterSig = ""; updateTiles(); meetTick(true);
+}
+function meetClose() {
+  if (!meetOn) return;
+  meetOn = false; document.body.classList.remove("meet"); $("meet").hidden = true; $("mMenu").hidden = true; $("mChat").hidden = true;
+  try { if (document.fullscreenElement === $("mStage")) document.exitFullscreen(); } catch (e) {}
+  const app = $("app"); app.insertBefore($("videos"), meetHome.videos);
+  const vh = $("vHands"), vt = $("vToast"), mb = $("meetBox"), view = viewerEl(), ctl = document.querySelector("#roompanel .rpctl");
+  if (view && vh) view.appendChild(vh); if (view && vt) view.appendChild(vt); if (ctl && mb) ctl.appendChild(mb);
+  $("mPres").srcObject = null; rosterSig = ""; updateTiles(); updateRoomPanel();
+}
+function meetSync() {                                                // estado dos botões da barra (chamado também por syncMediaButtons)
+  const mic = trackOn("audio"), cam = trackOn("video"), hand = myHand();
+  const set = (id, on, txt) => { const b = $(id); b.className = on ? "on" : "off"; b.lastElementChild.textContent = txt; };
+  set("mMic", mic, mic ? "Mic ligado" : "Mic desligado"); set("mCam", cam, cam ? "Câmera ligada" : "Câmera desligada");
+  $("mHand").classList.toggle("on", hand); $("mHand").lastElementChild.textContent = hand ? "Abaixar a mão" : "Levantar a mão";
+}
+let meetSig = "";
+function meetTick(force) {
+  if (!meetOn) return;
+  if (!inMeetRoom()) return meetClose();
+  const bid = bstream ? uid : roomBroadcaster("reu"), pres = !!bid, mine = bid === uid, m = $("meet");
+  m.classList.toggle("pres", pres); $("mStage").hidden = !pres;
+  const n = Object.keys(players).filter(id => roomOf(players[id].x, players[id].y) === "reu").length;
+  $("mInfo").textContent = n + (n === 1 ? " pessoa na sala" : " pessoas na sala");
+  meetSync(); const pg = $("vPage"); $("mSPage").textContent = pg ? pg.textContent : "";
+  const st = !pres ? null : mine ? (viewPref === "sld" || viewPref === "vid" ? bstream : null) : broadcastStreamFor(bid), v = $("mPres");
+  if (v.srcObject !== st) { v.srcObject = st; if (st) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); } }
+  const who = pres ? (mine ? "Você" : cleanName((players[bid] && players[bid].name) || "Alguém")) : "";
+  const label = pres ? (mine ? bLabel : cleanText((players[bid] && players[bid].blabel) || "Apresentação", 60)) : "";
+  const sig = [pres, mine, st ? 1 : 0, who, label, viewPref, bstream ? 1 : 0, bid && !mine ? mixOf(bid, true).m : 0, $("mChat").hidden].join("|");
+  if (sig === meetSig && !force) return; meetSig = sig;
+  $("mNote").textContent = !pres ? "" : st ? "" : mine ? "Sua tela está sendo compartilhada com a sala." : "Conectando à apresentação de " + who + "…";
+  $("mCap").textContent = pres ? "📡 " + (mine ? "Você está apresentando" : who + " está apresentando") + (label ? " · " + label : "") : "";
+  $("mSldCtl").hidden = !(mine && viewPref === "sld"); $("mVidCtl").hidden = !(mine && viewPref === "vid");
+  $("mSnd").hidden = !(pres && !mine); if (pres && !mine) $("mSnd").textContent = mixOf(bid, true).m ? "🔇" : "🔈";
+  $("mPresBtn").classList.toggle("on", mine); $("mMenu").querySelector('[data-k="stop"]').hidden = !bstream;
+  $("mChatBtn").classList.toggle("on", !$("mChat").hidden); $("mChatBtn").setAttribute("aria-pressed", String(!$("mChat").hidden));
+}
+/* o que apresentar: trocar de tela para slides ou vídeo (e voltar) é só escolher de novo no menu */
+function meetPresent(kind) {
+  $("mMenu").hidden = true; $("mPresBtn").setAttribute("aria-expanded", "false");
+  if (kind === "stop") stopBroadcast(true);
+  else if (kind === "screen") startBroadcast("screen");
+  else if (kind === "sld") $("mSldFile").click();
+  else if (kind === "vid") $("mVidFile").click();
+}
+$("btnMeet").onclick = meetOpen; $("mLeave").onclick = meetClose;
+$("mMic").onclick = () => toggle("audio"); $("mCam").onclick = () => toggle("video");
+$("mHand").onclick = () => { toggleHand(); meetSync(); };
+$("mMix").onclick = () => toggleMix();
+$("mChatBtn").onclick = () => { $("mChat").hidden = !$("mChat").hidden; meetTick(true); if (!$("mChat").hidden) { renderMeetLog(); const i = $("meetIn"); if (i) i.focus(); } };
+$("mPresBtn").onclick = () => { const h = $("mMenu").hidden; $("mMenu").hidden = !h; $("mPresBtn").setAttribute("aria-expanded", String(h)); };
+$("mMenu").addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) meetPresent(b.dataset.k); });
+$("mSldFile").onchange = async e => { const f = e.target.files; if (!f || !f.length) return; await loadSlideFiles(f); e.target.value = ""; if (slides.length) startBroadcast("slides"); };
+$("mVidFile").onchange = e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  if (!/^video\//.test(f.type) && !/\.(mp4|webm|mov|mkv|ogv)$/i.test(f.name)) return setStatus("Escolha um arquivo de vídeo.", 3000);
+  const v = $("vidLocal"); v.src = URL.createObjectURL(f); viewPref = "vid";
+  v.onerror = () => setStatus("Este formato de vídeo não é suportado pelo navegador.", 4000);
+  v.onloadeddata = () => { v.onloadeddata = null; startBroadcast("video"); };
+};
+$("mSPrev").onclick = () => slideGo(-1); $("mSNext").onclick = () => slideGo(1);
+$("mVPlay").onclick = () => { const v = $("vidLocal"); if (v.paused) { const p = v.play(); if (p && p.catch) p.catch(() => {}); } else v.pause(); };
+$("mVBack").onclick = () => { $("vidLocal").currentTime = Math.max(0, $("vidLocal").currentTime - 10); };
+$("mVFwd").onclick = () => { $("vidLocal").currentTime += 10; };
+$("mSnd").onclick = () => { const b = $("vMute"); if (b) b.click(); meetTick(true); };
+$("mFS").onclick = async () => { const el = $("mStage"); try { if (document.fullscreenElement === el) await document.exitFullscreen(); else await el.requestFullscreen(); } catch (e) { setStatus("Este navegador não permite tela cheia aqui.", 3000); } };
+document.addEventListener("click", e => { if (!$("mMenu").hidden && !e.target.closest(".mpwrap")) { $("mMenu").hidden = true; $("mPresBtn").setAttribute("aria-expanded", "false"); } });
+addEventListener("keydown", e => {                                    // setas passam os slides de quem apresenta; Esc fecha o menu
+  if (!meetOn || e.target.tagName === "INPUT") return;
+  if (e.key === "Escape" && !$("mMenu").hidden) { $("mMenu").hidden = true; return; }
+  if (!bstream || viewPref !== "sld") return;
+  const nxt = ["ArrowRight", "ArrowDown", "PageDown", " "].includes(e.key), prv = ["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key);
+  if (nxt || prv) { e.preventDefault(); e.stopPropagation(); slideGo(nxt ? 1 : -1); }
+}, true);
+setInterval(() => { if (meetOn) meetTick(); }, 700);                  // slide, nome da apresentação etc. mudam sem passar pelo laço do jogo
 /* =========================================================
    DESENHO (laço principal): mundo em pixel art + camada de rótulos
    ========================================================= */

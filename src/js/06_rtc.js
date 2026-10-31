@@ -140,7 +140,7 @@ function syncMediaButtons() {
   const mic = trackOn("audio"), cam = trackOn("video");
   $("btnMic").className = mic ? "on" : "off"; $("btnMic").textContent = mic ? "Mic ligado" : "Mic desligado";
   $("btnCam").className = cam ? "on" : "off"; $("btnCam").textContent = cam ? "Câmera ligada" : "Câmera desligada";
-  if (meRef) meRef.update({ mic, cam, csid: localStream ? localStream.id : null }); updateTiles();
+  if (meRef) meRef.update({ mic, cam, csid: localStream ? localStream.id : null }); updateTiles(); if (typeof meetOn !== "undefined" && meetOn) meetSync();
 }
 async function toggle(kind) {
   if (me.act && me.act.type === "sleep") return setStatus("Você está dormindo. Acorde primeiro.", 2500);

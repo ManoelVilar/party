@@ -5,6 +5,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Adicionado
+- **Modo reunião (estilo Meet)** na sala de reuniões: botão **🖥 Modo reunião** (na barra de cima e no painel da sala) abre uma tela cheia com **palco grande** para a apresentação de quem compartilha e **as câmeras de todos na lateral** (sem apresentação, o palco some e as câmeras viram uma grade). Barra embaixo com **Mic, Câmera, Apresentar ▾** (minha tela, slides em PDF/imagens, vídeo em arquivo — dá para trocar de um para outro a qualquer momento e parar), **Levantar a mão** (as mãos aparecem no palco com "Dar a palavra"), **Chat** da reunião, **Vozes** (volume de cada pessoa) e **Voltar ao jogo**. Setas passam os slides e não andam com o boneco; fecha sozinho se você sair da sala. Reaproveita a transmissão, as câmeras, a mão e o chat que já existiam (nada novo na rede). Teste: `tests/e2e/meet.py`.
 - **Jukebox: busca melhor** — `!play nome` agora pontua os resultados (palavras no título/artista sem ligar para acento, frase inteira, evita remix/cover/vinheta/set longo salvo se pedirem, desempate por popularidade) e avisa como corrigir; novo **`!buscar nome`** lista até 5 opções e `!play 1…5` / `!escolher N` escolhe; busca opcional no **YouTube** com chave própria (`JUKE_YT_KEY`, veja `docs/JUKEBOX.md`).
 - **Gatos mais visíveis** — caixas de areia maiores e laranja sobre um tapete cinza, potes de ração e água maiores sobre tapetinhos, e uma bolinha vermelha "!" pulando quando o pote está quase vazio ou a caixa está suja.
 

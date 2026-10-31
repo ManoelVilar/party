@@ -165,7 +165,7 @@ function setLoading(on) { const l = $("vLoad"); if (l) l.hidden = !on; }
 function buildRoomPanel() {
   rpBuilt = true;
   $("roompanel").innerHTML =
-    '<div class="rphead"><b id="rpTitle"></b><span class="muted" id="rpInfo"></span><button id="rpToggle">Recolher</button></div>' +
+    '<div class="rphead"><b id="rpTitle"></b><span class="muted" id="rpInfo"></span><button id="rpMeet" type="button" title="Modo reunião: palco grande e câmeras na lateral">🖥 Modo reunião</button><button id="rpToggle">Recolher</button></div>' +
     '<div class="rpgrid" id="rpBody"><div><div class="viewer"><div id="vIdle" class="vmsg"></div><div id="ytWrap" hidden><div id="ytbox"></div></div>' +
     '<video id="bview" autoplay playsinline hidden></video><video id="vidLocal" controls playsinline hidden></video><canvas id="slideCanvas" width="1600" height="900" hidden></canvas>' +
     '<div id="vLoad" class="vmsg" hidden>Carregando...</div><button id="ytKick" class="primary" hidden style="inset:auto 8px 8px auto;width:auto;height:auto;z-index:3"></button>' +
@@ -183,6 +183,7 @@ function buildRoomPanel() {
     '<div class="row"><button id="sldBc" class="primary">Apresentar para a sala</button><button id="sldStop" class="no">Parar</button></div><div class="muted" style="font-size:.8rem">PDF ou imagens. Setas ou clique passam os slides; "Apresentar" mostra para todos da sala. O botão Tela cheia (no canto do visor) amplia.</div><div class="err"></div></div>' +
     '<div id="handBox"><div class="row"><button id="handBtn" type="button" class="primary">✋ Levantar a mão</button></div><b class="muted" style="font-size:.85rem">Participantes</b><div class="roster" id="roster"></div></div><div id="meetBox" hidden><b class="muted" style="font-size:.85rem">Chat da reunião</b><div id="meetLog"></div>' +
     '<form class="say" id="meetForm"><input id="meetIn" maxlength="200" placeholder="Mensagem para a reunião" autocomplete="off"><button class="primary" type="submit">Enviar</button></form></div></div></div>';
+  $("rpMeet").onclick = meetOpen;
   $("rpToggle").onclick = () => { const b = $("rpBody"); b.hidden = !b.hidden; $("rpToggle").textContent = b.hidden ? "Expandir" : "Recolher"; };
   $("ytGo").onclick = () => {
     rpErr(""); const id = parseYouTube($("ytUrl").value); if (!id) return rpErr("Link inválido. Cole um link do YouTube (youtube.com/watch?v=..., youtu.be/..., shorts).");
@@ -225,7 +226,7 @@ function configureForRoom(r) {
   (r === "cin" ? [["scr", "Compartilhar tela"]] : [["scr", "Tela"], ["sld", "Slides"], ["vid", "Vídeo"]]).forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.dataset.p = t[0]; b.textContent = t[1]; b.onclick = () => selectPane(t[0]); tabs.appendChild(b);
   });
-  $("meetBox").hidden = r !== "reu"; selectPane("scr"); rpErr("");
+  $("meetBox").hidden = r !== "reu"; $("rpMeet").hidden = r !== "reu"; selectPane("scr"); rpErr("");
 }
 function renderMeetLog() {
   const box = $("meetLog"); if (!box) return; box.innerHTML = "";
@@ -306,19 +307,21 @@ function updateViewer() {
 /* o painel completo (transmitir tela, slides, vídeo) só aparece para quem está no PC da sala; os demais veem só o vídeo */
 function updateRoomPanel() {
   const r = roomOf(me.x, me.y), panel = $("roompanel"), inRoom = r === "cin" || r === "reu";
+  $("btnMeet").hidden = r !== "reu" || meetOn;
   if (!inRoom) {
+    if (meetOn) meetClose();
     if (!panel.hidden) { panel.hidden = true; if (bstream) stopBroadcast(true); try { if (yt && ytReady) yt.pauseVideo(); } catch (e) {} const v = $("vidLocal"); if (v) v.pause(); }
     rpRoom = null; if (myHand()) { meRef.update({ hand: null }); if (players[uid]) players[uid].hand = null; } return;
   }
   const atPC = !!near(o => o.t === "painel", 1), live = !!bstream || !!roomBroadcaster(r);
   const anyHand = Object.keys(players).some(id => players[id].hand && roomOf(players[id].x, players[id].y) === r);
-  const show = atPC || live || anyHand;
+  const show = atPC || live || anyHand || meetOn;
   if (!show) { if (!panel.hidden) panel.hidden = true; return; }
   panel.hidden = false; if (!rpBuilt) buildRoomPanel();
   panel.classList.toggle("rpcompact", !atPC);
   if (rpRoom !== r) { rpRoom = r; rosterSig = ""; configureForRoom(r); applyCinema(); }
   const n = Object.keys(players).filter(id => roomOf(players[id].x, players[id].y) === r).length;
   $("rpInfo").textContent = n + (n === 1 ? " pessoa na sala" : " pessoas na sala");
-  renderRoster(); updateViewer();
+  renderRoster(); updateViewer(); meetTick();
 }
 function focusRoomPanel() { updateRoomPanel(); const p = $("roompanel"); if (!p.hidden) { $("rpBody").hidden = false; $("rpToggle").textContent = "Recolher"; p.scrollIntoView({ behavior: "smooth", block: "center" }); } }

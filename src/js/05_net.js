@@ -216,6 +216,7 @@ addEventListener("keydown", e => {
   if (e.key === "+" || e.key === "=") return setZoom(zoomT * 1.15);
   if (e.key === "-" || e.key === "_") return setZoom(zoomT / 1.15);
   if (e.key === "e" || e.key === "E") { const a = currentActions()[0]; if (a) a.fn(); return; }
+  if (meetOn && KEYV[e.key]) return;                                   // no modo reunião as setas/WASD não movem o boneco
   if (!KEYV[e.key]) return; e.preventDefault();
   if (me.act && me.act.type === "sleep") { wake(); return; }
   if (me.act && me.act.type === "shower") return;
