@@ -281,7 +281,7 @@ function jSendDur(d) {
 }
 function jYtSync(want, pos) {
   const box = $("jukeyt"), on = want && jNow && jNow.src === "yt";
-  box.hidden = !on;
+  box.hidden = !on; $("jukepanel").classList.toggle("ytkeep", !!on);   // o player fica dentro do painel da jukebox; painel fechado = fora da tela, mas ainda ativo
   if (!on) { if (jYt && jYtReady) try { if (jYt.getPlayerState() === 1) jYt.pauseVideo(); } catch (e) { /* ok */ } return; }
   if (!jYt) {
     if (jYtLoading) return; jYtLoading = true; setTimeout(() => { if (!jYt) jYtLoading = false; }, 9000);

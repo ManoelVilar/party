@@ -21,6 +21,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - **Mic e câmera não conectavam entre pessoas**: o TURN público `openrelayproject` (que repassa a mídia entre redes diferentes) foi desativado pelo serviço, então só redes simples se ligavam. Agora o TURN é configurável e já vem com o ExpressTURN grátis (ou Metered/servidor próprio — `docs/VOZ.md`), a ligação espera as credenciais chegarem e, quando a conexão falha, o jogo explica o motivo na tela.
 
 ### Alterado
+- **Player do YouTube dentro da Jukebox**: o quadradinho do YouTube agora aparece dentro do painel 🎵 Jukebox, não mais solto sobre o jogo. Com o painel fechado ele sai da tela mas segue ativo (a música não para nem reinicia). Observação: as regras do YouTube pedem o player visível; manter só no painel é uma decisão consciente do dono do projeto.
 - **Jukebox saiu da frente do escritório 2**: agora fica na sala em (17,9), entre a estante e a TV. As caixas de areia saíram de trás da parede da frente (banheiro (27,16), sala (41,11)) e os potes foram para um canto livre da cozinha ((26,2) e (27,2)), fora de trás das cadeiras.
 
 - **Mixer de vozes** (botão 🎚 Vozes): volume individual (0–100%) da voz de cada pessoa do espaço e botão para **mutar** alguém, inclusive antes de chegar perto. Cada quadradinho de vídeo também tem um botão 🔈/🔇 para mutar na hora. Só muda o que você ouve (nada vai para o servidor) e fica salvo no aparelho (`nc_mix`). No iPhone/iPad o navegador não deixa mudar o volume de cada pessoa; mutar funciona. Teste em `tests/e2e/mix.py`.

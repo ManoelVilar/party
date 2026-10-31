@@ -136,16 +136,17 @@
   #mixpanel[hidden] { display:none; }
   #jukepanel { position:fixed; right:8px; top:56px; z-index:72; width:min(400px,calc(100vw - 16px)); max-height:calc(100vh - 70px); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; }
   #jukepanel[hidden], #jukeyt[hidden] { display:none; }
+  /* o player do YouTube mora dentro da jukebox; com o painel fechado e uma faixa do YouTube tocando, o painel sai da tela mas continua desenhado (display:none faria o navegador pausar o vídeo) */
+  #jukepanel.ytkeep[hidden] { display:grid !important; left:-10000px; right:auto; top:0; visibility:hidden; pointer-events:none; }
   .jknow { display:grid; gap:4px; background:var(--panel2); border:3px solid var(--line); padding:8px; } .jknow b { color:var(--accent); overflow-wrap:anywhere; }
   .jkbar { height:8px; background:var(--lo); border:2px solid var(--line); } .jkbar i { display:block; height:100%; width:0; background:var(--accent); }
   .jkctl { display:flex; gap:6px; flex-wrap:wrap; align-items:center; } .jkvol { display:flex; gap:6px; align-items:center; margin-left:auto; } .jkvol input { width:110px; }
   #jkQueue { list-style:none; margin:0; padding:0; display:grid; gap:4px; max-height:180px; overflow:auto; }
   #jkQueue li { display:flex; gap:6px; align-items:center; background:var(--panel2); border:2px solid var(--line); padding:3px 8px; } #jkQueue li > span { margin-right:auto; overflow-wrap:anywhere; }
   #jkQueue li button { width:30px; height:30px; padding:0; } .jkhelp { font-size:.8rem; }
-  #jukeyt { position:fixed; right:8px; bottom:8px; z-index:60; width:206px; background:var(--panel); border:3px solid var(--line); }
+  #jukeyt { width:206px; margin:0 auto; background:var(--panel); border:3px solid var(--line); }
   #jukeyt .jyhead { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:2px 6px; font-size:.8rem; } #jukeyt .jyhead button { padding:2px 6px; font-size:.75rem; }
   #jukeyt iframe, #jukeyt #jukeyt-in { width:200px; height:200px; display:block; margin:0 auto 3px; }
-  body.full.sh-cats #jukeyt { bottom:auto; top:120px; }
   .mxhead { display:flex; align-items:center; justify-content:space-between; gap:8px; } .mxhead b { color:var(--accent); }
   .mxhead button { width:36px; height:36px; padding:0; }
   .mxnote { font-size:.8rem; }
@@ -541,6 +542,7 @@
     <div class="mxhead"><b>🎵 Jukebox</b><button id="jkClose" type="button" aria-label="Fechar">✕</button></div>
     <div class="jknow"><b id="jkTitle">Nada tocando</b><span id="jkBy" class="muted"></span>
       <div class="jkbar"><i id="jkBar"></i></div><span id="jkTime" class="muted"></span></div>
+    <div id="jukeyt" hidden><div class="jyhead"><span>🎵 YouTube</span><button id="jukeytKick" type="button" hidden>🔈 Ligar o som</button></div><div id="jukeyt-in"></div></div>
     <div class="jkctl"><button id="jkPlay" type="button">⏸ Pausar</button><button id="jkSkip" type="button">⏭ Pular</button><button id="jkStop" type="button" class="no" title="Para e limpa a fila">⏹ Parar</button><button id="jkDance" type="button" hidden>💃 Dançar</button></div>
     <form id="jkForm" class="row"><input id="jkIn" type="text" placeholder="Nome da música ou link do YouTube" autocomplete="off" aria-label="Música para adicionar"><button class="primary" type="submit">Adicionar</button></form>
     <div id="jkMsg" class="muted" role="status"></div>
@@ -550,7 +552,6 @@
     <div id="jkNote" class="muted"></div>
     <div class="muted jkhelp">No chat: <b>!play</b> nome ou link · <b>!fila</b> · <b>!agora</b> · <b>!pular</b> · <b>!pausar</b> · <b>!continuar</b> · <b>!parar</b> · <b>!limpar</b> · <b>!vol</b> 0-100</div>
   </div>
-  <div id="jukeyt" hidden><div class="jyhead"><span>🎵 YouTube</span><button id="jukeytKick" type="button" hidden>🔈 Ligar o som</button></div><div id="jukeyt-in"></div></div>
   <div id="gamepanel" class="panel" hidden></div>
   <div class="panel" id="chatpanel">
     <div id="log"></div>
