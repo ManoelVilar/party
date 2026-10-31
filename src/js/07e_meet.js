@@ -70,7 +70,8 @@ $("btnMeet").onclick = meetOpen; $("mLeave").onclick = meetClose;
 $("mMic").onclick = () => toggle("audio"); $("mCam").onclick = () => toggle("video");
 $("mHand").onclick = () => { toggleHand(); meetSync(); };
 $("mMix").onclick = () => toggleMix();
-$("mChatBtn").onclick = () => { $("mChat").hidden = !$("mChat").hidden; meetTick(true); if (!$("mChat").hidden) { renderMeetLog(); const i = $("meetIn"); if (i) i.focus(); } };
+function meetToggleChat() { $("mChat").hidden = !$("mChat").hidden; meetTick(true); if (!$("mChat").hidden) { renderMeetLog(); const i = $("meetIn"); if (i) i.focus(); } }
+$("mChatBtn").onclick = meetToggleChat;
 $("mPresBtn").onclick = () => { const h = $("mMenu").hidden; $("mMenu").hidden = !h; $("mPresBtn").setAttribute("aria-expanded", String(h)); };
 $("mMenu").addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) meetPresent(b.dataset.k); });
 $("mSldFile").onchange = async e => { const f = e.target.files; if (!f || !f.length) return; await loadSlideFiles(f); e.target.value = ""; if (slides.length) startBroadcast("slides"); };
@@ -88,6 +89,9 @@ $("mVFwd").onclick = () => { $("vidLocal").currentTime += 10; };
 $("mSnd").onclick = () => { const b = $("vMute"); if (b) b.click(); meetTick(true); };
 $("mFS").onclick = async () => { const el = $("mStage"); try { if (document.fullscreenElement === el) await document.exitFullscreen(); else await el.requestFullscreen(); } catch (e) { setStatus("Este navegador não permite tela cheia aqui.", 3000); } };
 document.addEventListener("click", e => { if (!$("mMenu").hidden && !e.target.closest(".mpwrap")) { $("mMenu").hidden = true; $("mPresBtn").setAttribute("aria-expanded", "false"); } });
+addEventListener("keydown", e => {                                    // Esc no campo do chat da reunião fecha o chat (a tecla C abre; ver 05_net.js)
+  if (meetOn && e.key === "Escape" && e.target && e.target.id === "meetIn") { e.preventDefault(); $("mChat").hidden = true; meetTick(true); e.target.blur(); }
+});
 addEventListener("keydown", e => {                                    // setas passam os slides de quem apresenta; Esc fecha o menu
   if (!meetOn || e.target.tagName === "INPUT") return;
   if (e.key === "Escape" && !$("mMenu").hidden) { $("mMenu").hidden = true; return; }

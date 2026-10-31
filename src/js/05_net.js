@@ -219,7 +219,7 @@ addEventListener("keydown", e => {
   { const fs = document.fullscreenElement || document.webkitFullscreenElement; if (fs && fs.classList && fs.classList.contains("viewer")) return; }
   if (e.key === "f" || e.key === "F") return toggleBrowserFull();
   if (e.key === "h" || e.key === "H") return toggleHand();
-  if ((e.key === "c" || e.key === "C") && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); return toggleChat(); }
+  if ((e.key === "c" || e.key === "C") && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); return meetOn ? meetToggleChat() : toggleChat(); }
   if (e.key === "+" || e.key === "=") return setZoom(zoomT * 1.15);
   if (e.key === "-" || e.key === "_") return setZoom(zoomT / 1.15);
   if (e.key === "e" || e.key === "E") { const a = currentActions()[0]; if (a) a.fn(); return; }

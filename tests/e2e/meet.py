@@ -49,7 +49,7 @@ with sync_playwright() as p:
     ok("Beto está apresentando" in A.inner_text("#mCap"), "legenda mostra quem está apresentando")
     ok(A.evaluate("$('videos').getBoundingClientRect().width") < 270 and wait(A, "document.querySelectorAll('#mTiles .vt').length === 3"), "as câmeras ficam na coluna lateral estreita")
     ok(A.evaluate("$('mPres').muted === true"), "o vídeo do palco é mudo (o som vem do player da transmissão, sem eco)")
-    ok(Bt.is_visible("#mNote") and "compartilhada" in Bt.inner_text("#mNote"), "quem apresenta a tela vê aviso em vez do espelho da própria tela")
+    ok(wait(Bt, "!document.getElementById('mNote').hidden && document.getElementById('mNote').innerText.includes('compartilhada')"), "quem apresenta a tela vê aviso em vez do espelho da própria tela")
     # mão levantada
     C.evaluate("toggleHand()"); 
     ok(wait(A, "!$('vHands').hidden && $('mHands').contains($('vHands')) && $('vHands').innerText.includes('Caio')"), "mão levantada de outra pessoa aparece no palco")
@@ -78,6 +78,12 @@ with sync_playwright() as p:
     ok(A.is_visible("#mChat") and A.is_visible("#meetIn"), "o botão Chat abre o chat da reunião")
     A.fill("#meetIn", "olá reunião"); A.press("#meetIn", "Enter")
     ok(wait(Bt, "document.getElementById('meetLog').innerText.includes('olá reunião')"), "a mensagem chega para os outros")
+    A.press("#meetIn", "Escape"); A.wait_for_timeout(300)
+    ok(not A.is_visible("#mChat"), "Esc no campo do chat fecha o chat da reunião")
+    A.keyboard.press("c"); A.wait_for_timeout(300)
+    ok(A.is_visible("#mChat") and A.evaluate("document.activeElement.id") == "meetIn", "a tecla C abre o chat da reunião e deixa o cursor para escrever")
+    A.press("#meetIn", "Escape"); A.wait_for_timeout(200); A.keyboard.press("c"); A.wait_for_timeout(300)
+    ok(A.is_visible("#mChat") and not A.evaluate("document.body.classList.contains('sh-chat')"), "no modo reunião a tecla C não mexe no chat do jogo")
     # voltar ao jogo
     A.click("#mLeave"); A.wait_for_timeout(400)
     ok(not A.is_visible("#meet") and not A.evaluate("document.body.classList.contains('meet')"), "Voltar ao jogo fecha o modo reunião")
