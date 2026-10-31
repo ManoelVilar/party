@@ -17,6 +17,7 @@ A jukebox fica na **Sala**, entre a TV e a estante. Enquanto toca, as luzes do p
 | `!parar` | Para a música **e limpa a fila** |
 | `!limpar` | Esvazia a fila e deixa a atual tocando |
 | `!vol 0-100` | Seu volume (só você ouve a diferença; fica salvo no aparelho) |
+| `!fps` | Liga/desliga o medidor de quadros por segundo (diagnóstico) |
 | `!ajuda` | Lista os comandos |
 
 Todos fazem tudo (adicionar, pular, pausar, parar). A fila aceita até 20 músicas. Um comando desconhecido (`!batata`) é só conversa.
@@ -44,7 +45,14 @@ As regras (`scripts/gera-regras.mjs`) validam tamanhos e formatos (`ref` só let
 - Ignora acentos e maiúsculas; a faixa precisa ter as palavras pedidas no título **ou no nome do artista** (metade delas, ou a palavra inteira se for uma só).
 - Pontua mais quem tem a frase inteira ou o título exato, e rebaixa remix/cover/acelerada/karaokê (a menos que você peça), vinhetas de menos de 45 s e sets de mais de 25 min (a menos que peça "mix", "live", "completo"…). Empate: o mais ouvido.
 - Sem resultado bom, avisa e sugere `!buscar` ou colar um link do YouTube.
-- **YouTube por nome (opcional):** o YouTube não deixa buscar sem chave. Se quiser, crie uma chave grátis da *YouTube Data API v3* no Google Cloud (cota grátis ≈ 100 buscas por dia), **restrinja-a ao site** (referenciador `https://manoelvilar.github.io/*`) e coloque em `JUKE_YT_KEY` (em `src/js/07d_jukebox.js`; depois `node scripts/build.mjs`) ou defina `window.PARTY_YT_KEY`. Com chave, os resultados do YouTube (só vídeos que permitem incorporar) vêm primeiro e o catálogo aberto completa a lista; se a cota acabar ou a chave falhar, volta sozinho para o catálogo aberto. Sem chave nada muda.
+- Se nada bate direito, tenta de novo sem enfeites (`(Clipe Oficial)`, `ft.`, `lyrics`…) e, por último, mostra o resultado **mais próximo marcado como "aproximado"** (no `!buscar` e depois do `!play`).
+- **YouTube por nome (opcional):** o YouTube não deixa buscar sem chave. Se quiser, crie uma chave grátis da *YouTube Data API v3* no Google Cloud (cota grátis ≈ 100 buscas por dia), **restrinja-a ao site** (referenciador `https://manoelvilar.github.io/*`) e coloque em `JUKE_YT_KEY` (em `src/js/07d_jukebox.js`; depois `node scripts/build.mjs`) ou defina `window.PARTY_YT_KEY`. Com chave, os resultados do YouTube (só vídeos que permitem incorporar) vêm primeiro e o catálogo aberto completa a lista; se a cota acabar ou a chave falhar, volta sozinho para o catálogo aberto. Cada resultado do YouTube traz a duração (some o que é trecho de menos de 45 s e baixa vídeos de mais de 25 min, salvo se você pedir "mix", "live"…) e a mesma busca fica guardada 7 dias no aparelho para poupar a cota. Sem chave nada muda.
+
+  **Como criar a chave (grátis, sem cartão):** console.cloud.google.com › criar projeto › *APIs e serviços* › *Biblioteca* › ativar **YouTube Data API v3** › *Credenciais* › *Criar credenciais* › *Chave de API* › em *Restrições* escolha **Sites** e coloque `https://manoelvilar.github.io/*`, e em *Restringir chave* marque só **YouTube Data API v3**. Cota grátis: 10.000 unidades por dia (≈ 100 buscas).
+
+## Som automático e fluidez
+- O navegador só deixa tocar com som depois de uma interação. Agora **qualquer toque, clique ou tecla na página** (inclusive digitar no chat) libera o som na hora: desmuta o YouTube que começou mudo e retoma o áudio bloqueado; nas faixas seguintes da fila o som já continua sozinho (no iPhone o `<audio>` é "abençoado" no primeiro toque). Se você recarregar a página, o primeiro toque libera de novo.
+- `!fps` liga/desliga um medidor no canto da tela (quadros por segundo, custo médio e pior quadro) — útil para medir no celular.
 
 ## Limites e privacidade
 - Catálogo aberto: [Audius](https://audius.co) (consulta pelo navegador de quem pediu; o IP dele vai para o Audius). Se a rede/bloqueador impedir, o comando avisa e sugere o link do YouTube.

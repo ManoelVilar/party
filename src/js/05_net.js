@@ -47,7 +47,13 @@ if (!matchMedia("(pointer:coarse)").matches) { const _i = $("inSay"); if (_i) _i
 if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) document.documentElement.classList.add("nofs");
 $("btnFull").onclick = $("zFull").onclick = toggleBrowserFull;
 $("btnCatsT").onclick = () => document.body.classList.toggle("sh-cats");
-$("btnChatT").onclick = () => { document.body.classList.toggle("sh-chat"); if (document.body.classList.contains("sh-chat")) setTimeout(() => $("inSay").focus(), 50); };
+function toggleChat(open) {                                          // botão Chat e tecla C: mostra/esconde o chat (em tela cheia) e já deixa pronto para escrever
+  const on = open === undefined ? !document.body.classList.contains("sh-chat") : open;
+  document.body.classList.toggle("sh-chat", on);
+  if (on) setTimeout(() => $("inSay").focus(), 50); else $("inSay").blur();
+}
+$("btnChatT").onclick = () => toggleChat();
+$("inSay").addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); toggleChat(false); } });   // Esc fecha o chat e devolve o teclado ao jogo
 const ZMIN = .55, ZMAX = 1.8;
 try { const z = parseFloat(store.get("nc_zoom")); if (z >= ZMIN && z <= ZMAX) { zoom = z; zoomT = z; K = z / ART; } } catch (e) {}
 const setZoom = z => { zoomT = Math.max(ZMIN, Math.min(ZMAX, z)); store.set("nc_zoom", String(zoomT)); };
@@ -213,6 +219,7 @@ addEventListener("keydown", e => {
   { const fs = document.fullscreenElement || document.webkitFullscreenElement; if (fs && fs.classList && fs.classList.contains("viewer")) return; }
   if (e.key === "f" || e.key === "F") return toggleBrowserFull();
   if (e.key === "h" || e.key === "H") return toggleHand();
+  if ((e.key === "c" || e.key === "C") && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); return toggleChat(); }
   if (e.key === "+" || e.key === "=") return setZoom(zoomT * 1.15);
   if (e.key === "-" || e.key === "_") return setZoom(zoomT / 1.15);
   if (e.key === "e" || e.key === "E") { const a = currentActions()[0]; if (a) a.fn(); return; }
@@ -406,7 +413,7 @@ $("sayForm").onsubmit = e => {
   if (Date.now() - (onSayForm.last || 0) < 700) return; onSayForm.last = Date.now(); $("inSay").value = "";
   roomRef.child("chat").push({ name: myName, color: myLook.top.color, text, ts: Date.now() + serverOffset });
   meRef.update({ say: text, sayTs: Date.now() });
-  if (raw[0] === "!") jukeCommand(raw);                                                  // comandos da jukebox (!play, !pular...)
+  if (raw[0] === "!" && !perfCommand(raw)) jukeCommand(raw);                                                  // comandos da jukebox (!play, !pular...)
 };
 
 /* ---------- ciclo lento ---------- */
