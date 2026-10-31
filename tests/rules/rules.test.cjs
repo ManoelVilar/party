@@ -86,6 +86,23 @@ check("coloca vídeo no cinema", me(A).update(R + "/cinema", { src: "yt", id: "d
 check("cinema com campo desconhecido é recusado", me(A).update(R + "/cinema", { evil: "x" }), false);
 check("sem login não mexe no cinema", me(null).update(R + "/cinema", { state: "play" }), false);
 
+/* cache compartilhado das buscas do YouTube */
+const yc = { q: "mundo fashion", t: NOW, l: [{ ref: "dQw4w9WgXcQ", title: "Um vídeo — Canal", dur: 213 }, { ref: "abcdefghijk", title: "Outro" }] };
+check("ytcache: logado grava a busca nova", me(A).write("/ytcache/abc123def", yc), true);
+check("ytcache: sem login não grava", me(null).write("/ytcache/abc123def", yc), false);
+check("ytcache: logado lê", me(A, targaryen.database(rules, { ytcache: { abc123def: yc } }, NOW)).read("/ytcache/abc123def"), true);
+check("ytcache: sem login não lê", me(null, targaryen.database(rules, { ytcache: { abc123def: yc } }, NOW)).read("/ytcache/abc123def"), false);
+const ycDb = targaryen.database(rules, { ytcache: { abc123def: yc } }, NOW);
+check("ytcache: não sobrescreve busca ainda válida", me(B, ycDb).write("/ytcache/abc123def", { ...yc, l: [{ ref: "zzzzzzzzzzz", title: "Falso" }] }), false);
+const ycOld = targaryen.database(rules, { ytcache: { abc123def: { ...yc, t: NOW - 8 * 86400000 } } }, NOW);
+check("ytcache: renova busca vencida (>7 dias)", me(B, ycOld).write("/ytcache/abc123def", yc), true);
+check("ytcache: não apaga", me(A, ycOld).write("/ytcache/abc123def", null), false);
+check("ytcache: id de vídeo inválido é recusado", me(A).write("/ytcache/abc123def", { ...yc, l: [{ ref: "curto", title: "x" }] }), false);
+check("ytcache: título gigante é recusado", me(A).write("/ytcache/abc123def", { ...yc, l: [{ ref: "dQw4w9WgXcQ", title: "x".repeat(91) }] }), false);
+check("ytcache: campo desconhecido é recusado", me(A).write("/ytcache/abc123def", { ...yc, evil: 1 }), false);
+check("ytcache: hora falsa é recusada", me(A).write("/ytcache/abc123def", { ...yc, t: NOW + 99999999 }), false);
+check("ytcache: chave com símbolos é recusada", me(A).write("/ytcache/AB-12", yc), false);
+
 /* jukebox */
 const jNow = { src: "au", ref: "Dz4Ab", title: "Lofi — DJ", by: "Ana", seq: NOW, t0: NOW, dur: 90 };
 const jQ = { src: "yt", ref: "dQw4w9WgXcQ", title: "Um vídeo", by: "Ana", ts: NOW };

@@ -99,6 +99,28 @@ const rules = {
       }
     },
 
+    /* cache compartilhado das buscas do YouTube (poupa a cota diária): qualquer pessoa autenticada lê; grava só se não existe ou venceu (7 dias); nunca apaga */
+    ytcache: {
+      "$k": {
+        ".validate": "$k.matches(/^[a-z0-9]{4,24}$/)",
+        ".read": "auth != null",
+        ".write": "auth != null && newData.exists() && (!data.exists() || data.child('t').val() < now - 604800000)",
+        q: { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 80" },
+        t: { ".validate": "newData.isNumber() && newData.val() > now - 300000 && newData.val() < now + 300000" },
+        l: {
+          ".validate": "newData.hasChildren()",
+          "$i": {
+            ".validate": "$i.matches(/^[0-9]$/) && newData.hasChildren(['ref', 'title'])",
+            ref: { ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{11}$/)" },
+            title: { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 90" },
+            dur: { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 86400" },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    },
+
     rooms: {
       "$room": {
         ".validate": "$room.matches(/^[a-z0-9-]{4,40}$/)",

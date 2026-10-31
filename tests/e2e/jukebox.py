@@ -146,6 +146,13 @@ with sync_playwright() as p:
     ok(r[0].startswith("yt:AAAAAAAAAAA") and ev(A, "jYtCache('varios tema')[0].dur") == 205 and ev(A, "jYtCache('varios tema')[1].dur") == 4000, "com chave: a duração dos vídeos vem junto (3:25 e 1h06) e vai para a fila")
     n_yt = len(YT_CALLS); A.evaluate("jSearch('Varios Tema', 5)"); A.wait_for_timeout(300)
     ok(len(YT_CALLS) == n_yt, "a mesma busca no YouTube é guardada por 7 dias (não gasta a cota de novo)")
+    # cache compartilhado: outra pessoa (cache local vazio) reaproveita a busca sem gastar a cota
+    ev(B, "window.PARTY_YT_KEY = 'chave-de-teste'; localStorage.removeItem('pt_ytc')")
+    n_yt = len(YT_CALLS)
+    r = B.evaluate("jSearch('varios tema', 5).then(l => l.map(i => i.src + ':' + i.ref))")
+    ok(len(YT_CALLS) == n_yt and r[0] == "yt:AAAAAAAAAAA", "cache compartilhado: outra pessoa reaproveita a busca do YouTube sem gastar a cota (%s)" % r[:1])
+    ok(ev(A, "jYtHash('varios tema')") == ev(B, "jYtHash('varios tema')") and ev(A, "jYtHash('Várioś  Tema'.trim())") != "", "a chave do cache é estável")
+    ev(B, "window.PARTY_YT_KEY = ''")
     ev(A, "window.PARTY_YT_KEY = ''")
     say(A, "!batata", 400)
     ok("Comandos" not in log(A).split("!batata")[-1], "!comando desconhecido é só conversa")
