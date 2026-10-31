@@ -183,6 +183,8 @@ with sync_playwright() as p:
     ev(A, "(() => { jYtMuted = true; $('jukeytKick').hidden = false; window.__yt.m = true; })()")
     A.keyboard.press("Shift"); A.wait_for_timeout(300)
     ok(ev(A, "jYtMuted === false && window.__yt.m === false"), "apertar uma tecla (ou digitar no chat) também liga")
+    ev(A, "(() => { jYtMuted = true; $('jukeytKick').hidden = false; window.__yt.m = true; jYtSeq = null; jSync(); })()"); A.wait_for_timeout(300)
+    ok(ev(A, "jYtMuted === false && window.__yt.m === false && $('jukeytKick').hidden"), "música nova depois de um toque não herda o mudo da anterior")
     # ninguém alterou duas vezes
     A.wait_for_timeout(1200)
     ok(ev(A, "jNow.ref") == "dQw4w9WgXcQ" and ev(B, "jNow.ref") == "dQw4w9WgXcQ", "pular não avança duas vezes (dois clientes veem o mesmo estado)")
