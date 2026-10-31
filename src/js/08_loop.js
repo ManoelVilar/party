@@ -31,12 +31,12 @@ function frame() {
   } else if (me.act && (me.act.type === "eat" || me.act.type === "dance") && (path.length || keys.length || holdVec)) { me.act = null; meRef.update({ act: null }); }
 
   /* zoom e câmera (em unidades do mundo; K = pixels de arte por unidade) */
-  zoom += (zoomT - zoom) * .2; if (Math.abs(zoomT - zoom) < .002) zoom = zoomT; K = zoom / ART;
+  zoom += (zoomT - zoom) * (1 - Math.pow(.8, dtMs / 16.7)); if (Math.abs(zoomT - zoom) < .002) zoom = zoomT; K = zoom / ART;
   const vw = LW / K, vh = LH / K, mp = players[uid], tp = titleOn ? titleTarget(now) : P((mp ? mp.rx : me.x) + .5, (mp ? mp.ry : me.y) + .5, 20);
   let cx = tp[0] - vw / 2, cy = tp[1] - vh / 2;
   cx = vw >= WORLD_W ? (WORLD_W - vw) / 2 : Math.max(0, Math.min(WORLD_W - vw, cx));
   cy = vh >= WORLD_H ? (WORLD_H - vh) / 2 : Math.max(0, Math.min(WORLD_H - vh, cy));
-  camX += (cx - camX) * .12; camY += (cy - camY) * .12;
+  const fc = 1 - Math.pow(.88, dtMs / 16.7); camX += (cx - camX) * fc; camY += (cy - camY) * fc;      // acompanha na mesma velocidade a 60 ou a 30 quadros
   camRX = Math.round(camX * K) / K; camRY = Math.round(camY * K) / K; const kx = camRX, ky = camRY;
 
   natalT = now;
@@ -169,17 +169,55 @@ function frame() {
     if (l.zzz) { mctx.fillStyle = "#cfe0ff"; mctx.font = "bold 28px 'Pixelify Sans', monospace"; const t = now / 600; mctx.fillText("z", x + 36 + Math.sin(t) * 4, y - 20 - (t % 1) * 14); mctx.fillText("Z", x + 56, y - 40 - ((t + .5) % 1) * 14); }
     if (l.food) { mctx.font = "40px serif"; mctx.fillText(l.food, x, top - 22 + Math.sin(now / 150) * 3); }
     if (l.say) {
-      const t = l.say.length > 38 ? l.say.slice(0, 38) + "..." : l.say; mctx.font = "500 24px 'Pixelify Sans', monospace";
-      const bw = Math.ceil(mctx.measureText(t).width) + 28, bh = 44, bx = Math.round(x - bw / 2), by = Math.round(top - bh - 14);
+      mctx.font = "500 24px 'Pixelify Sans', monospace";
+      const lines = wrapBubble(l.say), lh = 28, bw = Math.ceil(Math.max(...lines.map(t => mctx.measureText(t).width))) + 28, bh = lines.length * lh + 16, bx = Math.round(x - bw / 2), by = Math.round(top - bh - 14);
       box8(bx, by, bw, bh, "#fff6d8", "#120a1c"); mctx.fillStyle = "#fff6d8"; mctx.fillRect(Math.round(x) - 8, by + bh, 16, 8); mctx.fillStyle = "#120a1c"; mctx.fillRect(Math.round(x) - 11, by + bh + 8, 22, 4);
-      mctx.fillStyle = "#2b1b3a"; mctx.fillText(t, x, by + bh / 2 + 1);
+      mctx.fillStyle = "#2b1b3a"; lines.forEach((t, i) => mctx.fillText(t, x, by + 8 + lh * i + lh / 2 + 1));
     }
   });
 }
-let loopOn = false, loopN = 0;
+/* quebra o balão de fala em linhas (até 5, ~26 caracteres), cortando em palavra e partindo palavras enormes (links) */
+const bubbleCache = {};
+function wrapBubble(txt) {
+  const k = txt; if (bubbleCache[k]) return bubbleCache[k];
+  const MAX = 26, out = []; let cur = "";
+  String(txt).split(/\s+/).filter(Boolean).forEach(w => {
+    while (w.length > MAX) { if (cur) { out.push(cur); cur = ""; } out.push(w.slice(0, MAX)); w = w.slice(MAX); }
+    if (!cur) cur = w; else if ((cur + " " + w).length <= MAX) cur += " " + w; else { out.push(cur); cur = w; }
+  });
+  if (cur) out.push(cur);
+  let lines = out.slice(0, 5); if (out.length > 5) lines[4] = lines[4].slice(0, MAX - 1) + "…";
+  if (!lines.length) lines = [""];
+  const keys = Object.keys(bubbleCache); if (keys.length > 60) delete bubbleCache[keys[0]];
+  return (bubbleCache[k] = lines);
+}
+let loopOn = false, loopSkip = 0, loopSlow = false, loopCost = 8;
+let perfOn = false, perfEl = null, perfFrames = 0, perfWorst = 0, perfSince = 0;
+/* Regulador de quadros: se desenhar um quadro leva mais que ~17 ms (não dá para segurar 60), trava em 30 por segundo certinhos em vez de oscilar
+   entre 20 e 45 (parece bem mais fluido no celular e esquenta menos); volta aos 60 quando o aparelho dá conta (< 10 ms). Escondida atrás do
+   modo reunião, a cena roda a ~10 por segundo para sobrar CPU para os vídeos. Aba em segundo plano não desenha. */
 function loop() {
   requestAnimationFrame(loop);
-  if (titleOn && (loopN++ & 1)) return;                               // fundo da tela inicial a 30 quadros por segundo (o desfoque pesa)
+  if (document.hidden) return;
+  const every = titleOn ? 2 : document.body.classList.contains("meet") ? 6 : loopSlow ? 2 : 1;      // fundo da tela inicial também a 30 (o desfoque pesa)
+  if (every > 1 && (loopSkip++ % every)) return;
+  const t0 = performance.now();
   try { frame(); } catch (e) { console.error(e); }
+  const c = performance.now() - t0;
+  loopCost += (c - loopCost) * .1;
+  if (!loopSlow && loopCost > 17) loopSlow = true; else if (loopSlow && loopCost < 10) loopSlow = false;
+  if (perfOn) { perfFrames++; if (c > perfWorst) perfWorst = c; perfTick(t0 + c); }
+}
+function perfTick(t) {                                                // medidor opcional: !fps no chat (mostra quadros por segundo, custo médio e pior quadro)
+  if (!perfSince) perfSince = t; if (t - perfSince < 1000) return;
+  if (!perfEl) { perfEl = document.createElement("div"); perfEl.style.cssText = "position:fixed;left:6px;bottom:6px;z-index:90;background:rgba(0,0,0,.75);color:#7cf29a;font:12px monospace;padding:3px 7px;pointer-events:none"; document.body.appendChild(perfEl); }
+  perfEl.textContent = Math.round(perfFrames * 1000 / (t - perfSince)) + " fps · " + loopCost.toFixed(1) + " ms/quadro · pior " + Math.round(perfWorst) + " ms" + (loopSlow ? " · modo 30" : "");
+  perfFrames = 0; perfWorst = 0; perfSince = t;
+}
+function perfCommand(raw) {
+  if (!/^!fps\s*$/i.test(String(raw || ""))) return false;
+  perfOn = !perfOn; perfSince = 0; perfFrames = 0; perfWorst = 0; if (!perfOn && perfEl) { perfEl.remove(); perfEl = null; }
+  setStatus(perfOn ? "Medidor de quadros ligado (!fps de novo desliga)." : "Medidor de quadros desligado.", 2500);
+  return true;
 }
 function startLoop() { if (!loopOn) { loopOn = true; requestAnimationFrame(loop); } }

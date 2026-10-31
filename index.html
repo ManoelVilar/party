@@ -239,7 +239,8 @@
   .roster div span { margin-right:auto; }
   #meetLog { background:#2a1b40; border:3px solid var(--line); padding:6px; height:120px; overflow-y:auto; font-size:.85rem; }
   #log { background:#2a1b40; border:3px solid var(--line); padding:8px; height:90px; overflow-y:auto; font-size:.9rem; }
-  #log div, #meetLog div { margin-bottom:3px; }
+  #log div, #meetLog div { margin-bottom:3px; overflow-wrap:anywhere; word-break:break-word; }
+  #log, #meetLog { overflow-x:hidden; }
   #log b, #meetLog b { font-weight:600; }
   .say { display:flex; gap:8px; margin-top:8px; }
   .dpad { display:none; grid-template-columns:repeat(3,54px); grid-template-rows:repeat(2,54px); gap:6px; justify-content:center; }
@@ -2693,7 +2694,13 @@ if (!matchMedia("(pointer:coarse)").matches) { const _i = $("inSay"); if (_i) _i
 if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) document.documentElement.classList.add("nofs");
 $("btnFull").onclick = $("zFull").onclick = toggleBrowserFull;
 $("btnCatsT").onclick = () => document.body.classList.toggle("sh-cats");
-$("btnChatT").onclick = () => { document.body.classList.toggle("sh-chat"); if (document.body.classList.contains("sh-chat")) setTimeout(() => $("inSay").focus(), 50); };
+function toggleChat(open) {                                          // botão Chat e tecla C: mostra/esconde o chat (em tela cheia) e já deixa pronto para escrever
+  const on = open === undefined ? !document.body.classList.contains("sh-chat") : open;
+  document.body.classList.toggle("sh-chat", on);
+  if (on) setTimeout(() => $("inSay").focus(), 50); else $("inSay").blur();
+}
+$("btnChatT").onclick = () => toggleChat();
+$("inSay").addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); toggleChat(false); } });   // Esc fecha o chat e devolve o teclado ao jogo
 const ZMIN = .55, ZMAX = 1.8;
 try { const z = parseFloat(store.get("nc_zoom")); if (z >= ZMIN && z <= ZMAX) { zoom = z; zoomT = z; K = z / ART; } } catch (e) {}
 const setZoom = z => { zoomT = Math.max(ZMIN, Math.min(ZMAX, z)); store.set("nc_zoom", String(zoomT)); };
@@ -2859,6 +2866,7 @@ addEventListener("keydown", e => {
   { const fs = document.fullscreenElement || document.webkitFullscreenElement; if (fs && fs.classList && fs.classList.contains("viewer")) return; }
   if (e.key === "f" || e.key === "F") return toggleBrowserFull();
   if (e.key === "h" || e.key === "H") return toggleHand();
+  if ((e.key === "c" || e.key === "C") && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); return meetOn ? meetToggleChat() : toggleChat(); }
   if (e.key === "+" || e.key === "=") return setZoom(zoomT * 1.15);
   if (e.key === "-" || e.key === "_") return setZoom(zoomT / 1.15);
   if (e.key === "e" || e.key === "E") { const a = currentActions()[0]; if (a) a.fn(); return; }
@@ -3052,7 +3060,7 @@ $("sayForm").onsubmit = e => {
   if (Date.now() - (onSayForm.last || 0) < 700) return; onSayForm.last = Date.now(); $("inSay").value = "";
   roomRef.child("chat").push({ name: myName, color: myLook.top.color, text, ts: Date.now() + serverOffset });
   meRef.update({ say: text, sayTs: Date.now() });
-  if (raw[0] === "!") jukeCommand(raw);                                                  // comandos da jukebox (!play, !pular...)
+  if (raw[0] === "!" && !perfCommand(raw)) jukeCommand(raw);                                                  // comandos da jukebox (!play, !pular...)
 };
 
 /* ---------- ciclo lento ---------- */
@@ -4926,39 +4934,84 @@ const jYtKey = () => (typeof window.PARTY_YT_KEY === "string" && window.PARTY_YT
 const JUKE_RUINS = /remix|cover|slowed|sped ?up|nightcore|karaoke|8d|reverb|bass ?boost|mashup|tribute|instrumental|playback/;
 const jPalavras = s => jNorm(s).replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
 const jDecode = t => String(t || "").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-function jScore(t, q) {                                           // quanto a faixa do catálogo combina com o que foi pedido (maior = melhor); null = descartar
+function jScore(t, q, minCov) {                                  // quanto a faixa do catálogo combina com o que foi pedido (maior = melhor); null = descartar
   const qw = jPalavras(q); let sig = qw.filter(w => w.length > 2); if (!sig.length) sig = qw; if (!sig.length) return 0;
   const tw = jPalavras((t.title || "") + " " + (t.user && t.user.name || "")), txt = " " + tw.join(" ") + " ";
   const hit = sig.filter(w => tw.some(x => x === w || (w.length > 3 && x.startsWith(w)))).length, cov = hit / sig.length;
-  if (cov < (sig.length === 1 ? 1 : .5)) return null;
+  if (cov < (minCov != null ? minCov : sig.length === 1 ? 1 : .5)) return null;
   const qs = qw.join(" "), titulo = jPalavras(t.title).join(" ");
   let sc = cov * 10 + (txt.includes(" " + qs + " ") ? 3 : 0) + (titulo === qs ? 3 : 0);
-  if (JUKE_RUINS.test(jNorm(t.title)) && !JUKE_RUINS.test(jNorm(q))) sc -= 4;                          // remix/cover/acelerada só se pedirem
-  if (t.duration > 0 && t.duration < 45) sc -= 5;                                                      // vinhetas e trechinhos
-  if (t.duration > 1500 && !/mix|set|live|hora|hour|album|completo|full/.test(jNorm(q))) sc -= 3;      // sets longos só se pedirem
+  sc += jPenaliza(t.title, t.duration, q);
   return sc + Math.min(2, Math.log10((t.play_count || 0) + 1) / 3);                                    // desempate: o mais ouvido
 }
+function jPenaliza(title, dur, q) {                               // remix/cover/vinheta/set longo só entram bem na lista se a pessoa pedir
+  let sc = 0; const qn = jNorm(q);
+  if (JUKE_RUINS.test(jNorm(title)) && !JUKE_RUINS.test(qn)) sc -= 4;
+  if (dur > 0 && dur < 45) sc -= 5;
+  if (dur > 1500 && !/mix|set|live|hora|hour|album|completo|full/.test(qn)) sc -= 3;
+  return sc;
+}
+const jLimpa = q => String(q || "").replace(/\(.*?\)|\[.*?\]/g, " ").replace(/\b(feat|ft|featuring|oficial|official|clipe|videoclipe|video|lyrics|letra|audio|hd|4k|ao vivo)\b\.?/gi, " ").replace(/\s+/g, " ").trim();
 async function jSearchAu(q) {
-  const j = await jFetch(AU_API + "/tracks/search?query=" + encodeURIComponent(q.slice(0, 80)) + "&limit=25&app_name=" + AU_APP), seen = {}, out = [];
-  ((j && j.data) || []).map(t => ({ t, sc: jScore(t, q) })).filter(r => r.sc != null).sort((x, y) => y.sc - x.sc).forEach(r => {
+  const lim = jLimpa(q), tries = [q]; if (lim && lim !== q) tries.push(lim);
+  let last = null;
+  for (const qq of tries) {                                         // 1º o pedido como veio, 2º sem "(Clipe Oficial)", "ft." etc.
+    const j = await jFetch(AU_API + "/tracks/search?query=" + encodeURIComponent(qq.slice(0, 80)) + "&limit=40&app_name=" + AU_APP); last = { j, qq };
+    const out = jRankAu(j, qq, null); if (out.length) return out;
+  }
+  const aprox = jRankAu(last.j, last.qq, .3);                      // nada bate direito: mostra o mais próximo, marcado como aproximado
+  aprox.forEach(it => { it.approx = true; }); return aprox;
+}
+function jRankAu(j, q, minCov) {
+  const seen = {}, out = [];
+  ((j && j.data) || []).map(t => ({ t, sc: jScore(t, q, minCov) })).filter(r => r.sc != null).sort((x, y) => y.sc - x.sc).forEach(r => {
     const it = jTrack(r.t); if (it && !seen[it.title]) { seen[it.title] = 1; out.push(it); }
   });
   return out;
 }
-async function jSearchYt(q, n) {
-  const j = await jFetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&maxResults=" + n + "&q=" + encodeURIComponent(q.slice(0, 80)) + "&key=" + encodeURIComponent(jYtKey()), 6000);
-  return ((j && j.items) || []).filter(v => v && v.id && /^[A-Za-z0-9_-]{11}$/.test(v.id.videoId || "")).map(v => ({
-    src: "yt", ref: v.id.videoId, title: jClean(jDecode(v.snippet && v.snippet.title) + (v.snippet && v.snippet.channelTitle ? " — " + jDecode(v.snippet.channelTitle) : ""))
-  }));
+/* YouTube: a busca oficial (precisa de chave) + a duração dos vídeos; resultados ficam 7 dias neste aparelho para poupar a cota diária */
+const jIsoDur = s => { const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(s || ""); return m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 0; };
+function jYtCache(q, put) {
+  try {
+    const o = JSON.parse(store.get("pt_ytc") || "{}"), k = jNorm(q).trim();
+    if (!put) { const e = o[k]; return e && Date.now() - e.t < 6048e5 ? e.l : null; }
+    o[k] = { t: Date.now(), l: put }; const ks = Object.keys(o); if (ks.length > 40) ks.sort((x, y) => o[x].t - o[y].t).slice(0, ks.length - 40).forEach(d => delete o[d]);
+    store.set("pt_ytc", JSON.stringify(o));
+  } catch (e) { /* sem cache */ }
+  return null;
 }
+async function jSearchYt(q, n) {
+  const hit = jYtCache(q); if (hit && hit.length) return hit.slice(0, n);
+  const key = encodeURIComponent(jYtKey()), base = "https://www.googleapis.com/youtube/v3/", enc = encodeURIComponent(q.slice(0, 80));
+  const valid = j => ((j && j.items) || []).filter(v => v && v.id && /^[A-Za-z0-9_-]{11}$/.test(v.id.videoId || "") && v.snippet);
+  let items = valid(await jFetch(base + "search?part=snippet&type=video&videoEmbeddable=true&videoCategoryId=10&maxResults=10&q=" + enc + "&key=" + key, 6000));   // 1º só "Música"
+  if (!items.length) items = valid(await jFetch(base + "search?part=snippet&type=video&videoEmbeddable=true&maxResults=10&q=" + enc + "&key=" + key, 6000));
+  const durs = {};
+  try { const d = await jFetch(base + "videos?part=contentDetails&id=" + items.map(v => v.id.videoId).join(",") + "&key=" + key, 5000); ((d && d.items) || []).forEach(v => { durs[v.id] = jIsoDur(v.contentDetails && v.contentDetails.duration); }); } catch (e) { /* sem duração: segue */ }
+  const out = items.map((v, i) => {
+    const title = jDecode(v.snippet.title) + (v.snippet.channelTitle ? " — " + jDecode(v.snippet.channelTitle) : ""), dur = durs[v.id.videoId] || 0;
+    const it = { src: "yt", ref: v.id.videoId, title: jClean(title) }; if (dur > 0 && dur <= 86400) it.dur = dur;
+    return { it, sc: -i * .4 + jPenaliza(v.snippet.title, dur, q) };
+  }).sort((x, y) => y.sc - x.sc).map(r => r.it);
+  if (out.length) jYtCache(q, out);
+  return out;
+}
+let jYtWarnAt = 0;
 async function jSearch(q, n) {                                    // lista de itens da fila, do melhor para o pior (YouTube primeiro, se houver chave)
   n = n || 5; let falhas = 0, fontes = 0, yt = [], au = [];
-  if (jYtKey()) { fontes++; try { yt = await jSearchYt(q, n); } catch (e) { falhas++; } }
+  if (jYtKey()) {
+    fontes++;
+    try { yt = await jSearchYt(q, n); } catch (e) {
+      falhas++; if (Date.now() - jYtWarnAt > 600000) { jYtWarnAt = Date.now(); jSys("A busca do YouTube não respondeu (chave inválida ou cota do dia esgotada). Usando só o catálogo aberto."); }
+    }
+  }
   fontes++; try { au = await jSearchAu(q); } catch (e) { falhas++; }
   if (falhas >= fontes) throw new Error("Não consegui buscar agora (rede ou bloqueio). Cole um link do YouTube.");
-  const out = yt.slice(0, au.length ? Math.ceil(n * .6) : n);
-  au.forEach(it => { if (out.length < n) out.push(it); });
+  const exatos = au.filter(i => !i.approx), aprox = au.filter(i => i.approx);
+  const out = yt.slice(0, exatos.length ? Math.ceil(n * .6) : n);
+  exatos.forEach(it => { if (out.length < n) out.push(it); });
   yt.slice(out.filter(i => i.src === "yt").length).forEach(it => { if (out.length < n) out.push(it); });
+  aprox.forEach(it => { if (out.length < n) out.push(it); });
   return out;
 }
 async function jResolve(q) {
@@ -5013,13 +5066,13 @@ function jukeCommand(raw) {
     jSearch(arg, 5).then(list => {
       if (!list.length) { jSys("Não achei «" + arg.slice(0, 40) + "». Confira o nome (artista + música ajuda) ou cole um link do YouTube."); return; }
       jPick = { list, ts: Date.now() };
-      list.forEach((it, i) => jSys((i + 1) + ". " + it.title + (it.dur ? " (" + jFmt(it.dur * 1000) + ")" : "") + (it.src === "yt" ? " · YouTube" : "")));
+      list.forEach((it, i) => jSys((i + 1) + ". " + it.title + (it.dur ? " (" + jFmt(it.dur * 1000) + ")" : "") + (it.src === "yt" ? " · YouTube" : "") + (it.approx ? " · aproximado" : "")));
       jSys("Escolha com !play 1" + (list.length > 1 ? " … !play " + list.length : "") + " (vale por 2 minutos).");
     }).catch(e => jSys(e.message || "Não consegui buscar."));
   } else if (cmd === "play") {
     if (!arg) { jSys("Use: !play nome da música ou link do YouTube."); return true; }
     jSys("Procurando…");
-    jAdd(arg).then(it => { jSys("Adicionada: " + it.title + (jNow ? " (posição " + Object.keys(jQueue).length + " na fila)" : "") + (parseYouTube(arg) || /^https?:/i.test(arg) ? "" : " · não era essa? use !buscar " + arg.slice(0, 30))); }).catch(e => jSys(e.message || "Não consegui adicionar."));
+    jAdd(arg).then(it => { jSys("Adicionada: " + it.title + (jNow ? " (posição " + Object.keys(jQueue).length + " na fila)" : "") + (parseYouTube(arg) || /^https?:/i.test(arg) ? "" : (it.approx ? " · resultado aproximado" : "") + " · não era essa? use !buscar " + arg.slice(0, 30))); }).catch(e => jSys(e.message || "Não consegui adicionar."));
   } else if (cmd === "fila") {
     const ks = Object.keys(jQueue).sort();
     if (jNow) jSys("Agora: " + jNow.title);
@@ -5045,9 +5098,27 @@ function jSetVol(v) { jVol = Math.max(0, Math.min(100, Math.round(v))); store.se
 /* ---------- tocador ---------- */
 function jNeedClick() {
   if (jNeedClick.on) return; jNeedClick.on = true;
-  setStatus("🎵 A jukebox está tocando. Clique em qualquer lugar da página para liberar o som.", 6000);
-  document.addEventListener("pointerdown", () => { jNeedClick.on = false; jSync(); }, { once: true });
+  setStatus("🎵 A jukebox está tocando. Toque ou clique em qualquer lugar (ou aperte uma tecla) para liberar o som.", 6000);
 }
+/* som automático: o navegador só libera áudio com som depois de uma interação. Qualquer toque ou tecla na página (digitar no chat conta)
+   libera na hora: desmuta o YouTube, retoma o áudio bloqueado e "abençoa" o <audio> (iPhone) para as próximas faixas da fila tocarem sozinhas. */
+const JUKE_SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+let jBlessed = false;
+function jAuEl() {
+  if (!jAu) { jAu = new Audio(); jAu.preload = "auto"; jAu.setAttribute("playsinline", ""); jAu.onended = () => { if (jAu.src !== JUKE_SILENCE) jEnded(); }; jAu.onerror = () => { if (jAu.src !== JUKE_SILENCE) jPlayErr(); }; }   // o silêncio de "abençoar" não conta como faixa
+  return jAu;
+}
+function jUnlock() {
+  if (!jInit) return;
+  if (!jBlessed) {
+    jBlessed = true; const a = jAuEl();
+    if (!a.src) { a.src = JUKE_SILENCE; const p = a.play(); if (p && p.then) p.then(() => { if (a.src === JUKE_SILENCE) { a.pause(); a.removeAttribute("src"); jAuSeq = null; } }).catch(() => { jBlessed = false; }); }
+  }
+  if (jYtMuted && jYt && jYtReady) { try { jYtMuted = false; jYt.unMute(); jYt.setVolume(jVol); jYt.playVideo(); $("jukeytKick").hidden = true; } catch (e) { /* ok */ } }
+  if (jNeedClick.on) jNeedClick.on = false;
+  if (jNow && jNow.pause == null) jSync();
+}
+["pointerdown", "keydown", "touchend", "click"].forEach(t => addEventListener(t, jUnlock, true));
 function jEnded() { if (jNow) jReqSend("end").catch(() => {}); }
 function jPlayErr() {
   if (!jNow || jErrSeq === jNow.seq) return; jErrSeq = jNow.seq;
@@ -5055,7 +5126,7 @@ function jPlayErr() {
 }
 function jAuSync(want, pos) {
   if (!want || jNow.src !== "au") { if (jAu && !jAu.paused) try { jAu.pause(); } catch (e) { /* ok */ } return; }
-  if (!jAu) { jAu = new Audio(); jAu.preload = "auto"; jAu.onended = jEnded; jAu.onerror = () => jPlayErr(); }
+  jAuEl();
   if (jAuSeq !== jNow.seq) { jAuSeq = jNow.seq; jAuSeek = 0; jAu.src = AU_API + "/tracks/" + encodeURIComponent(jNow.ref) + "/stream?app_name=" + AU_APP; }
   jAu.volume = jVol / 100;
   const t = pos / 1000;
@@ -5274,7 +5345,8 @@ $("btnMeet").onclick = meetOpen; $("mLeave").onclick = meetClose;
 $("mMic").onclick = () => toggle("audio"); $("mCam").onclick = () => toggle("video");
 $("mHand").onclick = () => { toggleHand(); meetSync(); };
 $("mMix").onclick = () => toggleMix();
-$("mChatBtn").onclick = () => { $("mChat").hidden = !$("mChat").hidden; meetTick(true); if (!$("mChat").hidden) { renderMeetLog(); const i = $("meetIn"); if (i) i.focus(); } };
+function meetToggleChat() { $("mChat").hidden = !$("mChat").hidden; meetTick(true); if (!$("mChat").hidden) { renderMeetLog(); const i = $("meetIn"); if (i) i.focus(); } }
+$("mChatBtn").onclick = meetToggleChat;
 $("mPresBtn").onclick = () => { const h = $("mMenu").hidden; $("mMenu").hidden = !h; $("mPresBtn").setAttribute("aria-expanded", String(h)); };
 $("mMenu").addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) meetPresent(b.dataset.k); });
 $("mSldFile").onchange = async e => { const f = e.target.files; if (!f || !f.length) return; await loadSlideFiles(f); e.target.value = ""; if (slides.length) startBroadcast("slides"); };
@@ -5292,6 +5364,9 @@ $("mVFwd").onclick = () => { $("vidLocal").currentTime += 10; };
 $("mSnd").onclick = () => { const b = $("vMute"); if (b) b.click(); meetTick(true); };
 $("mFS").onclick = async () => { const el = $("mStage"); try { if (document.fullscreenElement === el) await document.exitFullscreen(); else await el.requestFullscreen(); } catch (e) { setStatus("Este navegador não permite tela cheia aqui.", 3000); } };
 document.addEventListener("click", e => { if (!$("mMenu").hidden && !e.target.closest(".mpwrap")) { $("mMenu").hidden = true; $("mPresBtn").setAttribute("aria-expanded", "false"); } });
+addEventListener("keydown", e => {                                    // Esc no campo do chat da reunião fecha o chat (a tecla C abre; ver 05_net.js)
+  if (meetOn && e.key === "Escape" && e.target && e.target.id === "meetIn") { e.preventDefault(); $("mChat").hidden = true; meetTick(true); e.target.blur(); }
+});
 addEventListener("keydown", e => {                                    // setas passam os slides de quem apresenta; Esc fecha o menu
   if (!meetOn || e.target.tagName === "INPUT") return;
   if (e.key === "Escape" && !$("mMenu").hidden) { $("mMenu").hidden = true; return; }
@@ -5333,12 +5408,12 @@ function frame() {
   } else if (me.act && (me.act.type === "eat" || me.act.type === "dance") && (path.length || keys.length || holdVec)) { me.act = null; meRef.update({ act: null }); }
 
   /* zoom e câmera (em unidades do mundo; K = pixels de arte por unidade) */
-  zoom += (zoomT - zoom) * .2; if (Math.abs(zoomT - zoom) < .002) zoom = zoomT; K = zoom / ART;
+  zoom += (zoomT - zoom) * (1 - Math.pow(.8, dtMs / 16.7)); if (Math.abs(zoomT - zoom) < .002) zoom = zoomT; K = zoom / ART;
   const vw = LW / K, vh = LH / K, mp = players[uid], tp = titleOn ? titleTarget(now) : P((mp ? mp.rx : me.x) + .5, (mp ? mp.ry : me.y) + .5, 20);
   let cx = tp[0] - vw / 2, cy = tp[1] - vh / 2;
   cx = vw >= WORLD_W ? (WORLD_W - vw) / 2 : Math.max(0, Math.min(WORLD_W - vw, cx));
   cy = vh >= WORLD_H ? (WORLD_H - vh) / 2 : Math.max(0, Math.min(WORLD_H - vh, cy));
-  camX += (cx - camX) * .12; camY += (cy - camY) * .12;
+  const fc = 1 - Math.pow(.88, dtMs / 16.7); camX += (cx - camX) * fc; camY += (cy - camY) * fc;      // acompanha na mesma velocidade a 60 ou a 30 quadros
   camRX = Math.round(camX * K) / K; camRY = Math.round(camY * K) / K; const kx = camRX, ky = camRY;
 
   natalT = now;
@@ -5471,18 +5546,56 @@ function frame() {
     if (l.zzz) { mctx.fillStyle = "#cfe0ff"; mctx.font = "bold 28px 'Pixelify Sans', monospace"; const t = now / 600; mctx.fillText("z", x + 36 + Math.sin(t) * 4, y - 20 - (t % 1) * 14); mctx.fillText("Z", x + 56, y - 40 - ((t + .5) % 1) * 14); }
     if (l.food) { mctx.font = "40px serif"; mctx.fillText(l.food, x, top - 22 + Math.sin(now / 150) * 3); }
     if (l.say) {
-      const t = l.say.length > 38 ? l.say.slice(0, 38) + "..." : l.say; mctx.font = "500 24px 'Pixelify Sans', monospace";
-      const bw = Math.ceil(mctx.measureText(t).width) + 28, bh = 44, bx = Math.round(x - bw / 2), by = Math.round(top - bh - 14);
+      mctx.font = "500 24px 'Pixelify Sans', monospace";
+      const lines = wrapBubble(l.say), lh = 28, bw = Math.ceil(Math.max(...lines.map(t => mctx.measureText(t).width))) + 28, bh = lines.length * lh + 16, bx = Math.round(x - bw / 2), by = Math.round(top - bh - 14);
       box8(bx, by, bw, bh, "#fff6d8", "#120a1c"); mctx.fillStyle = "#fff6d8"; mctx.fillRect(Math.round(x) - 8, by + bh, 16, 8); mctx.fillStyle = "#120a1c"; mctx.fillRect(Math.round(x) - 11, by + bh + 8, 22, 4);
-      mctx.fillStyle = "#2b1b3a"; mctx.fillText(t, x, by + bh / 2 + 1);
+      mctx.fillStyle = "#2b1b3a"; lines.forEach((t, i) => mctx.fillText(t, x, by + 8 + lh * i + lh / 2 + 1));
     }
   });
 }
-let loopOn = false, loopN = 0;
+/* quebra o balão de fala em linhas (até 5, ~26 caracteres), cortando em palavra e partindo palavras enormes (links) */
+const bubbleCache = {};
+function wrapBubble(txt) {
+  const k = txt; if (bubbleCache[k]) return bubbleCache[k];
+  const MAX = 26, out = []; let cur = "";
+  String(txt).split(/\s+/).filter(Boolean).forEach(w => {
+    while (w.length > MAX) { if (cur) { out.push(cur); cur = ""; } out.push(w.slice(0, MAX)); w = w.slice(MAX); }
+    if (!cur) cur = w; else if ((cur + " " + w).length <= MAX) cur += " " + w; else { out.push(cur); cur = w; }
+  });
+  if (cur) out.push(cur);
+  let lines = out.slice(0, 5); if (out.length > 5) lines[4] = lines[4].slice(0, MAX - 1) + "…";
+  if (!lines.length) lines = [""];
+  const keys = Object.keys(bubbleCache); if (keys.length > 60) delete bubbleCache[keys[0]];
+  return (bubbleCache[k] = lines);
+}
+let loopOn = false, loopSkip = 0, loopSlow = false, loopCost = 8;
+let perfOn = false, perfEl = null, perfFrames = 0, perfWorst = 0, perfSince = 0;
+/* Regulador de quadros: se desenhar um quadro leva mais que ~17 ms (não dá para segurar 60), trava em 30 por segundo certinhos em vez de oscilar
+   entre 20 e 45 (parece bem mais fluido no celular e esquenta menos); volta aos 60 quando o aparelho dá conta (< 10 ms). Escondida atrás do
+   modo reunião, a cena roda a ~10 por segundo para sobrar CPU para os vídeos. Aba em segundo plano não desenha. */
 function loop() {
   requestAnimationFrame(loop);
-  if (titleOn && (loopN++ & 1)) return;                               // fundo da tela inicial a 30 quadros por segundo (o desfoque pesa)
+  if (document.hidden) return;
+  const every = titleOn ? 2 : document.body.classList.contains("meet") ? 6 : loopSlow ? 2 : 1;      // fundo da tela inicial também a 30 (o desfoque pesa)
+  if (every > 1 && (loopSkip++ % every)) return;
+  const t0 = performance.now();
   try { frame(); } catch (e) { console.error(e); }
+  const c = performance.now() - t0;
+  loopCost += (c - loopCost) * .1;
+  if (!loopSlow && loopCost > 17) loopSlow = true; else if (loopSlow && loopCost < 10) loopSlow = false;
+  if (perfOn) { perfFrames++; if (c > perfWorst) perfWorst = c; perfTick(t0 + c); }
+}
+function perfTick(t) {                                                // medidor opcional: !fps no chat (mostra quadros por segundo, custo médio e pior quadro)
+  if (!perfSince) perfSince = t; if (t - perfSince < 1000) return;
+  if (!perfEl) { perfEl = document.createElement("div"); perfEl.style.cssText = "position:fixed;left:6px;bottom:6px;z-index:90;background:rgba(0,0,0,.75);color:#7cf29a;font:12px monospace;padding:3px 7px;pointer-events:none"; document.body.appendChild(perfEl); }
+  perfEl.textContent = Math.round(perfFrames * 1000 / (t - perfSince)) + " fps · " + loopCost.toFixed(1) + " ms/quadro · pior " + Math.round(perfWorst) + " ms" + (loopSlow ? " · modo 30" : "");
+  perfFrames = 0; perfWorst = 0; perfSince = t;
+}
+function perfCommand(raw) {
+  if (!/^!fps\s*$/i.test(String(raw || ""))) return false;
+  perfOn = !perfOn; perfSince = 0; perfFrames = 0; perfWorst = 0; if (!perfOn && perfEl) { perfEl.remove(); perfEl = null; }
+  setStatus(perfOn ? "Medidor de quadros ligado (!fps de novo desliga)." : "Medidor de quadros desligado.", 2500);
+  return true;
 }
 function startLoop() { if (!loopOn) { loopOn = true; requestAnimationFrame(loop); } }
 /* =========================================================

@@ -239,7 +239,8 @@
   .roster div span { margin-right:auto; }
   #meetLog { background:#2a1b40; border:3px solid var(--line); padding:6px; height:120px; overflow-y:auto; font-size:.85rem; }
   #log { background:#2a1b40; border:3px solid var(--line); padding:8px; height:90px; overflow-y:auto; font-size:.9rem; }
-  #log div, #meetLog div { margin-bottom:3px; }
+  #log div, #meetLog div { margin-bottom:3px; overflow-wrap:anywhere; word-break:break-word; }
+  #log, #meetLog { overflow-x:hidden; }
   #log b, #meetLog b { font-weight:600; }
   .say { display:flex; gap:8px; margin-top:8px; }
   .dpad { display:none; grid-template-columns:repeat(3,54px); grid-template-rows:repeat(2,54px); gap:6px; justify-content:center; }

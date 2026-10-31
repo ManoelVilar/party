@@ -33,6 +33,8 @@ CORS = {"access-control-allow-origin": "*"}
 def au(i, title, artist, dur, plays): return {"id": i, "title": title, "user": {"name": artist}, "duration": dur, "play_count": plays, "is_streamable": True}
 VARIOS = [au("Rm1xx", "Varios Tema (Remix)", "DJ Quente", 210, 9999), au("In1tr", "Varios Tema Intro", "Banda X", 20, 500), au("Ou1tr", "Outra Coisa", "Alguem", 180, 99999),
           au("Ao1vv", "Varios Tema Ao Vivo", "Banda X", 240, 10), au("Or1gi", "Varios Tema", "Banda X", 200, 50), au("Or1gi", "Varios Tema", "Banda X", 200, 50)]
+YT_CALLS = []
+YT_DUR = {"items": [{"id": "AAAAAAAAAAA", "contentDetails": {"duration": "PT3M25S"}}, {"id": "BBBBBBBBBBB", "contentDetails": {"duration": "PT1H6M40S"}}]}
 YT_SEARCH = {"items": [{"id": {"videoId": "AAAAAAAAAAA"}, "snippet": {"title": "Varios Tema &amp; Cia (Clipe Oficial)", "channelTitle": "Canal Oficial"}},
                        {"id": {"videoId": "BBBBBBBBBBB"}, "snippet": {"title": "Varios Tema ao vivo", "channelTitle": "Outro Canal"}}, {"id": {"channelId": "x"}, "snippet": {"title": "canal"}}]}
 SEARCH = {"data": [{"id": "Dz4Ab", "title": "Lofi Test", "user": {"name": "DJ Teste"}, "duration": 90, "is_streamable": True}]}
@@ -47,11 +49,13 @@ def mk(ctx, name, room):
         elif "api.audius.co/v1/tracks/search" in u:
             q = (parse_qs(urlparse(u).query).get("query") or [""])[0]
             if "naoexiste" in q.lower(): data = {"data": []}
-            elif q == "varios tema": data = {"data": VARIOS}
+            elif "varios" in q.lower(): data = {"data": VARIOS}
             else: data = {"data": [{"id": "Dz4Ab", "title": q.title() + " Test", "user": {"name": "DJ Teste"}, "duration": 90, "is_streamable": True}]}   # o título ecoa o pedido
             r.fulfill(body=json.dumps(data), content_type="application/json", headers=CORS)
         elif "googleapis.com/youtube/v3/search" in u:
-            r.fulfill(body=json.dumps(YT_SEARCH), content_type="application/json", headers=CORS)
+            YT_CALLS.append("search"); r.fulfill(body=json.dumps(YT_SEARCH), content_type="application/json", headers=CORS)
+        elif "googleapis.com/youtube/v3/videos" in u:
+            YT_CALLS.append("videos"); r.fulfill(body=json.dumps(YT_DUR), content_type="application/json", headers=CORS)
         elif "api.audius.co/v1/tracks/" in u and "/stream" in u: r.fulfill(body=wav(), content_type="audio/wav", headers=CORS)
         elif "youtube.com/oembed" in u: r.fulfill(body=json.dumps({"title": "Video de Teste"}), content_type="application/json", headers=CORS)
         elif "youtube.com/iframe_api" in u: r.fulfill(body=YT_STUB, content_type="application/javascript")
@@ -131,10 +135,17 @@ with sync_playwright() as p:
     ok("Use: !buscar" in log(A), "!buscar sem nome ensina o uso")
     ev(A, "jPick = { list: [{ src: 'au', ref: 'Dz4Ab', title: 'X' }], ts: Date.now() - 130000 }"); say(A, "!escolher 1", 700)
     ok(log(A).count("Faça uma busca primeiro") == 2, "a lista de opções vence em 2 minutos")
+    r = A.evaluate("jSearch('varios xyz qqq', 5).then(l => l.map(i => i.title + '|' + !!i.approx))")
+    ok(len(r) >= 1 and r[0].endswith("|true"), "nenhuma faixa bate direito: mostra a mais próxima marcada como aproximada (%s)" % r[:1])
+    r = A.evaluate("jSearch('Varios Tema (Clipe Oficial) ft. Alguém', 5).then(l => l.map(i => i.title + '|' + !!i.approx))")
+    ok(r and r[0].startswith("Varios Tema — Banda X") and r[0].endswith("|false"), "'(Clipe Oficial) ft. ...' não atrapalha: a busca tenta de novo sem o enfeite (%s)" % r[:1])
     # com chave do YouTube configurada: resultados do YouTube vêm primeiro, com título decodificado
     ev(A, "window.PARTY_YT_KEY = 'chave-de-teste'")
     r = A.evaluate("jSearch('varios tema', 5).then(l => l.map(i => i.src + ':' + i.ref + ':' + i.title))")
     ok(r[0] == "yt:AAAAAAAAAAA:Varios Tema & Cia (Clipe Oficial) — Canal Oficial" and r[1].startswith("yt:BBBBBBBBBBB") and r[2].startswith("au:") and len(r) == 5, "com chave: YouTube primeiro (só vídeos), título legível, catálogo aberto completa (%s)" % r[:3])
+    ok(r[0].startswith("yt:AAAAAAAAAAA") and ev(A, "jYtCache('varios tema')[0].dur") == 205 and ev(A, "jYtCache('varios tema')[1].dur") == 4000, "com chave: a duração dos vídeos vem junto (3:25 e 1h06) e vai para a fila")
+    n_yt = len(YT_CALLS); A.evaluate("jSearch('Varios Tema', 5)"); A.wait_for_timeout(300)
+    ok(len(YT_CALLS) == n_yt, "a mesma busca no YouTube é guardada por 7 dias (não gasta a cota de novo)")
     ev(A, "window.PARTY_YT_KEY = ''")
     say(A, "!batata", 400)
     ok("Comandos" not in log(A).split("!batata")[-1], "!comando desconhecido é só conversa")
@@ -165,6 +176,13 @@ with sync_playwright() as p:
     ok(wait_for(A, f"jNow && jNow.seq !== {s0} && jNow.src === 'yt'") and ev(A, "Object.keys(jQueue).length") == 0, "!pular passa para a próxima (a da fila) e tira da fila")
     ok(wait_for(A, "!$('jukeyt').hidden") and wait_for(A, "window.__yt && window.__ytlog.includes('load:dQw4w9WgXcQ')"), "música do YouTube: carrega a API só agora e mostra o player")
     ok(ev(A, "jAu.paused"), "e o áudio do catálogo para")
+    # som automático: qualquer toque libera o YouTube que começou mudo (autoplay bloqueado), sem botão especial
+    s2 = ev(A, "jNow.seq"); ev(A, "(() => { jYtMuted = true; $('jukeytKick').hidden = false; window.__yt.m = true; })()")
+    A.mouse.click(300, 300); A.wait_for_timeout(400)
+    ok(ev(A, "jYtMuted === false && window.__yt.m === false && $('jukeytKick').hidden") and ev(A, "jNow.seq") == s2, "um toque qualquer na página liga o som do YouTube e não pula a música")
+    ev(A, "(() => { jYtMuted = true; $('jukeytKick').hidden = false; window.__yt.m = true; })()")
+    A.keyboard.press("Shift"); A.wait_for_timeout(300)
+    ok(ev(A, "jYtMuted === false && window.__yt.m === false"), "apertar uma tecla (ou digitar no chat) também liga")
     # ninguém alterou duas vezes
     A.wait_for_timeout(1200)
     ok(ev(A, "jNow.ref") == "dQw4w9WgXcQ" and ev(B, "jNow.ref") == "dQw4w9WgXcQ", "pular não avança duas vezes (dois clientes veem o mesmo estado)")
