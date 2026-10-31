@@ -29,17 +29,7 @@ O jogo é estático: basta servir o `index.html` por **HTTPS** (obrigatório par
 3. Autorize `SEU-USUARIO.github.io` no Firebase Authentication.
 
 ## TURN
-Quando dois jogadores estão em redes que bloqueiam conexão direta (4G, Wi-Fi corporativo), o WebRTC precisa de um servidor **TURN**. O MVP vem com o TURN público *Open Relay* (`openrelayproject`), compartilhado e sem garantia: pode ficar lento ou cair, e **qualquer pessoa** vê as credenciais no código.
-
-Para algo estável:
-1. Crie conta grátis em [metered.ca](https://www.metered.ca) (ou use Cloudflare Calls TURN, Twilio Network Traversal, ou seu próprio `coturn`).
-2. Em `src/js/01_core.js`, substitua o item TURN da lista `ICE`:
-   ```js
-   { urls: ["turn:SEU-HOST:80", "turn:SEU-HOST:443", "turns:SEU-HOST:443?transport=tcp"], username: "USUARIO", credential: "SENHA" }
-   ```
-3. `npm run build` e publique de novo.
-
-> Credenciais TURN estáticas ficam visíveis no navegador. Para uso público, gere credenciais temporárias por sessão (via função serverless) — veja o [ROADMAP](ROADMAP.md).
+Quando dois jogadores estão em redes que bloqueiam conexão direta (4G, Wi-Fi corporativo), o WebRTC precisa de um servidor **TURN**. O TURN público *Open Relay* (`openrelayproject`) que o MVP usava foi desativado, então **sem configurar um TURN só redes simples se conectam**. Passo a passo (Metered grátis ou servidor próprio) em [VOZ.md](VOZ.md).
 
 ## Domínio próprio
 Aponte o DNS para o provedor, adicione o domínio em Authentication → Domínios autorizados e ajuste a restrição da chave de API.

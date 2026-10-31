@@ -8,14 +8,19 @@ const firebaseConfig = {
   messagingSenderId: "74157272467",
   appId: "1:74157272467:web:74b045afc43ee7ff610c66"
 };
-/* Servidores da chamada. Se uma rede bloquear a conexão (comum em 4G),
-   adicione um TURN: { urls: "turn:SERVIDOR:443", username: "USUARIO", credential: "SENHA" } */
-const ICE = [
-  { urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" },
-  /* TURN público gratuito (Open Relay): faz a chamada funcionar entre redes diferentes (casa x 4G x trabalho).
-     É um serviço compartilhado e pode oscilar; para algo estável crie uma conta grátis em metered.ca e troque aqui. */
-  { urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turns:openrelay.metered.ca:443?transport=tcp"], username: "openrelayproject", credential: "openrelayproject" }
+/* Servidores da chamada de voz e vídeo (veja docs/VOZ.md).
+   STUN descobre o endereço de cada pessoa e basta quando as duas redes são "amigáveis". Entre redes diferentes (casa x 4G x trabalho)
+   muitas vezes a conexão direta é impossível e só um servidor TURN (que repassa o áudio e o vídeo) resolve.
+   O TURN público "openrelayproject" que ficava aqui foi desativado pelo serviço, por isso mic e câmera só funcionavam em redes simples.
+   Para ligar um TURN, escolha UMA das opções abaixo (as duas podem ficar vazias: aí só o STUN é usado):
+   - TURN_METERED: conta grátis em metered.ca (20 GB/mês). Preencha { app: "NOME-DO-APP", key: "CHAVE-API" } — as credenciais são pedidas ao serviço a cada entrada.
+   - TURN_FIXO: servidor com usuário e senha fixos, ex.: [{ urls: ["turn:SERVIDOR:443?transport=tcp"], username: "USUARIO", credential: "SENHA" }]. */
+const TURN_METERED = null;
+const TURN_FIXO = [      // ExpressTURN (plano grátis, 1000 GB/mês, só porta 3478). Credencial só de TURN: pode ser trocada em "Atualizar credenciais" no painel deles.
+  { urls: ["turn:free.expressturn.com:3478?transport=udp", "turn:free.expressturn.com:3478?transport=tcp"], username: "000000002108866363", credential: "wMGOdi8VabA0LzFB8sVwWJJTVQA=" }
 ];
+const ICE = [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }].concat(TURN_FIXO);
+let iceTurnOk = TURN_FIXO.length > 0, iceReady = null;                          // há algum TURN configurado? (usado nos avisos de "sem conexão")
 /* ============================================================ */
 
 /* =========================================================

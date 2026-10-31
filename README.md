@@ -93,7 +93,7 @@ Os testes de navegador **não usam o Firebase real nem rede real**: `tests/e2e/f
 
 - [Arquitetura](docs/ARCHITECTURE.md) — módulos, dados no Firebase, WebRTC, decisões
 - [Firebase](docs/FIREBASE.md) — criar o projeto, regras, restringir a chave
-- [Contas, salas e convites](docs/CONTAS.md) · [Agentes de IA](docs/AGENTES.md) · [Jukebox](docs/JUKEBOX.md) · [Limpeza no servidor](docs/LIMPEZA.md)
+- [Contas, salas e convites](docs/CONTAS.md) · [Agentes de IA](docs/AGENTES.md) · [Jukebox](docs/JUKEBOX.md) · [Voz e vídeo](docs/VOZ.md) · [Limpeza no servidor](docs/LIMPEZA.md)
 - [Deploy](docs/DEPLOY.md) — Netlify, GitHub Pages, TURN
 - [Auditoria do MVP](docs/AUDITORIA-MVP.md) — o que foi revisado, achados, riscos conhecidos
 - [Checklist de lançamento](docs/MVP-CHECKLIST.md) — o que testar em aparelhos reais antes de divulgar

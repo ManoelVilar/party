@@ -155,7 +155,7 @@ function startGame(name, room) {
     pass = s.val() || {};
     DOORS.forEach(d => { const has = !!(pass[d.office] && pass[d.office][uid]); if (has && !lastPassMine[d.office]) setStatus("✅ Pode entrar " + inO(d.office) + "! A porta abriu.", 6000); lastPassMine[d.office] = has; });
   });
-  initAccess(); initDesks(); initRooms(); initGames(); initJukebox();
+  loadTurn(); initAccess(); initDesks(); initRooms(); initGames(); initJukebox();
   renderCatPanel("rebuild");
   setInterval(tick, 400); setInterval(() => runCatAI(), 150); setInterval(refreshActions, 250); startLoop();
 }

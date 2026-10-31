@@ -22,6 +22,7 @@ python3 smoke.py
 python3 jogos.py
 python3 gatos.py
 python3 jukebox.py
+python3 turn.py
 python3 reconectar.py
 python3 contas.py
 # grava as escritas reais do cliente e confere contra as regras do Firebase

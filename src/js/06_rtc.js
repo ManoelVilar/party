@@ -9,6 +9,24 @@
    ========================================================= */
 const peers = {}, retryAt = {};
 let bstream = null, bLabel = "", bprev = null;                                  // minha transmissão (tela / vídeo / slides)
+/* pede ao serviço (Metered) as credenciais do TURN e acrescenta à lista; se falhar, segue só com STUN */
+function loadTurn() {
+  if (iceReady) return iceReady;
+  const cfg = (typeof window.PARTY_TURN === "object" && window.PARTY_TURN) || TURN_METERED;
+  if (!cfg || !cfg.app || !cfg.key) return (iceReady = Promise.resolve(iceTurnOk));
+  return (iceReady = fetch("https://" + encodeURIComponent(cfg.app) + ".metered.live/api/v1/turn/credentials?apiKey=" + encodeURIComponent(cfg.key))
+    .then(r => { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+    .then(list => { if (Array.isArray(list) && list.length) { list.forEach(s => ICE.push(s)); iceTurnOk = true; } return iceTurnOk; })
+    .catch(e => { console.warn("TURN indisponível:", e && e.message || e); return iceTurnOk; }));
+}
+let turnWarned = false;
+function warnNoRelay(other) {                                                   // a conexão direta falhou: explica uma vez o que está acontecendo
+  if (turnWarned) return; turnWarned = true;
+  const nm = (players[other] && players[other].name) || "a outra pessoa";
+  const msg = iceTurnOk ? "Não consegui ligar voz/vídeo com " + nm + " (rede muito restrita de um dos lados). Tente trocar de rede ou recarregar."
+    : "Não consegui ligar voz/vídeo com " + nm + ": as redes dos dois não permitem conexão direta e este site ainda não tem um servidor de repasse (TURN). Veja docs/VOZ.md.";
+  setStatus(msg, 9000); console.warn(msg);
+}
 const sid = () => Math.random().toString(36).slice(2, 9);
 function canTalk(id, linked) {
   const p = players[id]; if (!p) return false;
@@ -27,7 +45,7 @@ function makePC(other, id) {
     updateTiles();
     const rec = peers[other];
     if (rec && rec.sid === id && pc.connectionState === "connected") tuneBroadcast();
-    if (rec && rec.sid === id && pc.connectionState === "failed") { retryAt[other] = Date.now() + 6000; closePeer(other, true); }
+    if (rec && rec.sid === id && pc.connectionState === "failed") { warnNoRelay(other); retryAt[other] = Date.now() + 6000; closePeer(other, true); }
   };
   return pc;
 }
@@ -68,7 +86,11 @@ function slotStream(id, idxs) {
   return (rec.slotSt[key] = new MediaStream(tracks));
 }
 const newRec = (pc, id) => ({ pc, sid: id, pending: [], remoteSet: false, slotSt: {} });
+const dialing = {};
 async function callPeer(other) {
+  if (dialing[other]) return; dialing[other] = true;                              // o laço do jogo chama a cada tick: só uma ligação por vez
+  try { await loadTurn(); } finally { delete dialing[other]; }
+  if (peers[other] || !canTalk(other, true)) return;
   const id = sid(), pc = makePC(other, id); peers[other] = newRec(pc, id);
   attachLocal(pc, true);
   const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
@@ -80,6 +102,7 @@ async function handleSignal(m) {
   if (m.type === "bye") { if (peers[from] && (!m.sid || peers[from].sid === m.sid)) closePeer(from, false); return; }
   if (m.type === "offer") {
     if (!canTalk(from, true)) return;
+    await loadTurn(); if (!canTalk(from, true)) return;
     closePeer(from, false);
     const pc = makePC(from, m.sid), rec = newRec(pc, m.sid); peers[from] = rec;
     await pc.setRemoteDescription(JSON.parse(m.data)); rec.remoteSet = true; await flushPending(rec);
