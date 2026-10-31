@@ -4980,8 +4980,24 @@ function jYtCache(q, put) {
   } catch (e) { /* sem cache */ }
   return null;
 }
+/* cache compartilhado (Firebase ytcache/<hash>): quem busca primeiro gasta a cota, os outros reaproveitam por 7 dias */
+function jYtHash(k) { let a = 5381, b = 52711; for (let i = 0; i < k.length; i++) { const c = k.charCodeAt(i); a = (a * 33 ^ c) >>> 0; b = (b * 31 + c) >>> 0; } return a.toString(36) + b.toString(36); }
+const jShareRef = q => { try { return db.ref("ytcache/" + jYtHash(jNorm(q).trim())); } catch (e) { return null; } };
+async function jShareGet(q) {
+  const r = jShareRef(q); if (!r) return null;
+  try {
+    const v = (await Promise.race([r.once("value"), new Promise((_, no) => setTimeout(no, 2500))])).val();
+    if (v && v.q === jNorm(q).trim() && Date.now() + serverOffset - v.t < 6048e5 && v.l) { const l = Object.values(v.l).filter(i => i && i.ref); return l.length ? l.map(i => Object.assign({ src: "yt" }, i)) : null; }
+  } catch (e) { /* sem cache compartilhado: busca no YouTube */ }
+  return null;
+}
+function jSharePut(q, out) {
+  const r = jShareRef(q); if (!r) return;
+  try { r.set({ q: jNorm(q).trim().slice(0, 80), t: Date.now() + serverOffset, l: out.slice(0, 10).map(i => { const o = { ref: i.ref, title: String(i.title).slice(0, 90) }; if (i.dur) o.dur = i.dur; return o; }) }).catch(() => {}); } catch (e) { /* sem cache compartilhado */ }
+}
 async function jSearchYt(q, n) {
   const hit = jYtCache(q); if (hit && hit.length) return hit.slice(0, n);
+  const shared = await jShareGet(q); if (shared) { jYtCache(q, shared); return shared.slice(0, n); }
   const key = encodeURIComponent(jYtKey()), base = "https://www.googleapis.com/youtube/v3/", enc = encodeURIComponent(q.slice(0, 80));
   const valid = j => ((j && j.items) || []).filter(v => v && v.id && /^[A-Za-z0-9_-]{11}$/.test(v.id.videoId || "") && v.snippet);
   let items = valid(await jFetch(base + "search?part=snippet&type=video&videoEmbeddable=true&videoCategoryId=10&maxResults=10&q=" + enc + "&key=" + key, 6000));   // 1º só "Música"
@@ -4993,7 +5009,7 @@ async function jSearchYt(q, n) {
     const it = { src: "yt", ref: v.id.videoId, title: jClean(title) }; if (dur > 0 && dur <= 86400) it.dur = dur;
     return { it, sc: -i * .4 + jPenaliza(v.snippet.title, dur, q) };
   }).sort((x, y) => y.sc - x.sc).map(r => r.it);
-  if (out.length) jYtCache(q, out);
+  if (out.length) { jYtCache(q, out); jSharePut(q, out); }
   return out;
 }
 let jYtWarnAt = 0;
