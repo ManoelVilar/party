@@ -5134,12 +5134,13 @@ function jNeedClick() {
 /* som automático: o navegador só libera áudio com som depois de uma interação. Qualquer toque ou tecla na página (digitar no chat conta)
    libera na hora: desmuta o YouTube, retoma o áudio bloqueado e "abençoa" o <audio> (iPhone) para as próximas faixas da fila tocarem sozinhas. */
 const JUKE_SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
-let jBlessed = false;
+let jBlessed = false, jGest = false, jYtUnmSeq = null;   // jGest: a pessoa já tocou/apertou algo na página (o navegador libera o som); jYtUnmSeq: faixa em que já religamos o som sozinhos
 function jAuEl() {
   if (!jAu) { jAu = new Audio(); jAu.preload = "auto"; jAu.setAttribute("playsinline", ""); jAu.onended = () => { if (jAu.src !== JUKE_SILENCE) jEnded(); }; jAu.onerror = () => { if (jAu.src !== JUKE_SILENCE) jPlayErr(); }; }   // o silêncio de "abençoar" não conta como faixa
   return jAu;
 }
 function jUnlock() {
+  jGest = true;
   if (!jInit) return;
   if (!jBlessed) {
     jBlessed = true; const a = jAuEl();
@@ -5178,17 +5179,18 @@ function jYtSync(want, pos) {
     ytLoadAPI(() => {
       if (jYt) return;
       jYt = new window.YT.Player("jukeyt-in", { width: 200, height: 200, videoId: jNow ? jNow.ref : "", playerVars: { autoplay: 1, controls: 0, playsinline: 1, rel: 0, modestbranding: 1, disablekb: 1 },
-        events: { onReady: () => { jYtReady = true; jYtSeq = null; jSync(); }, onStateChange: e => { if (e.data === 0) jEnded(); }, onError: () => jPlayErr() } });
+        events: { onReady: () => { jYtReady = true; jYtSeq = null; jSync(); }, onStateChange: e => { if (e.data === 0) jEnded(); if (e.data === 1 && jYtMuted && jGest && jYtUnmSeq !== jYtSeq) { jYtUnmSeq = jYtSeq; try { jYtMuted = false; jYt.unMute(); jYt.setVolume(jVol); $("jukeytKick").hidden = true; } catch (x) { /* ok */ } } }, onError: () => jPlayErr() } });
     });
     return;
   }
   if (!jYtReady) return;
   try {
-    if (jYtSeq !== jNow.seq) { jYtSeq = jNow.seq; jYtStuck = 0; jYt.loadVideoById({ videoId: jNow.ref, startSeconds: pos / 1000 }); }
+    if (jYtSeq !== jNow.seq) { jYtSeq = jNow.seq; jYtStuck = 0; if (jGest && jYtMuted) { jYtMuted = false; $("jukeytKick").hidden = true; }   // música nova: depois de um toque o som já está liberado, não herda o mudo da anterior
+      jYt.loadVideoById({ videoId: jNow.ref, startSeconds: pos / 1000 }); }
     if (jYtMuted) jYt.mute(); else { jYt.unMute(); jYt.setVolume(jVol); }
     const st = jYt.getPlayerState(), cur = jYt.getCurrentTime();
     if (st === 1 || st === 3) { jYtStuck = 0; if (st === 1 && Math.abs(cur - pos / 1000) > 3) jYt.seekTo(Math.max(0, pos / 1000), true); }
-    else if (st !== 0) { jYtStuck++; jYt.playVideo(); if (jYtStuck === 3 && !jYtMuted) { jYtMuted = true; jYt.mute(); jYt.playVideo(); $("jukeytKick").hidden = false; } }   // autoplay com som bloqueado: toca sem som e oferece ligar
+    else if (st !== 0) { jYtStuck++; jYt.playVideo(); if (jYtStuck === (jGest ? 10 : 3) && !jYtMuted) { jYtMuted = true; jYt.mute(); jYt.playVideo(); $("jukeytKick").hidden = false; } }   // autoplay com som bloqueado: toca sem som e oferece ligar
     if (!jNow.dur) { const d = jYt.getDuration(); if (d > 0) jSendDur(d); }
   } catch (e) { /* player ainda carregando */ }
 }

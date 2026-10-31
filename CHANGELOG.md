@@ -17,6 +17,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - **Gatos mais visíveis** — caixas de areia maiores e laranja sobre um tapete cinza, potes de ração e água maiores sobre tapetinhos, e uma bolinha vermelha "!" pulando quando o pote está quase vazio ou a caixa está suja.
 
 ### Corrigido
+- **Jukebox: música nova começava no mudo** (YouTube): depois de qualquer toque na página o som já está liberado, então a faixa nova não herda o mudo da anterior, só marca mudo se travar por ~10 s, e religa sozinha quando começa a tocar.
 - **Mic e câmera não conectavam entre pessoas**: o TURN público `openrelayproject` (que repassa a mídia entre redes diferentes) foi desativado pelo serviço, então só redes simples se ligavam. Agora o TURN é configurável e já vem com o ExpressTURN grátis (ou Metered/servidor próprio — `docs/VOZ.md`), a ligação espera as credenciais chegarem e, quando a conexão falha, o jogo explica o motivo na tela.
 
 ### Alterado
