@@ -1,4 +1,4 @@
-(function(){
+(function(){ window.PARTY_YT_KEY = "";   // testes: sem chave do YouTube (não gasta a cota)
   const root={}; const ls=[]; let pushN=0; const PUSHID=Math.random().toString(36).slice(2,5);
   const split=p=>p.split("/").filter(Boolean);
   const get=(p)=>{let n=root;for(const k of split(p)){if(n==null||typeof n!=="object")return null;n=n[k];}return n===undefined?null:n;};
