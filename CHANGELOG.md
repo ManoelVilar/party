@@ -9,7 +9,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - **Gatos mais visíveis** — caixas de areia maiores e laranja sobre um tapete cinza, potes de ração e água maiores sobre tapetinhos, e uma bolinha vermelha "!" pulando quando o pote está quase vazio ou a caixa está suja.
 
 ### Corrigido
-- **Mic e câmera não conectavam entre pessoas**: o TURN público `openrelayproject` (que repassa a mídia entre redes diferentes) foi desativado pelo serviço, então só redes simples se ligavam. Agora o TURN é configurável (Metered grátis ou servidor próprio — `docs/VOZ.md`), a ligação espera as credenciais chegarem e, quando a conexão falha, o jogo explica o motivo na tela.
+- **Mic e câmera não conectavam entre pessoas**: o TURN público `openrelayproject` (que repassa a mídia entre redes diferentes) foi desativado pelo serviço, então só redes simples se ligavam. Agora o TURN é configurável e já vem com o ExpressTURN grátis (ou Metered/servidor próprio — `docs/VOZ.md`), a ligação espera as credenciais chegarem e, quando a conexão falha, o jogo explica o motivo na tela.
 
 ### Alterado
 - **Jukebox saiu da frente do escritório 2**: agora fica na sala em (17,9), entre a estante e a TV. As caixas de areia saíram de trás da parede da frente (banheiro (27,16), sala (41,11)) e os potes foram para um canto livre da cozinha ((26,2) e (27,2)), fora de trás das cadeiras.

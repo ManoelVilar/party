@@ -589,7 +589,9 @@ const firebaseConfig = {
    - TURN_METERED: conta grátis em metered.ca (20 GB/mês). Preencha { app: "NOME-DO-APP", key: "CHAVE-API" } — as credenciais são pedidas ao serviço a cada entrada.
    - TURN_FIXO: servidor com usuário e senha fixos, ex.: [{ urls: ["turn:SERVIDOR:443?transport=tcp"], username: "USUARIO", credential: "SENHA" }]. */
 const TURN_METERED = null;
-const TURN_FIXO = [];
+const TURN_FIXO = [      // ExpressTURN (plano grátis, 1000 GB/mês, só porta 3478). Credencial só de TURN: pode ser trocada em "Atualizar credenciais" no painel deles.
+  { urls: ["turn:free.expressturn.com:3478?transport=udp", "turn:free.expressturn.com:3478?transport=tcp"], username: "000000002108866363", credential: "wMGOdi8VabA0LzFB8sVwWJJTVQA=" }
+];
 const ICE = [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }].concat(TURN_FIXO);
 let iceTurnOk = TURN_FIXO.length > 0, iceReady = null;                          // há algum TURN configurado? (usado nos avisos de "sem conexão")
 /* ============================================================ */

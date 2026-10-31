@@ -10,7 +10,10 @@ O áudio e o vídeo vão **direto de navegador para navegador** (WebRTC); o Fire
 ## Sintoma: "mic e câmera não funcionam com ninguém"
 O botão liga e a sua imagem aparece, mas a outra pessoa fica com "…" ou "⚠ sem conexão". É a falta de TURN. O TURN público (`openrelayproject`) que o projeto usava foi **desativado pelo serviço** (testado em 31/10/2026: nenhum candidato de repasse e o endereço `staticauth` nem resolve), então hoje só redes simples se conectam. Quando isso acontece o jogo avisa na tela e no console.
 
-## Ligar um TURN grátis (Metered, 20 GB por mês)
+## TURN em uso hoje: ExpressTURN (grátis, 1000 GB por mês)
+Está em `TURN_FIXO` (`src/js/01_core.js`): servidor `free.expressturn.com:3478`, usuário e senha gerados pelo painel deles. A credencial fica visível no código do site (como qualquer coisa num site estático); ela só dá acesso ao repasse de mídia, dentro da franquia. Para trocar: painel do ExpressTURN › *Atualizar credenciais*, copie usuário e senha novos para `TURN_FIXO` e publique. O plano grátis usa só a porta 3478; redes muito restritas podem bloqueá-la.
+
+## Alternativa: Metered (20 GB por mês)
 1. Crie uma conta grátis em <https://www.metered.ca> (opção *TURN Server* / *Open Relay*).
 2. No painel, crie um **app** e anote o **nome do app** (o começo do endereço `NOME.metered.live`) e a **chave de API** (*API Key*).
 3. Em `src/js/01_core.js`, troque `const TURN_METERED = null;` por  
