@@ -183,6 +183,16 @@ with sync_playwright() as p:
     ok(wait_for(A, f"jNow && jNow.seq !== {s0} && jNow.src === 'yt'") and ev(A, "Object.keys(jQueue).length") == 0, "!pular passa para a próxima (a da fila) e tira da fila")
     ok(wait_for(A, "!$('jukeyt').hidden") and wait_for(A, "window.__yt && window.__ytlog.includes('load:dQw4w9WgXcQ')"), "música do YouTube: carrega a API só agora e mostra o player")
     ok(ev(A, "jAu.paused"), "e o áudio do catálogo para")
+    # o player do YouTube fica dentro do painel da jukebox; fechando o painel ele sai da tela mas segue ativo e visível para o navegador
+    ev(A, "$('jukepanel').hidden = false"); A.wait_for_timeout(200)
+    r = ev(A, "(() => { const b = $('jukeyt-in').getBoundingClientRect(), p = $('jukepanel').getBoundingClientRect(); return [Math.round(b.width), Math.round(b.height), b.left >= p.left && b.right <= p.right, $('jukepanel').contains($('jukeyt'))]; })()")
+    ok(r[0] >= 200 and r[1] >= 200 and r[2] and r[3], "painel aberto: o player (200x200) aparece dentro do painel da jukebox (%s)" % r)
+    A.screenshot(path="/tmp/claude-0/jk_aberto.png")
+    ev(A, "$('jukepanel').hidden = true"); A.wait_for_timeout(200)
+    r = ev(A, "(() => { const b = $('jukeyt-in').getBoundingClientRect(); return [Math.round(b.width), Math.round(b.height), b.right <= 0, getComputedStyle($('jukepanel')).display]; })()")
+    ok(r[0] >= 200 and r[1] >= 200 and r[2] and r[3] != "none", "painel fechado: o player sai da tela mas continua desenhado (não é display:none) (%s)" % r)
+    ok(ev(A, "window.__ytlog.filter(x => x === 'new').length") == 1, "o player não é recriado ao abrir/fechar o painel (a música não reinicia)")
+    A.screenshot(path="/tmp/claude-0/jk_fechado.png")
     # som automático: qualquer toque libera o YouTube que começou mudo (autoplay bloqueado), sem botão especial
     s2 = ev(A, "jNow.seq"); ev(A, "(() => { jYtMuted = true; $('jukeytKick').hidden = false; window.__yt.m = true; })()")
     A.mouse.click(300, 300); A.wait_for_timeout(400)
