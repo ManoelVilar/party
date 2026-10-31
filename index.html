@@ -2740,7 +2740,19 @@ function selfState() { const q = players[uid] || {}; return { name: myName, look
 let posRoom = null;
 const posKey = r => "pt_pos_" + r;
 function posLoad(r) {
-  try { const o = JSON.parse(store.get(posKey(r)) || "null"); if (!o || Date.now() - o.t > 432e5 || !Number.isInteger(o.x) || !Number.isInteger(o.y) || tileBlocked(o.x, o.y)) return null; return { x: o.x, y: o.y, dir: /^[udlr]$/.test(o.dir) ? o.dir : "d" }; } catch (e) { return null; }
+  try {
+    const o = JSON.parse(store.get(posKey(r)) || "null"); if (!o || Date.now() - o.t > 432e5 || !Number.isInteger(o.x) || !Number.isInteger(o.y)) return null;
+    let x = o.x, y = o.y;
+    if (tileBlocked(x, y)) {                                              // estava sentado (sofá, cadeira, mesa): fica no tile livre mais perto, de preferência na mesma sala
+      const sala = roomOf(x, y); let best = null, bd = 99;
+      for (let dx = -3; dx <= 3; dx++) for (let dy = -3; dy <= 3; dy++) {
+        const nx = x + dx, ny = y + dy, d = Math.abs(dx) + Math.abs(dy) + (roomOf(nx, ny) === sala ? 0 : 5);
+        if (d < bd && !tileBlocked(nx, ny)) { bd = d; best = [nx, ny]; }
+      }
+      if (!best) return null; x = best[0]; y = best[1];
+    }
+    return { x, y, dir: /^[udlr]$/.test(o.dir) ? o.dir : "d" };
+  } catch (e) { return null; }
 }
 function posSave() {
   if (!posRoom || leaving || !meRef) return;
