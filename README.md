@@ -15,7 +15,7 @@ Espaço virtual em **pixel art isométrica** para festas, encontros com amigos e
 | **Voz e vídeo** | WebRTC direto entre os participantes (malha), ativado por **proximidade** na sala/cozinha e por **cômodo** nos demais; **mixer 🎚 Vozes** com volume individual da voz e da transmissão de cada pessoa e botão de mutar (só para você) |
 | **Transmissão** | Compartilhar tela, vídeo local ou slides (PDF/imagens) no telão do cinema e da sala de reuniões (o botão ⛶ do visor amplia) |
 | **YouTube** | Vídeo sincronizado para todos no cinema |
-| **Reuniões** | Levantar a mão (✋), "Dar a palavra" (só quem apresenta), chat da reunião |
+| **Reuniões** | **Modo reunião** estilo Meet (palco grande + câmeras na lateral, Apresentar: tela, slides ou vídeo), levantar a mão (✋), "Dar a palavra" (só quem apresenta), chat da reunião |
 | **Portas** | Escritórios e sala de reuniões têm porta: bater, permitir ou recusar |
 | **Gatos** | Sombra e Neblina têm fome, sede, energia, banheiro e bem-estar; ração, areia, carinho, petisco e brincadeira. O tempo corre mesmo com a sala vazia, com fome extrema o gato fica fraco, e os potes podem encher sozinhos (modo automático) |
 | **Chat** | Chat do espaço com hora, reiniciado a cada sessão |

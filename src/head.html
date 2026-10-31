@@ -336,6 +336,48 @@
   .mbox { width:min(980px,100%); max-height:94vh; overflow:auto; display:grid; gap:10px; }
   .mhead { display:flex; align-items:center; gap:8px; } .mhead b { color:var(--accent); font-size:1.15rem; }
   .mfoot { display:flex; gap:8px; justify-content:flex-end; }
+  /* ---------- modo reunião (estilo Meet) ---------- */
+  #meet { position:fixed; inset:0; z-index:45; display:flex; flex-direction:column; gap:8px; padding:8px; background:#0f0a1a; }
+  #meet[hidden] { display:none; }
+  .mtop { display:flex; align-items:center; gap:10px; flex-wrap:wrap; } .mtop b { color:var(--accent); font-size:1.05rem; }
+  .mmain { position:relative; flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+  #meet.pres .mmain { grid-template-columns:minmax(0,1fr) 250px; }
+  .mstage { position:relative; min-height:0; background:#000; border:3px solid var(--line); overflow:hidden; }
+  .mstage:fullscreen { border:0; } .mstage:-webkit-full-screen { border:0; }
+  .mstage video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
+  .mnote { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:20px; color:var(--muted); pointer-events:none; }
+  .mnote:empty { display:none; }
+  .mcap { position:absolute; left:8px; bottom:8px; z-index:3; background:rgba(18,10,28,.85); padding:3px 10px; font-size:.85rem; max-width:70%; }
+  .mcap:empty { display:none; }
+  .mctl { position:absolute; right:8px; bottom:8px; z-index:3; display:flex; gap:6px; align-items:center; }
+  .mctl > span { display:flex; gap:6px; align-items:center; background:rgba(18,10,28,.85); padding:2px 6px; } .mctl > span[hidden] { display:none; }
+  .mctl button { padding:4px 10px; opacity:.92; }
+  .mside { min-height:0; overflow:auto; }
+  body.meet #meet #videos { position:static; display:grid; gap:8px; max-height:none; min-height:0; overflow:visible; padding:0; align-items:start; align-content:start; }
+  body.meet #meet #vhint { display:none; }
+  body.meet #meet .vt { width:100%; height:auto; aspect-ratio:4/3; box-shadow:none; }
+  body.meet #meet .vt .ph { font-size:2.6rem; } body.meet #meet .vt .nm { font-size:.85rem; }
+  #meet.pres #videos { grid-template-columns:minmax(0,1fr); }
+  #meet:not(.pres) #videos { grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr)); align-content:center; min-height:100%; }
+  #meet:not(.pres) .vt { max-width:calc((100vh - 190px) * 4 / 3); justify-self:center; }
+  .mhands { position:absolute; left:8px; top:8px; z-index:5; display:flex; flex-direction:column; gap:6px; pointer-events:none; max-height:70%; overflow:hidden; }
+  .mhands .vhands { display:flex; flex-direction:column; gap:6px; } .mhands .vhands[hidden] { display:none; }
+  .mhands .vtoast { background:rgba(42,27,64,.95); border:3px solid #ffd166; color:#fff6d8; padding:8px 14px; font-size:1rem; } .mhands .vtoast[hidden] { display:none; }
+  .mchat { position:absolute; right:0; bottom:0; z-index:6; width:min(340px,100%); max-height:60%; display:flex; flex-direction:column; gap:6px; padding:8px; overflow:hidden; }
+  .mchat[hidden] { display:none; } .mchat #meetBox { display:flex; flex-direction:column; gap:6px; min-height:0; } .mchat #meetBox[hidden] { display:none; } .mchat #meetLog { height:200px; }
+  .mbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; padding-top:2px; }
+  .mbar button { padding:8px 14px; } .mbar button.on { background:#2d7a4a; } .mbar button.off { background:#7a2238; }
+  #mHand.on, #mChatBtn.on, #mPresBtn.on { background:#ffd166; color:#2b1b3a; }
+  .mpwrap { position:relative; }
+  .mmenu { position:absolute; bottom:calc(100% + 8px); left:0; z-index:7; display:grid; gap:6px; min-width:260px; padding:8px; }
+  .mmenu[hidden] { display:none; } .mmenu button { text-align:left; }
+  body.meet #roompanel { position:fixed !important; left:-10000px !important; top:0 !important; width:620px !important; }      /* fora da tela, mas ativo: o som da apresentação continua nele */
+  body.meet #catpanel, body.meet #prompts { display:none; }
+  @media (max-width:760px) {
+    #meet.pres .mmain { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 110px; }
+    #meet.pres .mside { overflow-x:auto; overflow-y:hidden; } #meet.pres #videos { grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:120px; }
+    .mbar button span { display:none; } .mbar button { padding:10px 12px; font-size:1.1rem; } .mmenu { position:fixed; left:8px; right:8px; bottom:72px; min-width:0; }
+  }
 </style>
 </head>
 <body>
@@ -433,6 +475,7 @@
     <button id="btnMic" class="off">Mic</button>
     <button id="btnCam" class="off">Câmera</button>
     <button id="btnMix" title="Volume da voz de cada pessoa e mutar" aria-pressed="false">🎚 Vozes</button>
+    <button id="btnMeet" title="Modo reunião: palco grande com a apresentação e as câmeras na lateral" hidden>🖥 Modo reunião</button>
     <button id="btnJuke" title="Jukebox: música para a sala toda (comandos !play, !pular...)" aria-pressed="false">🎵 Jukebox</button>
     <button id="btnWard">Guarda-roupa</button>
     <button id="btnCatsT">Gatos</button>
@@ -459,6 +502,35 @@
   </div>
   <div id="catpanel" class="panel"></div>
   <div id="roompanel" class="panel" hidden></div>
+  <div id="meet" hidden role="dialog" aria-label="Modo reunião">
+    <div class="mtop"><b>🖥 Sala de reuniões</b><span id="mInfo" class="muted"></span></div>
+    <div class="mmain">
+      <div class="mstage" id="mStage" hidden>
+        <video id="mPres" autoplay playsinline muted></video>
+        <div class="mnote" id="mNote"></div>
+        <div class="mctl">
+          <span id="mSldCtl" hidden><button id="mSPrev" type="button" aria-label="Slide anterior">◀</button><b id="mSPage"></b><button id="mSNext" type="button" aria-label="Próximo slide">▶</button></span>
+          <span id="mVidCtl" hidden><button id="mVBack" type="button">−10s</button><button id="mVPlay" type="button">⏯</button><button id="mVFwd" type="button">+10s</button></span>
+          <button id="mSnd" type="button" hidden title="Som da apresentação (só para você)">🔈</button><button id="mFS" type="button" title="Palco em tela cheia">⛶</button>
+        </div>
+        <div class="mcap" id="mCap"></div>
+      </div>
+      <div class="mside" id="mTiles"></div>
+      <div class="mhands" id="mHands"></div>
+      <div class="mchat panel" id="mChat" hidden></div>
+    </div>
+    <div class="mbar">
+      <button id="mMic" type="button" class="off">🎤 <span>Mic</span></button>
+      <button id="mCam" type="button" class="off">📷 <span>Câmera</span></button>
+      <div class="mpwrap"><button id="mPresBtn" type="button" aria-haspopup="true" aria-expanded="false">🖥 <span>Apresentar ▾</span></button>
+        <div id="mMenu" class="mmenu panel" hidden><button type="button" data-k="screen">🖥 Minha tela</button><button type="button" data-k="sld">📊 Slides (PDF ou imagens)…</button><button type="button" data-k="vid">🎞 Vídeo (arquivo)…</button><button type="button" data-k="stop" class="no" hidden>⏹ Parar de apresentar</button></div></div>
+      <button id="mHand" type="button">✋ <span>Levantar a mão</span></button>
+      <button id="mChatBtn" type="button" aria-pressed="false">💬 <span>Chat</span></button>
+      <button id="mMix" type="button">🎚 <span>Vozes</span></button>
+      <button id="mLeave" type="button" class="no">↙ <span>Voltar ao jogo</span></button>
+    </div>
+    <input type="file" id="mSldFile" accept="application/pdf,image/*" multiple hidden><input type="file" id="mVidFile" accept="video/*" hidden>
+  </div>
   <div id="mixpanel" class="panel" hidden role="dialog" aria-label="Volume das vozes">
     <div class="mxhead"><b>🎚 Volume das vozes</b><button id="mixClose" type="button" aria-label="Fechar">✕</button></div>
     <div class="muted mxnote">Só muda o que <b>você</b> ouve; ninguém fica sabendo. Fica salvo neste aparelho.</div>
