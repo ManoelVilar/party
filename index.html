@@ -4929,8 +4929,8 @@ function jTrack(t) {                                               // faixa do c
   return /^[A-Za-z0-9_-]{3,16}$/.test(it.ref) ? it : null;
 }
 /* ---------- busca por nome: junta as fontes, pontua e devolve as melhores ---------- */
-const JUKE_YT_KEY = "";                                           // opcional: chave da YouTube Data API v3 (veja docs/JUKEBOX.md). Vazia = só o catálogo aberto.
-const jYtKey = () => (typeof window.PARTY_YT_KEY === "string" && window.PARTY_YT_KEY) || JUKE_YT_KEY;   // também dá para definir window.PARTY_YT_KEY
+const JUKE_YT_KEY = "AIzaSyDq99tl7hY1jkWb9CB-tWtVxMNGQDbfdFk";                                           // opcional: chave da YouTube Data API v3 (veja docs/JUKEBOX.md). Vazia = só o catálogo aberto.
+const jYtKey = () => typeof window.PARTY_YT_KEY === "string" ? window.PARTY_YT_KEY : JUKE_YT_KEY;   // window.PARTY_YT_KEY (mesmo vazia) tem prioridade; os testes usam "" para não gastar a cota
 const JUKE_RUINS = /remix|cover|slowed|sped ?up|nightcore|karaoke|8d|reverb|bass ?boost|mashup|tribute|instrumental|playback/;
 const jPalavras = s => jNorm(s).replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
 const jDecode = t => String(t || "").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
