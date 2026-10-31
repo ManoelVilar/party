@@ -40,6 +40,11 @@ with sync_playwright() as p:
     ev(K, "localStorage.setItem('%s', JSON.stringify({x: 36, y: 15, dir: 'l', t: Date.now() - 13 * 3600e3}))" % KEY)
     ev(K, "posRoom = null"); K.reload(); K.wait_for_timeout(2500)   # posRoom nulo: o pagehide não regrava
     ok(ev(K, "me.x >= 10 && me.x <= 15 && me.y >= 10 && me.y <= 11"), "posição de mais de 12 h atrás é ignorada (ponto inicial)")
+    sofa = ev(K, "(() => { for (let x = 31; x <= 43; x++) for (let y = 14; y <= 18; y++) if (tileBlocked(x, y)) return [x, y]; return null; })()")
+    if sofa:
+        ev(K, "localStorage.setItem('%s', JSON.stringify({x: %d, y: %d, dir: 'd', t: Date.now()}))" % (KEY, sofa[0], sofa[1]))
+        ev(K, "posRoom = null"); K.reload(); K.wait_for_timeout(2500)
+        ok(ev(K, "roomOf(me.x, me.y)") == "reu" and ev(K, "!tileBlocked(me.x, me.y)"), "estava sentado (tile ocupado): volta para o tile livre mais perto, na mesma sala (%s)" % ev(K, "[me.x, me.y]"))
     ev(K, "localStorage.setItem('%s', JSON.stringify({x: 0, y: 0, dir: 'l', t: Date.now()}))" % KEY)
     ev(K, "posRoom = null"); K.reload(); K.wait_for_timeout(2500)
     ok(ev(K, "!tileBlocked(me.x, me.y)"), "posição salva em tile bloqueado é ignorada")
