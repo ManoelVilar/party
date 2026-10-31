@@ -2735,14 +2735,29 @@ $("inRoom").addEventListener("input", () => codeNote("Primeira vez? Toque em Ger
 
 /* o que o servidor precisa saber de nós (usado ao entrar e ao voltar da queda) */
 function selfState() { const q = players[uid] || {}; return { name: myName, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: !!q.mic, cam: !!q.cam, acct: myAcct(), csid: q.csid || null, bsid: q.bsid || null, blabel: q.blabel || null, act: me.act || null, vis: !document.hidden, ver: 3 }; }
+/* última posição por sala (neste aparelho): vale por 12 h; só em tile livre */
+let posRoom = null;
+const posKey = r => "pt_pos_" + r;
+function posLoad(r) {
+  try { const o = JSON.parse(store.get(posKey(r)) || "null"); if (!o || Date.now() - o.t > 432e5 || !Number.isInteger(o.x) || !Number.isInteger(o.y) || tileBlocked(o.x, o.y)) return null; return { x: o.x, y: o.y, dir: /^[udlr]$/.test(o.dir) ? o.dir : "d" }; } catch (e) { return null; }
+}
+function posSave() {
+  if (!posRoom || leaving || !meRef) return;
+  const b = me.act && me.from ? me.from : [me.x, me.y];                 // dormindo/no banho: guarda o lugar de onde saiu
+  try { store.set(posKey(posRoom), JSON.stringify({ x: b[0], y: b[1], dir: me.dir, t: Date.now() })); } catch (e) { /* sem armazenamento */ }
+}
+setInterval(posSave, 1500); addEventListener("pagehide", posSave); document.addEventListener("visibilitychange", () => { if (document.hidden) posSave(); });
 function startGame(name, room) {
   myName = name; tabInGame = true; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
-  let tries = 0;
-  do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30);
-  me.dir = "d"; me.act = null;
+  posRoom = room;
+  const spawnPadrao = () => { let tries = 0; do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30); me.dir = "d"; };
+  const salvo = posLoad(room);                                          // recarregou a página ou a internet caiu: volta para onde estava (cinema, reunião e mesas dependem do lugar)
+  if (salvo) { me.x = salvo.x; me.y = salvo.y; me.dir = salvo.dir; } else spawnPadrao();
+  me.act = null;
   const pp = P(me.x + .5, me.y + .5); camX = pp[0] - LW / K / 2; camY = pp[1] - LH / K / 2;
-  meRef.set({ name, look: myLook, x: me.x, y: me.y, dir: "d", mic: false, cam: false, vis: !document.hidden, ver: 3, acct: myAcct() })
+  const entra = () => meRef.set({ name, look: myLook, x: me.x, y: me.y, dir: me.dir, mic: false, cam: false, vis: !document.hidden, ver: 3, acct: myAcct() });
+  entra().catch(e => { if (!salvo) throw e; spawnPadrao(); return entra(); })   // lugar salvo recusado (ex.: escritório reservado agora): entra no ponto padrão
     .catch(e => { setStatus("⛔ O servidor não deixou você entrar (" + String((e && e.message) || e).slice(0, 90) + "). Confira as regras do Firebase (docs/FIREBASE.md).", 0); });
   document.addEventListener("visibilitychange", () => { const v = !document.hidden; if (players[uid]) players[uid].vis = v; if (meRef && !leaving && players[uid]) meRef.update({ vis: v }).catch(() => {}); });
   /* presença: ao perder a rede o servidor apaga nossa entrada (onDisconnect); ao voltar, recriamos para não virar "fantasma" invisível */
