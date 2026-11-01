@@ -5,6 +5,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Adicionado
+- **Visual: luz e atmosfera + botão de qualidade 🎨**: brilho quente nas lâmpadas, neon, TV, jukebox e lareira (com tremida do fogo), feixes de luz, vinheta roxa nas bordas, tom frio em cima/quente embaixo e partículas de poeira flutuando. O botão 🎨 (ou `!visual auto|alta|media|leve`) escolhe a qualidade; em **Automático** começa em Alta no computador e Média no celular e desce um nível sozinho se o aparelho não acompanhar. Código em `src/js/08b_atmos.js`; teste `tests/e2e/visual.py`.
 - **Cache compartilhado das buscas do YouTube**: a primeira pessoa que busca uma música gasta a cota; as outras reaproveitam o resultado por 7 dias (Firebase `ytcache/`, com regra nova — **publicar `database.rules.json`**). Se o cache não responder em 2,5 s, busca direto no YouTube.
 - **Recarregar mantém o lugar**: ao recarregar a página (ou voltar depois de a internet cair) o boneco volta para onde estava na sala, em vez do ponto inicial, para não atrapalhar o cinema, a sala de reuniões e as mesas. Vale por 12 h neste aparelho; se o lugar não estiver mais livre ou liberado, entra no ponto padrão.
 - **Jukebox com busca no YouTube ligada**: a chave da YouTube Data API v3 agora está em `JUKE_YT_KEY` (restrita ao site `manoelvilar.github.io`), então `!play` e `!buscar` encontram músicas populares. Se a cota diária acabar, volta sozinho para o catálogo aberto (Audius).

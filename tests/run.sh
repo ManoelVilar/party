@@ -26,6 +26,7 @@ python3 turn.py
 python3 meet.py
 python3 chat.py
 python3 fluidez.py
+python3 visual.py
 python3 reconectar.py
 python3 posicao.py
 python3 contas.py

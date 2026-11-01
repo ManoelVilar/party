@@ -440,7 +440,7 @@ $("sayForm").onsubmit = e => {
   if (Date.now() - (onSayForm.last || 0) < 700) return; onSayForm.last = Date.now(); $("inSay").value = "";
   roomRef.child("chat").push({ name: myName, color: myLook.top.color, text, ts: Date.now() + serverOffset });
   meRef.update({ say: text, sayTs: Date.now() });
-  if (raw[0] === "!" && !perfCommand(raw)) jukeCommand(raw);                                                  // comandos da jukebox (!play, !pular...)
+  if (raw[0] === "!" && !perfCommand(raw) && !qualCommand(raw)) jukeCommand(raw);                                                  // comandos da jukebox (!play, !pular...)
 };
 
 /* ---------- ciclo lento ---------- */
