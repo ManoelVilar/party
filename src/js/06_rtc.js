@@ -138,8 +138,8 @@ function trackOn(kind) { const t = trackFor(localStream, kind); return !!(t && t
 function setTracks(a, v) { if (!localStream) return; localStream.getTracks().forEach(t => { t.enabled = t.kind === "audio" ? !!a : !!v; }); syncMediaButtons(); }
 function syncMediaButtons() {
   const mic = trackOn("audio"), cam = trackOn("video");
-  $("btnMic").className = mic ? "on" : "off"; $("btnMic").textContent = mic ? "Mic ligado" : "Mic desligado";
-  $("btnCam").className = cam ? "on" : "off"; $("btnCam").textContent = cam ? "Câmera ligada" : "Câmera desligada";
+  $("btnMic").className = mic ? "on" : "off"; $("btnMic").textContent = mic ? "🎤 Mic ligado" : "🎙 Mic desligado";
+  $("btnCam").className = cam ? "on" : "off"; $("btnCam").textContent = cam ? "📷 Câmera ligada" : "📹 Câmera desligada";
   if (meRef) meRef.update({ mic, cam, csid: localStream ? localStream.id : null }); updateTiles(); if (typeof meetOn !== "undefined" && meetOn) meetSync();
 }
 async function toggle(kind) {
