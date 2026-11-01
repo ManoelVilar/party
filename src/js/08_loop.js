@@ -207,7 +207,6 @@ function loop() {
   const c = performance.now() - t0;
   loopCost += (c - loopCost) * .1;
   if (!loopSlow && loopCost > 17) loopSlow = true; else if (loopSlow && loopCost < 10) loopSlow = false;
-  qualVigia(loopSlow);
   if (perfOn) { perfFrames++; if (c > perfWorst) perfWorst = c; perfTick(t0 + c); }
 }
 function perfTick(t) {                                                // medidor opcional: !fps no chat (mostra quadros por segundo, custo médio e pior quadro)
