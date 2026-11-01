@@ -98,7 +98,7 @@ function frame() {
     const d = (it && !moving && z) ? (it.x + it.w - 1) + (it.y + it.h - 1) + 1.05 : c.rx + c.ry + 1.015;
     list.push({ d, run: () => {
       if (selectedCat === id) { ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 1.4; const q = P(c.rx + .5, c.ry + .5, 0); ctx.beginPath(); ctx.ellipse(q[0], q[1], 15, 7, 0, 0, 7); ctx.stroke(); }
-      const q = P(c.rx + .5, c.ry + .5, z); ctx.fillStyle = "rgba(26,16,38,.28)"; ctx.beginPath(); ctx.ellipse(q[0], q[1], 12, 4.8, 0, 0, 7); ctx.fill();
+      const q = P(c.rx + .5, c.ry + .5, z); ctx.fillStyle = "rgba(26,16,38,.14)"; ctx.beginPath(); ctx.ellipse(q[0], q[1], 15, 6.4, 0, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(26,16,38,.26)"; ctx.beginPath(); ctx.ellipse(q[0], q[1], 10.5, 4.2, 0, 0, 7); ctx.fill();
       outlined(w[0], w[1], g => drawCat(g, 0, 0, info.kind, st, flip, now, seed, sub, true));
     }});
     let icon = null;
@@ -139,7 +139,7 @@ function frame() {
     const w = P(p.rx + .5 + so[0], p.ry + .5 + so[1], 0), sh = P(p.rx + .5 + so[0], p.ry + .5 + so[1], 0);
     const pose = { sit: lvl || false, blink: !moving && !showering && (t2 % 3400) < 150, br: !moving && Math.floor(t2 / 600) % 2 === 1, wash: showering, raise: dancing ? (Math.floor(now / 230) % 2 ? 2 : 1) : handUp ? (Math.floor(now / 300) % 2 ? 2 : 1) : 0 };
     list.push({ d: p.rx + p.ry + 1.02, run: () => {
-      ctx.fillStyle = "rgba(26,16,38,.3)"; ctx.beginPath(); ctx.ellipse(sh[0], sh[1], 10, 4.2, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(26,16,38,.14)"; ctx.beginPath(); ctx.ellipse(sh[0], sh[1], 13, 5.6, 0, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(26,16,38,.28)"; ctx.beginPath(); ctx.ellipse(sh[0], sh[1], 9, 3.8, 0, 0, 7); ctx.fill();
       blitPerson(lctx, (w[0] + sway - camRX) * K, (w[1] - bob - camRY) * K, K * 2.25, LL, dir, fr, pose);
     }});
     labels.push(Object.assign(base, { wx: w[0], wy: w[1] - (lvl ? 63 : 76) - (handUp ? 11 : 0) - bob, food: act && act.type === "eat" ? act.food : null }));

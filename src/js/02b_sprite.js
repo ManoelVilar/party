@@ -6,6 +6,7 @@
    ========================================================= */
 const SPW = 20, SPH = 35, SDY = 3;               // SDY = folga no topo (coque, chapéu, braço levantado)
 const SP_OUT = "#1a1026";
+const CTX_FILTER = (() => { try { return "filter" in CanvasRenderingContext2D.prototype; } catch (e) { return false; } })();   // Safari antigo não tem: volta ao contorno escuro simples
 const spCache = new Map();
 /* linhas (de desenho): cabelo 1-4 | rosto 3-9 | pescoço 10 | tronco 11-19 | pernas 20-28 | sapatos 29-30 */
 
@@ -371,9 +372,15 @@ function spriteFor(L, dir, fi, o) {
   const raw = mkCanvas(SPW, SPH), g = raw.getContext("2d");
   if (dir === "l" || dir === "r") spSD(g, L, fi, o); else spFB(g, L, dir === "u", fi, o);
   const out = mkCanvas(SPW + 2, SPH + 2), og = out.getContext("2d");
+  const sel = CTX_FILTER;                                                         // contorno "seletivo": versão escura das próprias cores (cabelo, pele e roupa), não preto chapado
+  if (sel) og.filter = "brightness(.32) saturate(1.5)";
   for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) og.drawImage(raw, 1 + d[0], 1 + d[1]);
-  og.globalCompositeOperation = "source-in"; og.fillStyle = SP_OUT; og.fillRect(0, 0, SPW + 2, SPH + 2);
+  if (sel) og.filter = "none"; else { og.globalCompositeOperation = "source-in"; og.fillStyle = SP_OUT; og.fillRect(0, 0, SPW + 2, SPH + 2); }
   og.globalCompositeOperation = "source-over"; og.drawImage(raw, 1, 1);
+  { const rim = mkCanvas(SPW, SPH), rg = rim.getContext("2d"), sh = dir === "l" ? -1 : 1;     // luz de borda: 1 pixel claro nas bordas de cima/esquerda (o espelho do "l" já vira o lado certo)
+    rg.drawImage(raw, 0, 0); rg.globalCompositeOperation = "destination-out"; rg.drawImage(raw, sh, 1);
+    rg.globalCompositeOperation = "source-in"; rg.fillStyle = "rgba(255,244,214,.3)"; rg.fillRect(0, 0, SPW, SPH);
+    og.drawImage(rim, 1, 1); }
   if (dir === "l") { const m = mkCanvas(SPW + 2, SPH + 2), mg = m.getContext("2d"); mg.translate(SPW + 2, 0); mg.scale(-1, 1); mg.drawImage(out, 0, 0); c = m; } else c = out;
   spCache.set(key, c); return c;
 }

@@ -21,6 +21,8 @@ def new_page(ctx):
 
 def enter(pg, name, room):
     pg.fill("#inName", name); pg.fill("#inRoom", room); pg.click("#btnEnter"); pg.wait_for_timeout(900)
+    try: pg.wait_for_function("login.hidden && !app.hidden", timeout=8000)   # computador ocupado: dá tempo de entrar
+    except Exception: pass
 
 passed = 0
 def ok(cond, msg):

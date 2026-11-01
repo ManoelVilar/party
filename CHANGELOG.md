@@ -5,6 +5,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Adicionado
+- **Visual (etapa 3)**: bonecos e gatos com **contorno nas cores deles** (versão escura do cabelo, pele e roupa, em vez de preto chapado), **luz de borda** clara em cima/esquerda dos bonecos e sombra no chão em duas camadas (miolo + borda suave).
 - **Visual (etapa 2)**: piso com textura — cada ladrilho com um tom um pouco diferente, tábuas com veios e emendas alternadas, azulejo com brilho no canto, carpete pontilhado, rodapé de sombra mais suave — e **sombra de contato** embaixo dos móveis. O brilho das luzes passou a ser desenhado numa camada pequena (bem mais leve no nível Alto).
 - **Visual: luz e atmosfera + botão de qualidade 🎨**: brilho quente nas lâmpadas, neon, TV, jukebox e lareira (com tremida do fogo), feixes de luz, vinheta roxa nas bordas, tom frio em cima/quente embaixo e partículas de poeira flutuando. O botão 🎨 (ou `!visual auto|alta|media|leve`) escolhe a qualidade; em **Automático** começa em Alta no computador e Média no celular e desce um nível sozinho se o aparelho não acompanhar. Código em `src/js/08b_atmos.js`; teste `tests/e2e/visual.py`.
 - **Cache compartilhado das buscas do YouTube**: a primeira pessoa que busca uma música gasta a cota; as outras reaproveitam o resultado por 7 dias (Firebase `ytcache/`, com regra nova — **publicar `database.rules.json`**). Se o cache não responder em 2,5 s, busca direto no YouTube.
