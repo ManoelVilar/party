@@ -541,7 +541,7 @@
     <div class="jknow"><b id="jkTitle">Nada tocando</b><span id="jkBy" class="muted"></span>
       <div class="jkbar"><i id="jkBar"></i></div><span id="jkTime" class="muted"></span></div>
     <div class="jkctl"><button id="jkPlay" type="button">⏸ Pausar</button><button id="jkSkip" type="button">⏭ Pular</button><button id="jkStop" type="button" class="no" title="Para e limpa a fila">⏹ Parar</button><button id="jkDance" type="button" hidden>💃 Dançar</button></div>
-    <form id="jkForm" class="row"><input id="jkIn" type="text" placeholder="Nome da música ou link do Audius/Jamendo" autocomplete="off" aria-label="Música para adicionar"><button class="primary" type="submit">Adicionar</button></form>
+    <form id="jkForm" class="row"><input id="jkIn" type="text" placeholder="Nome da música ou link do Jamendo" autocomplete="off" aria-label="Música para adicionar"><button class="primary" type="submit">Adicionar</button></form>
     <div id="jkMsg" class="muted" role="status"></div>
     <ul id="jkQueue"></ul>
     <div class="jkctl"><button id="jkClear" type="button">Limpar fila</button><button id="jkMute" type="button" aria-label="Ligar ou desligar o som da jukebox">🔊 Som</button>
@@ -603,7 +603,7 @@
     <ul>
       <li>Google (scripts e banco do Firebase) e quem hospeda o site (Netlify ou GitHub), que mantêm registros de acesso.</li>
       <li>Cloudflare (cdnjs), apenas quando alguém usa slides em PDF.</li>
-      <li>Jukebox: quando alguém pede uma música pelo nome, seu aparelho consulta o catálogo aberto Audius (que vê seu IP e o texto buscado) e toca o áudio a partir de lá. Se a sala tiver a chave do Jamendo, a busca também consulta o Jamendo, que vê seu IP e o texto buscado. Cinema: ao pesquisar um vídeo, a busca é feita na API do YouTube (Google) e fica guardada por 7 dias no banco da sala para poupar a cota; ao exibir um vídeo, seu aparelho carrega o player incorporado do YouTube (Google), que vê seu IP e pode usar cookies. Nada disso é carregado se ninguém usar a jukebox ou o cinema.</li>
+      <li>Jukebox: quando alguém pede uma música pelo nome, seu aparelho consulta o catálogo aberto Jamendo (que vê seu IP e o texto buscado) e toca o áudio a partir de lá. Cinema: ao pesquisar um vídeo, a busca é feita na API do YouTube (Google) e fica guardada por 7 dias no banco da sala para poupar a cota; ao exibir um vídeo, seu aparelho carrega o player incorporado do YouTube (Google), que vê seu IP e pode usar cookies. Nada disso é carregado se ninguém usar a jukebox ou o cinema.</li>
       <li>A fonte do jogo está embutida no site: não consultamos o Google Fonts.</li>
     </ul>
 
@@ -4278,8 +4278,16 @@ function screenInfo(kind) {
   if (YT_ENABLED && kind === "cin" && cinema && cinema.src === "yt") return { bg: "#5a1a1a", icon: cinema.state === "play" ? "play" : "pause", accent: "#ff6b6b" };
   return { bg: kind === "cin" ? "#1d1d3a" : "#1d3a4a", icon: "idle", accent: "#8a8aa8" };
 }
+/* capa do vídeo do YouTube no telão do cinema (o player em si é um iframe e não dá para copiar a imagem dele). Com crossOrigin, se o servidor não liberar o uso no canvas a imagem nem "carrega": o telão cai no ícone de play */
+const ytThumbs = {};
+function ytThumb(id) {
+  if (!/^[A-Za-z0-9_-]{11}$/.test(id || "")) return null;
+  let t = ytThumbs[id]; if (!t) { const im = new Image(); t = ytThumbs[id] = { im, ok: false }; im.crossOrigin = "anonymous"; im.onload = () => { t.ok = true; }; im.src = "https://i.ytimg.com/vi/" + id + "/mqdefault.jpg"; }
+  return t.ok ? t.im : null;
+}
 /* imagem ao vivo para desenhar na tela grande do mundo (só para quem está na sala) */
 function liveSource(room) {
+  if (YT_ENABLED && room === "cin" && cinema && cinema.src === "yt" && cinema.id && !roomBroadcaster("cin")) { const th = ytThumb(cinema.id); if (th) return th; }   // YouTube: a capa aparece no telão para todos
   if (roomOf(me.x, me.y) !== room || !rpBuilt) return null;
   const v = $("bview"); if (v && !v.hidden && v.videoWidth > 0 && v.readyState >= 2) return v;
   if (bstream) {                                                         // quem transmite também vê o conteúdo na tela grande
@@ -5073,6 +5081,8 @@ function snRender(box, set, g, mineIdx, a, b) {
    ========================================================= */
 const JUKE_SILENT = ["esc1", "esc2", "reu", "cin"];
 const AU_API = "https://api.audius.co/v1", AU_APP = "Party", JUKE_MAX_FILA = 20;
+const JUKE_AU = false;                                              // Audius desligado (código mantido): mude para true para reativar. Os testes usam window.PARTY_AU
+const jAuOn = () => typeof window.PARTY_AU === "boolean" ? window.PARTY_AU : JUKE_AU;
 let jNow = null, jQueue = {}, jReq = null, jDone = "", jBusy = false, jLastSeq = null, jLastPause = null, jCmdAt = 0, jInit = false;
 let jVol = Math.max(0, Math.min(100, parseInt(store.get("pt_jvol") || "70", 10) || 0)), jMute = store.get("pt_jmute") === "1";
 let jAu = null, jAuSeq = null, jAuSeek = 0, jDurSent = null, jErrSeq = null;
@@ -5179,11 +5189,13 @@ async function jJmUrl(id) {                                         // endereço
 }
 /* busca por nome em todos os players de música: Audius e, com chave, Jamendo. poupa (!play): só consulta o segundo player se o primeiro não achou nada certo */
 async function jSearch(q, n, poupa) {
-  n = n || 5; let falhas = 0, fontes = 1, au = [], jm = [];
+  n = n || 5; let falhas = 0, fontes = 0, au = [], jm = [];
+  if (!jAuOn() && !jJmKey()) throw new Error("Nenhum player de música está ligado nesta sala.");
   const buscaJm = async () => { fontes++; try { jm = await jSearchJm(q); } catch (e) { falhas++; } };
-  if (jJmKey() && !poupa) await Promise.all([jSearchAu(q).then(r => { au = r; }, () => { falhas++; }), buscaJm()]);
+  const buscaAu = async () => { fontes++; try { au = await jSearchAu(q); } catch (e) { falhas++; } };
+  if (!poupa) await Promise.all([jAuOn() && buscaAu(), jJmKey() && buscaJm()]);
   else {
-    try { au = await jSearchAu(q); } catch (e) { falhas++; }
+    if (jAuOn()) await buscaAu();
     if (jJmKey() && !au.some(i => !i.approx)) await buscaJm();
   }
   if (falhas >= fontes) throw new Error("Não consegui buscar agora (rede ou bloqueio). Tente de novo em instantes.");
@@ -5194,8 +5206,9 @@ async function jSearch(q, n, poupa) {
 }
 async function jResolve(q) {
   q = String(q || "").trim(); if (!q) throw new Error("Diga o nome da música ou cole um link. Ex.: !play lofi hip hop");
-  if (parseYouTube(q)) throw new Error("Vídeos do YouTube agora tocam no PC do cinema. Aqui é música: diga o nome ou cole um link do Audius/Jamendo.");
+  if (parseYouTube(q)) throw new Error("Vídeos do YouTube agora tocam no PC do cinema. Aqui é música: diga o nome ou cole um link do Jamendo.");
   if (/^https?:\/\/(www\.)?audius\.co\//i.test(q)) {
+    if (!jAuOn()) throw new Error("O Audius está desligado. Diga o nome da música ou cole um link do Jamendo.");
     let j; try { j = await jFetch(AU_API + "/resolve?url=" + encodeURIComponent(q) + "&app_name=" + AU_APP); } catch (e) { throw new Error("Não consegui abrir esse link agora (rede ou bloqueio)."); }
     const it = jTrack(j && j.data); if (it) return it; throw new Error("Essa faixa do catálogo não está disponível para tocar.");
   }
@@ -5232,7 +5245,7 @@ function jukeCommand(raw) {
   const cmd = JUKE_CMDS[jNorm(m[1])]; if (!cmd) return false;                                    // "!algo" desconhecido é só conversa
   const arg = m[2].trim(), now = Date.now();
   if (now - jCmdAt < 800) return true; jCmdAt = now;
-  const need = () => { if (jNow) return true; jSys("Não tem nada tocando. Use !play nome da música ou um link do Audius."); return false; };
+  const need = () => { if (jNow) return true; jSys("Não tem nada tocando. Use !play nome da música."); return false; };
   const pickN = a => { const n = /^\d{1,2}$/.test(a) ? parseInt(a, 10) : 0; return n && jPick && now - jPick.ts < 120000 && n <= jPick.list.length ? n : 0; };
   if (cmd === "escolher" || (cmd === "play" && pickN(arg))) {
     const n = pickN(arg);
@@ -5248,7 +5261,7 @@ function jukeCommand(raw) {
       jSys("Escolha com !play 1" + (list.length > 1 ? " … !play " + list.length : "") + " (vale por 2 minutos).");
     }).catch(e => jSys(e.message || "Não consegui buscar."));
   } else if (cmd === "play") {
-    if (!arg) { jSys("Use: !play nome da música ou link do Audius/Jamendo."); return true; }
+    if (!arg) { jSys("Use: !play nome da música ou link do Jamendo."); return true; }
     jSys("Procurando…");
     jAdd(arg).then(it => { jSys("Adicionada: " + it.title + (jNow ? " (posição " + Object.keys(jQueue).length + " na fila)" : "") + (parseYouTube(arg) || /^https?:/i.test(arg) ? "" : (it.approx ? " · resultado aproximado" : "") + " · não era essa? use !buscar " + arg.slice(0, 30))); }).catch(e => jSys(e.message || "Não consegui adicionar."));
   } else if (cmd === "fila") {
@@ -5302,7 +5315,7 @@ function jPlayErr() {
   jSys("Não deu para tocar «" + cleanText(jNow.title, 60) + "». Pulando…"); jReqSend("skip").catch(() => {});
 }
 function jAuSync(want, pos) {
-  if (!want || (jNow.src !== "au" && jNow.src !== "jm")) { if (jAu && !jAu.paused) try { jAu.pause(); } catch (e) { /* ok */ } return; }
+  if (!want || ((jNow.src !== "au" || !jAuOn()) && jNow.src !== "jm")) { if (jAu && !jAu.paused) try { jAu.pause(); } catch (e) { /* ok */ } return; }
   jAuEl();
   if (jAuSeq !== jNow.seq) {
     jAuSeq = jNow.seq; jAuSeek = 0;
@@ -5354,7 +5367,7 @@ function jLead() {
     else if (r.t === "clear") ref.child("queue").remove();
     return;
   }
-  if (jNow && jNow.src === "yt") { jAdvance(); return; }                 // item antigo do YouTube: a jukebox não toca mais, pula
+  if (jNow && (jNow.src === "yt" || (jNow.src === "au" && !jAuOn()))) { jAdvance(); return; }                 // item antigo do YouTube: a jukebox não toca mais, pula
   if (jNow && jNow.pause == null) { if (t - jNow.t0 > (jNow.dur || 600) * 1000 + 2500) jAdvance(); }     // acabou (e ninguém avisou): vem a próxima; sem duração conhecida, 10 min
   else if (!jNow && Object.keys(jQueue).length) jAdvance();
 }

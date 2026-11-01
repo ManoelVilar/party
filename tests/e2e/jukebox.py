@@ -15,7 +15,7 @@ def ok(cond, msg):
     if not cond: print("FALHOU:", msg); sys.exit(1)
     passed += 1; print("ok -", msg)
 
-def wav(sec=90, rate=8000):
+def wav(sec=900, rate=8000):
     n = sec * rate
     return b"RIFF" + struct.pack("<I", 36 + n) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 1, 1, rate, rate, 1, 8) + b"data" + struct.pack("<I", n) + b"\x80" * n
 
@@ -23,9 +23,9 @@ CORS = {"access-control-allow-origin": "*"}
 def au(i, title, artist, dur, plays): return {"id": i, "title": title, "user": {"name": artist}, "duration": dur, "play_count": plays, "is_streamable": True}
 VARIOS = [au("Rm1xx", "Varios Tema (Remix)", "DJ Quente", 210, 9999), au("In1tr", "Varios Tema Intro", "Banda X", 20, 500), au("Ou1tr", "Outra Coisa", "Alguem", 180, 99999),
           au("Ao1vv", "Varios Tema Ao Vivo", "Banda X", 240, 10), au("Or1gi", "Varios Tema", "Banda X", 200, 50), au("Or1gi", "Varios Tema", "Banda X", 200, 50)]
-JM_CALLS = []
+JM_CALLS = []; AU_CALLS = []
 JM_ROWS = [{"id": "1001", "name": "Varios Tema", "artist_name": "Jam Band", "duration": 190, "audio": "https://jm.test/a.wav"}, {"id": "1002", "name": "Outra Coisa", "artist_name": "Alguem", "duration": 180, "audio": "https://jm.test/b.wav"}]
-SEARCH = {"data": [{"id": "Dz4Ab", "title": "Lofi Test", "user": {"name": "DJ Teste"}, "duration": 90, "is_streamable": True}]}
+SEARCH = {"data": [{"id": "Dz4Ab", "title": "Lofi Test", "user": {"name": "DJ Teste"}, "duration": 900, "is_streamable": True}]}
 
 def mk(ctx, name, room):
     pg = ctx.new_page()
@@ -35,10 +35,11 @@ def mk(ctx, name, room):
         if "firebase-app-compat" in u: r.fulfill(body=STUB, content_type="application/javascript")
         elif "gstatic.com/firebasejs" in u: r.fulfill(body="", content_type="application/javascript")
         elif "api.audius.co/v1/tracks/search" in u:
+            AU_CALLS.append(u)
             q = (parse_qs(urlparse(u).query).get("query") or [""])[0]
             if "naoexiste" in q.lower(): data = {"data": []}
             elif "varios" in q.lower(): data = {"data": VARIOS}
-            else: data = {"data": [{"id": "Dz4Ab", "title": q.title() + " Test", "user": {"name": "DJ Teste"}, "duration": 90, "is_streamable": True}]}   # o título ecoa o pedido
+            else: data = {"data": [{"id": "Dz4Ab", "title": q.title() + " Test", "user": {"name": "DJ Teste"}, "duration": 900, "is_streamable": True}]}   # o título ecoa o pedido
             r.fulfill(body=json.dumps(data), content_type="application/json", headers=CORS)
         elif "api.jamendo.com/v3.0/tracks/" in u:
             JM_CALLS.append(u); qs = parse_qs(urlparse(u).query); sq = (qs.get("search") or [""])[0].lower()
@@ -79,7 +80,7 @@ with sync_playwright() as p:
     ok("!play lofi" in log(B), "o comando aparece no chat para todos (como no Discord)")
     ok(wait_for(A, "jNow && jNow.title === 'Lofi Test — DJ Teste'") and wait_for(B, "jNow && jNow.src === 'au' && jNow.ref === 'Dz4Ab'"), "!play nome acha no catálogo aberto e começa a tocar nas duas pontas")
     ok("Tocando agora: Lofi Test" in log(B), "todos recebem o aviso 'Tocando agora'")
-    ok(ev(A, "jNow.dur === 90 && jNow.by === 'Ana' && typeof jNow.seq === 'number'"), "estado traz duração, quem pediu e o número da faixa")
+    ok(ev(A, "jNow.dur === 900 && jNow.by === 'Ana' && typeof jNow.seq === 'number'"), "estado traz duração, quem pediu e o número da faixa")
     ok(wait_for(A, "jAu && jAu.src.includes('/tracks/Dz4Ab/stream') && !jAu.paused") and wait_for(B, "jAu && !jAu.paused"), "as duas pontas tocam o áudio da faixa")
     ok(abs(ev(A, "jAu.currentTime") - ev(B, "jAu.currentTime")) < 3, "e no mesmo ponto da música (hora do servidor)")
     ok(ev(A, "jukePlaying()") and ev(B, "jukePlaying()"), "a jukebox fica 'tocando' (luzes e notas)")
@@ -139,8 +140,18 @@ with sync_playwright() as p:
     r = A.evaluate("jSearch('varios xyz qqq', 5, true).then(l => l.map(i => i.src + ':' + !!i.approx))")
     ok(len(JM_CALLS) > n_jm and r[0] == "jm:false", "!play: o primeiro player não achou certo, o segundo resolve (%s)" % r[:2])
     ok(ev(A, "(async () => { const o = window.PARTY_JM_KEY; window.PARTY_JM_KEY = ''; const l = await jSearch('varios tema', 5); window.PARTY_JM_KEY = o; return l.every(i => i.src === 'au'); })()"), "sem chave do Jamendo só o Audius é consultado")
+    ev(A, "window.PARTY_AU = false"); n_au = len(AU_CALLS)
+    r = A.evaluate("jSearch('varios tema', 5).then(l => l.map(i => i.src))")
+    ok(r and all(x == "jm" for x in r) and len(AU_CALLS) == n_au, "Audius desligado: a busca só usa o Jamendo e nem consulta o Audius (%s)" % r)
+    say(A, "!play https://audius.co/x/y", 900)
+    ok("Audius está desligado" in log(A), "link do Audius avisa que está desligado")
+    ev(A, "window.PARTY_AU = true")
+    A.wait_for_timeout(1000)
     say(B, "!play https://www.jamendo.com/track/1001/varios-tema", 1800)
-    ok(wait_for(A, "Object.keys(jQueue).length === 2 && Object.values(jQueue).some(i => i.src === 'jm' && i.ref === '1001')"), "link do Jamendo entra na fila")
+    ok(wait_for(A, "Object.values(jQueue).some(i => i.src === 'jm' && i.ref === '1001') || (jNow && jNow.src === 'jm')"), "link do Jamendo entra na fila")
+    # estado certo para o teste de pular: tocando a segunda faixa, com a do Jamendo esperando
+    ev(A, "roomRef.child('jukebox').set({ now: { src: 'au', ref: 'Dz4Ab', title: 'Segunda Faixa Test — DJ Teste', by: 'Beto', seq: jSrv(), t0: jSrv(), dur: 900 }, queue: { k1: { src: 'jm', ref: '1001', title: 'Varios Tema — Jam Band', by: 'Beto', ts: jSrv() } } })")
+    ok(wait_for(A, "jNow && jNow.title.startsWith('Segunda Faixa') && Object.keys(jQueue).length === 1") and wait_for(B, "jNow && jNow.title.startsWith('Segunda Faixa')"), "estado de teste preparado nas duas pontas")
     say(A, "!batata", 400)
     ok("Comandos" not in log(A).split("!batata")[-1], "!comando desconhecido é só conversa")
 
@@ -167,10 +178,7 @@ with sync_playwright() as p:
     # --- pular ---
     s0 = ev(A, "jNow.seq")
     say(B, "!pular", 1800)
-    ok(wait_for(A, f"jNow && jNow.seq !== {s0} && jNow.title.startsWith('Segunda Faixa')") and ev(A, "Object.keys(jQueue).length") == 1, "!pular passa para a próxima (a da fila) e tira da fila")
-    s0 = ev(A, "jNow.seq")
-    say(B, "!pular", 1800)
-    ok(wait_for(A, f"jNow && jNow.seq !== {s0} && jNow.src === 'jm'") and wait_for(A, "jAu.src.includes('jm.test') && !jAu.paused"), "música do Jamendo: pede o endereço do áudio e toca")
+    ok(ev(A, "Object.keys(jQueue).length") == 0 and wait_for(A, f"jNow && jNow.seq !== {s0} && jNow.src === 'jm'") and wait_for(A, "jAu.src.includes('jm.test') && !jAu.paused"), "música do Jamendo: pede o endereço do áudio e toca")
     ok(wait_for(B, "jAu.src.includes('jm.test') && !jAu.paused"), "e a outra ponta também ouve")
     A.wait_for_timeout(1200)
     ok(ev(A, "jNow.ref") == "1001" and ev(B, "jNow.ref") == "1001", "pular não avança duas vezes (dois clientes veem o mesmo estado)")

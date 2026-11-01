@@ -7,6 +7,8 @@ URL = os.environ.get("PARTY_URL", "http://localhost:8765/index.html")
 STUB = open("fbstub.js").read()
 errors = []; passed = 0; CALLS = []
 CORS = {"access-control-allow-origin": "*"}
+import base64
+PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAYAAAB/qH1jAAAAEklEQVR4nGNgYGD4z8DAwMAAAA0AAgGTjEbOAAAAAElFTkSuQmCC')
 YT_DUR = {"items": [{"id": "AAAAAAAAAAA", "contentDetails": {"duration": "PT3M25S"}}, {"id": "BBBBBBBBBBB", "contentDetails": {"duration": "PT1H6M40S"}}]}
 YT_SEARCH = {"items": [{"id": {"videoId": "AAAAAAAAAAA"}, "snippet": {"title": "Filme Teste &amp; Cia", "channelTitle": "Canal Um"}},
                        {"id": {"videoId": "BBBBBBBBBBB"}, "snippet": {"title": "Filme Teste completo", "channelTitle": "Canal Dois"}}, {"id": {"channelId": "x"}, "snippet": {"title": "canal"}}]}
@@ -24,6 +26,7 @@ def mk(ctx, name, room):
         elif "gstatic.com/firebasejs" in u: r.fulfill(body="", content_type="application/javascript")
         elif "googleapis.com/youtube/v3/search" in u: CALLS.append("search"); r.fulfill(body=json.dumps(YT_SEARCH), content_type="application/json", headers=CORS)
         elif "googleapis.com/youtube/v3/videos" in u: CALLS.append("videos"); r.fulfill(body=json.dumps(YT_DUR), content_type="application/json", headers=CORS)
+        elif "i.ytimg.com/vi/" in u: r.fulfill(body=PNG, content_type="image/png", headers=CORS)
         elif u.startswith("http://localhost"): r.continue_()
         else: r.abort()
     pg.route("**/*", route); pg.goto(URL); pg.wait_for_timeout(500); pg.locator("#tGuest").is_visible() and pg.click("#tGuest")
@@ -58,6 +61,7 @@ with sync_playwright() as p:
     ev(B, "localStorage.removeItem('pt_ytc')"); n = len(CALLS)
     ev(B, "$('ytRes').textContent = ''; $('ytUrl').value = 'filme teste'"); ev(B, "$('ytGo').click()")
     ok(wait_for(B, "$('ytRes').querySelectorAll('button').length === 2") and len(CALLS) == n, "cache compartilhado: sem cache local, outra pessoa reaproveita a busca do Firebase")
+    ok(wait_for(B, "liveSource('cin') && liveSource('cin').tagName === 'IMG'"), "o telão do cinema mostra a capa do vídeo escolhido")
     ev(A, "$('ytUrl').value = 'https://youtu.be/dQw4w9WgXcQ'"); ev(A, "$('ytGo').click()")
     ok(wait_for(B, "cinema.id === 'dQw4w9WgXcQ'"), "colar o link continua carregando direto")
     ev(A, "$('ytUrl').value = 'https://exemplo.com/x'"); ev(A, "$('ytGo').click()")

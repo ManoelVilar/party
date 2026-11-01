@@ -12,8 +12,16 @@ function screenInfo(kind) {
   if (YT_ENABLED && kind === "cin" && cinema && cinema.src === "yt") return { bg: "#5a1a1a", icon: cinema.state === "play" ? "play" : "pause", accent: "#ff6b6b" };
   return { bg: kind === "cin" ? "#1d1d3a" : "#1d3a4a", icon: "idle", accent: "#8a8aa8" };
 }
+/* capa do vídeo do YouTube no telão do cinema (o player em si é um iframe e não dá para copiar a imagem dele). Com crossOrigin, se o servidor não liberar o uso no canvas a imagem nem "carrega": o telão cai no ícone de play */
+const ytThumbs = {};
+function ytThumb(id) {
+  if (!/^[A-Za-z0-9_-]{11}$/.test(id || "")) return null;
+  let t = ytThumbs[id]; if (!t) { const im = new Image(); t = ytThumbs[id] = { im, ok: false }; im.crossOrigin = "anonymous"; im.onload = () => { t.ok = true; }; im.src = "https://i.ytimg.com/vi/" + id + "/mqdefault.jpg"; }
+  return t.ok ? t.im : null;
+}
 /* imagem ao vivo para desenhar na tela grande do mundo (só para quem está na sala) */
 function liveSource(room) {
+  if (YT_ENABLED && room === "cin" && cinema && cinema.src === "yt" && cinema.id && !roomBroadcaster("cin")) { const th = ytThumb(cinema.id); if (th) return th; }   // YouTube: a capa aparece no telão para todos
   if (roomOf(me.x, me.y) !== room || !rpBuilt) return null;
   const v = $("bview"); if (v && !v.hidden && v.videoWidth > 0 && v.readyState >= 2) return v;
   if (bstream) {                                                         // quem transmite também vê o conteúdo na tela grande
