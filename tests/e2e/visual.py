@@ -11,13 +11,13 @@ def chk(c, m):
 with sync_playwright() as p:
     b = p.chromium.launch(); ctx = b.new_context(viewport={"width": 1000, "height": 700})
     K = mk(ctx); temp(K, "Ana", "sala-visual-1234"); K.wait_for_timeout(1200)
-    chk(K.evaluate("qualPref") == "auto" and K.evaluate("$('btnQual').textContent").endswith("Automático"), "começa em Automático")
+    chk(K.evaluate("qualPref") == "auto" and K.evaluate("$('btnQual').title").startswith("Visual: Automático"), "começa em Automático")
     chk(K.evaluate("qualNivel()") == 2, "no computador o automático começa em alta")
     K.click("#btnQual"); chk(K.evaluate("qualPref") == "alta" and K.evaluate("localStorage.getItem('pt_qual')") == "alta", "o botão troca para Alta e guarda a escolha")
     for esperado in ("media", "leve", "auto"):
         K.click("#btnQual"); chk(K.evaluate("qualPref") == esperado, "o botão segue o ciclo: " + esperado)
     K.evaluate("document.body.classList.add('sh-chat')"); K.fill("#inSay", "!visual leve"); K.press("#inSay", "Enter"); K.wait_for_timeout(200)
-    chk(K.evaluate("qualNivel()") == 0 and K.evaluate("$('btnQual').textContent").endswith("Leve"), "!visual leve funciona")
+    chk(K.evaluate("qualNivel()") == 0 and K.evaluate("$('btnQual').title").startswith("Visual: Leve"), "!visual leve funciona")
     K.wait_for_timeout(1500); K.fill("#inSay", "!qualidade média"); K.press("#inSay", "Enter"); K.wait_for_timeout(200)
     chk(K.evaluate("qualNivel()") == 1, "!qualidade média (com acento) funciona")
     # nível leve não desenha o brilho/vinheta; nível alto sim (compara o pixel do canto, onde a vinheta escurece)

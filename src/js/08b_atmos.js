@@ -11,7 +11,7 @@ function qualSet(v) {
   setStatus("Visual: " + QUAL_NOMES[v] + (v === "auto" ? " (ajusta sozinho ao seu aparelho)" : ""), 2500);
   return true;
 }
-function qualBotao() { const b = $("btnQual"); if (b) b.textContent = "🎨 " + QUAL_NOMES[qualPref]; }
+function qualBotao() { const b = $("btnQual"); if (b) { b.textContent = "🎨"; b.title = "Visual: " + QUAL_NOMES[qualPref] + " (clique para trocar: Automático, Alta, Média, Leve; no chat: !visual alta)"; b.setAttribute("aria-label", b.title); } }   // só o ícone, para não empurrar os outros botões da barra
 function qualCommand(raw) {                                          // !visual alta|media|leve|auto
   const m = /^!(?:visual|qualidade)(?:\s+(\S+))?\s*$/i.exec(String(raw || "")); if (!m) return false;
   const v = jNorm(m[1] || "").replace("é", "e"); if (!v || !qualSet(v)) setStatus("Use: !visual auto, alta, media ou leve.", 3500);
