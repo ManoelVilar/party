@@ -59,6 +59,17 @@ function atmosVinheta(w, h) {                                        // vinheta 
   v.addColorStop(0, "rgba(24,10,40,0)"); v.addColorStop(1, "rgba(24,10,40,.5)");
   g.fillStyle = v; g.fillRect(0, 0, w, h); return atmVig;
 }
+let atmGlow = null, atmGlowG = null, atmFx = null, atmFxW = 0, atmFxH = 0;
+function atmosFeixes(w, h) {
+  if (atmFx && atmFxW === w && atmFxH === h) return atmFx;
+  atmFx = mkCanvas(w, h); atmFxW = w; atmFxH = h; const g = atmFx.getContext("2d");
+  for (let i = 0; i < 3; i++) {
+    const x0 = w * (.12 + i * .3), wd = w * (.07 + i * .02), gr = g.createLinearGradient(x0, 0, x0 + w * .3, h);
+    gr.addColorStop(0, "rgba(255,238,190,.06)"); gr.addColorStop(1, "rgba(255,238,190,0)");
+    g.fillStyle = gr; g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + wd, 0); g.lineTo(x0 + wd + w * .3, h); g.lineTo(x0 + w * .3, h); g.closePath(); g.fill();
+  }
+  return atmFx;
+}
 const atmPoeira = []; let atmT0 = 0;
 function atmosPoeira(n, now, w, h, SC) {
   const dt = Math.min(100, atmT0 ? now - atmT0 : 16); atmT0 = now;
@@ -76,28 +87,22 @@ function atmosDesenha(now, kx, ky, K, SC) {
   const nv = qualNivel(); if (nv <= 0 || document.body.classList.contains("meet")) return;
   const w = cv.width, h = cv.height;
   mctx.setTransform(1, 0, 0, 1, 0, 0); mctx.imageSmoothingEnabled = true;
-  /* brilho das luzes (soma de luz: 'screen' clareia sem estourar) */
-  mctx.globalCompositeOperation = "screen";
-  const luzes = atmosListaLuzes(), ky2 = ky + LH / K;
-  let n = 0;
+  /* brilho das luzes: somado numa imagem pequena (1/4 do tamanho) e ampliado de uma vez com 'screen' (clareia sem estourar); barato mesmo com muitas luzes */
+  const gw = Math.ceil(w / 4), gh = Math.ceil(h / 4), gs = SC / 4;
+  if (!atmGlow || atmGlow.width !== gw || atmGlow.height !== gh) { atmGlow = mkCanvas(gw, gh); atmGlowG = atmGlow.getContext("2d"); }
+  atmGlowG.setTransform(1, 0, 0, 1, 0, 0); atmGlowG.clearRect(0, 0, gw, gh); atmGlowG.globalCompositeOperation = "lighter";
+  const luzes = atmosListaLuzes(), ky2 = ky + LH / K; let usou = 0;
   for (const e of luzes) {
-    const L = e.L, sx = (e.p[0] - kx) * K * SC, sy = (e.p[1] - ky) * K * SC, r = L.r * K * SC;
-    if (sx < -r || sx > w + r || e.p[1] < ky - L.r || e.p[1] > ky2 + L.r) continue;
-    if (nv === 1 && ++n > 6) break;
+    const L = e.L, sx = (e.p[0] - kx) * K * gs, sy = (e.p[1] - ky) * K * gs, r = L.r * K * gs;
+    if (sx < -r || sx > gw + r || e.p[1] < ky - L.r || e.p[1] > ky2 + L.r) continue;
+    if (nv === 1 && usou >= 6) break;
     const pisca = L.fogo ? .82 + .18 * Math.sin(now / 90 + e.ph) * Math.sin(now / 230) : .94 + .06 * Math.sin(now / 900 + e.ph);
-    mctx.globalAlpha = Math.max(0, Math.min(1, L.a * pisca));
-    mctx.drawImage(atmosBrilho(L.c), sx - r, sy - r, r * 2, r * 2);
+    atmGlowG.globalAlpha = Math.max(0, Math.min(1, L.a * pisca)); atmGlowG.drawImage(atmosBrilho(L.c), sx - r, sy - r, r * 2, r * 2); usou++;
   }
-  mctx.globalAlpha = 1; mctx.globalCompositeOperation = "source-over";
-  /* feixes de luz entrando pela esquerda (só no nível alto) */
-  if (nv >= 2) {
-    const a = .045 + .02 * Math.sin(now / 3000);
-    for (let i = 0; i < 3; i++) {
-      const x0 = w * (.12 + i * .3) + Math.sin(now / 5000 + i) * w * .01, wd = w * (.07 + i * .02), g = mctx.createLinearGradient(x0, 0, x0 + w * .3, h);
-      g.addColorStop(0, "rgba(255,238,190," + a.toFixed(3) + ")"); g.addColorStop(1, "rgba(255,238,190,0)");
-      mctx.fillStyle = g; mctx.beginPath(); mctx.moveTo(x0, 0); mctx.lineTo(x0 + wd, 0); mctx.lineTo(x0 + wd + w * .3, h); mctx.lineTo(x0 + w * .3, h); mctx.closePath(); mctx.fill();
-    }
-  }
+  atmGlowG.globalAlpha = 1;
+  if (usou) { mctx.globalCompositeOperation = "screen"; mctx.drawImage(atmGlow, 0, 0, w, h); mctx.globalCompositeOperation = "source-over"; }
+  /* feixes de luz entrando pela esquerda (só no nível alto): desenhados uma vez numa imagem; a cada quadro é só uma cópia com a força variando */
+  if (nv >= 2) { mctx.globalAlpha = .75 + .25 * Math.sin(now / 3000); mctx.drawImage(atmosFeixes(w, h), 0, 0); mctx.globalAlpha = 1; }
   mctx.drawImage(atmosVinheta(w, h), 0, 0);
   atmosPoeira(nv >= 2 ? 26 : 10, now, w, h, SC);
   mctx.imageSmoothingEnabled = false;

@@ -2365,17 +2365,37 @@ function drawDoor(d) {
 }
 
 /* ---------- piso (desenhado só na área visível) ---------- */
+const SEM_SOMBRA = { quadro: 1, painel: 1, tapete: 1, tapete2: 1, tapete3: 1, tapete4: 1, tela: 1 };
 function drawFloor(kx, ky, vw, vh) {
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const r = rid[y][x]; if (!r) continue;
     const c = P(x + .5, y + .5); if (c[0] < kx - 40 || c[0] > kx + vw + 40 || c[1] < ky - 30 || c[1] > ky + vh + 30) continue;
-    const R = ROOMBY[r], col = (x + y) % 2 ? R.floor[0] : R.floor[1];
+    const R = ROOMBY[r], col = (x + y) % 2 ? R.floor[0] : R.floor[1], hv = ((x * 73856093) ^ (y * 19349663)) >>> 0, v = hv % 100;
     poly([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], col, R.pat === "carpet" ? null : "rgba(26,16,38,.14)");
-    if (R.pat === "wood") { poly([P(x, y + .5), P(x + 1, y + .5), P(x + 1, y + .53), P(x, y + .53)], "rgba(26,16,38,.1)"); poly([P(x + .5, y), P(x + .53, y), P(x + .53, y + .5), P(x + .5, y + .5)], "rgba(26,16,38,.08)"); }
-    if (R.pat === "tile") poly([P(x + .08, y + .08), P(x + .92, y + .08), P(x + .92, y + .92), P(x + .08, y + .92)], null, "rgba(255,246,216,.4)");
-    if (isWall(x, y - 1)) poly([P(x, y), P(x + 1, y), P(x + 1, y + .3), P(x, y + .3)], "rgba(26,16,38,.18)");
-    if (isWall(x - 1, y)) poly([P(x, y), P(x + .3, y), P(x + .3, y + 1), P(x, y + 1)], "rgba(26,16,38,.18)");
+    if (v < 22) poly([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], "rgba(255,246,216,.06)"); else if (v >= 78) poly([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], "rgba(26,16,38,.06)");   // cada piso com um tom um pouco diferente
+    if (R.pat === "wood") {                                                         // tábuas com veios e emendas alternadas
+      poly([P(x, y + .5), P(x + 1, y + .5), P(x + 1, y + .53), P(x, y + .53)], "rgba(26,16,38,.1)");
+      const sx = (y % 2 ? .25 : .75) + (v % 7) * .01; poly([P(x + sx, y), P(x + sx + .03, y), P(x + sx + .03, y + .5), P(x + sx, y + .5)], "rgba(26,16,38,.1)");
+      const g = .12 + (v % 5) * .1; poly([P(x + g, y + .2), P(x + g + .3, y + .2), P(x + g + .3, y + .23), P(x + g, y + .23)], "rgba(255,246,216,.07)");
+      poly([P(x + .55 - g * .3, y + .72), P(x + .9 - g * .3, y + .72), P(x + .9 - g * .3, y + .75), P(x + .55 - g * .3, y + .75)], "rgba(26,16,38,.06)");
+    }
+    if (R.pat === "tile") {
+      poly([P(x + .08, y + .08), P(x + .92, y + .08), P(x + .92, y + .92), P(x + .08, y + .92)], null, "rgba(255,246,216,.4)");
+      poly([P(x + .14, y + .14), P(x + .5, y + .14), P(x + .14, y + .5)], "rgba(255,255,255,.09)");                  // brilho de azulejo no canto de cima
+    }
+    if (R.pat === "carpet") for (let i = 0; i < 3; i++) { const a = ((hv >>> (i * 5)) % 90) / 100 + .05, b = ((hv >>> (i * 5 + 2)) % 90) / 100 + .05; poly([P(x + a, y + b), P(x + a + .06, y + b), P(x + a + .06, y + b + .06), P(x + a, y + b + .06)], i % 2 ? "rgba(255,246,216,.08)" : "rgba(26,16,38,.1)"); }
+    if (isWall(x, y - 1)) { poly([P(x, y), P(x + 1, y), P(x + 1, y + .3), P(x, y + .3)], "rgba(26,16,38,.18)"); poly([P(x, y + .3), P(x + 1, y + .3), P(x + 1, y + .55), P(x, y + .55)], "rgba(26,16,38,.07)"); }
+    if (isWall(x - 1, y)) { poly([P(x, y), P(x + .3, y), P(x + .3, y + 1), P(x, y + 1)], "rgba(26,16,38,.18)"); poly([P(x + .3, y), P(x + .55, y), P(x + .55, y + 1), P(x + .3, y + 1)], "rgba(26,16,38,.07)"); }
   }
+}
+/* sombra de contato dos móveis no chão (luz vinda de cima à esquerda: a sombra cai um pouco para a frente e para a direita); desenhada depois dos tapetes */
+function drawFloorShadows(kx, ky, vw, vh) {
+  OBJS.forEach(o => {
+    if (DEF[o.t].flat || SEM_SOMBRA[o.t]) return;
+    const c = P(o.x + o.w / 2, o.y + o.h / 2); if (c[0] < kx - 120 || c[0] > kx + vw + 120 || c[1] < ky - 100 || c[1] > ky + vh + 100) return;
+    poly([P(o.x - .08, o.y - .02), P(o.x + o.w + .28, o.y - .02), P(o.x + o.w + .28, o.y + o.h + .26), P(o.x - .08, o.y + o.h + .26)], "rgba(26,16,38,.1)");
+    poly([P(o.x + .02, o.y + .04), P(o.x + o.w + .16, o.y + .04), P(o.x + o.w + .16, o.y + o.h + .14), P(o.x + .02, o.y + o.h + .14)], "rgba(26,16,38,.12)");
+  });
 }
 /* =========================================================
    TEMA NATALINO
@@ -2641,7 +2661,7 @@ function bgDesenha(kx, ky) {
     if (W * H > 7e6) { BGC = false; return false; }
     const c = mkCanvas(W, H), g = c.getContext("2d"), salvo = ctx;
     ctx = g; g.setTransform(K, 0, 0, K, 0, 0);
-    try { drawFloor(-300, -300, WORLD_W + 600, WORLD_H + 600); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); } finally { ctx = salvo; }
+    try { drawFloor(-300, -300, WORLD_W + 600, WORLD_H + 600); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); drawFloorShadows(-300, -300, WORLD_W + 600, WORLD_H + 600); } finally { ctx = salvo; }
     BGC = c;
   }
   lctx.save(); lctx.setTransform(1, 0, 0, 1, 0, 0); lctx.drawImage(BGC, Math.round(kx * K), Math.round(ky * K), LW, LH, 0, 0, LW, LH); lctx.restore();
@@ -5468,7 +5488,7 @@ function frame() {
   ctx.setTransform(K, 0, 0, K, -kx * K, -ky * K);
   sprFeitos = 0; const sprOK = zoom === zoomT;                       // caches de piso e móveis só com o zoom parado
   if (NATAL) drawSnowGround(kx, ky, vw, vh);
-  if (!(sprOK && bgDesenha(kx, ky))) { drawFloor(kx, ky, vw, vh); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); }
+  if (!(sprOK && bgDesenha(kx, ky))) { drawFloor(kx, ky, vw, vh); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); drawFloorShadows(kx, ky, vw, vh); }
   const mk = Object.keys(messes);
   mk.forEach(k => drawMess(k, messes[k], Math.max(Math.abs(messes[k].x - me.x), Math.abs(messes[k].y - me.y)) <= 1));
   if (hover && !tileBlocked(hover[0], hover[1])) poly([P(hover[0], hover[1]), P(hover[0] + 1, hover[1]), P(hover[0] + 1, hover[1] + 1), P(hover[0], hover[1] + 1)], "rgba(255,246,216,.22)", "rgba(255,246,216,.9)");
@@ -5708,6 +5728,17 @@ function atmosVinheta(w, h) {                                        // vinheta 
   v.addColorStop(0, "rgba(24,10,40,0)"); v.addColorStop(1, "rgba(24,10,40,.5)");
   g.fillStyle = v; g.fillRect(0, 0, w, h); return atmVig;
 }
+let atmGlow = null, atmGlowG = null, atmFx = null, atmFxW = 0, atmFxH = 0;
+function atmosFeixes(w, h) {
+  if (atmFx && atmFxW === w && atmFxH === h) return atmFx;
+  atmFx = mkCanvas(w, h); atmFxW = w; atmFxH = h; const g = atmFx.getContext("2d");
+  for (let i = 0; i < 3; i++) {
+    const x0 = w * (.12 + i * .3), wd = w * (.07 + i * .02), gr = g.createLinearGradient(x0, 0, x0 + w * .3, h);
+    gr.addColorStop(0, "rgba(255,238,190,.06)"); gr.addColorStop(1, "rgba(255,238,190,0)");
+    g.fillStyle = gr; g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + wd, 0); g.lineTo(x0 + wd + w * .3, h); g.lineTo(x0 + w * .3, h); g.closePath(); g.fill();
+  }
+  return atmFx;
+}
 const atmPoeira = []; let atmT0 = 0;
 function atmosPoeira(n, now, w, h, SC) {
   const dt = Math.min(100, atmT0 ? now - atmT0 : 16); atmT0 = now;
@@ -5725,28 +5756,22 @@ function atmosDesenha(now, kx, ky, K, SC) {
   const nv = qualNivel(); if (nv <= 0 || document.body.classList.contains("meet")) return;
   const w = cv.width, h = cv.height;
   mctx.setTransform(1, 0, 0, 1, 0, 0); mctx.imageSmoothingEnabled = true;
-  /* brilho das luzes (soma de luz: 'screen' clareia sem estourar) */
-  mctx.globalCompositeOperation = "screen";
-  const luzes = atmosListaLuzes(), ky2 = ky + LH / K;
-  let n = 0;
+  /* brilho das luzes: somado numa imagem pequena (1/4 do tamanho) e ampliado de uma vez com 'screen' (clareia sem estourar); barato mesmo com muitas luzes */
+  const gw = Math.ceil(w / 4), gh = Math.ceil(h / 4), gs = SC / 4;
+  if (!atmGlow || atmGlow.width !== gw || atmGlow.height !== gh) { atmGlow = mkCanvas(gw, gh); atmGlowG = atmGlow.getContext("2d"); }
+  atmGlowG.setTransform(1, 0, 0, 1, 0, 0); atmGlowG.clearRect(0, 0, gw, gh); atmGlowG.globalCompositeOperation = "lighter";
+  const luzes = atmosListaLuzes(), ky2 = ky + LH / K; let usou = 0;
   for (const e of luzes) {
-    const L = e.L, sx = (e.p[0] - kx) * K * SC, sy = (e.p[1] - ky) * K * SC, r = L.r * K * SC;
-    if (sx < -r || sx > w + r || e.p[1] < ky - L.r || e.p[1] > ky2 + L.r) continue;
-    if (nv === 1 && ++n > 6) break;
+    const L = e.L, sx = (e.p[0] - kx) * K * gs, sy = (e.p[1] - ky) * K * gs, r = L.r * K * gs;
+    if (sx < -r || sx > gw + r || e.p[1] < ky - L.r || e.p[1] > ky2 + L.r) continue;
+    if (nv === 1 && usou >= 6) break;
     const pisca = L.fogo ? .82 + .18 * Math.sin(now / 90 + e.ph) * Math.sin(now / 230) : .94 + .06 * Math.sin(now / 900 + e.ph);
-    mctx.globalAlpha = Math.max(0, Math.min(1, L.a * pisca));
-    mctx.drawImage(atmosBrilho(L.c), sx - r, sy - r, r * 2, r * 2);
+    atmGlowG.globalAlpha = Math.max(0, Math.min(1, L.a * pisca)); atmGlowG.drawImage(atmosBrilho(L.c), sx - r, sy - r, r * 2, r * 2); usou++;
   }
-  mctx.globalAlpha = 1; mctx.globalCompositeOperation = "source-over";
-  /* feixes de luz entrando pela esquerda (só no nível alto) */
-  if (nv >= 2) {
-    const a = .045 + .02 * Math.sin(now / 3000);
-    for (let i = 0; i < 3; i++) {
-      const x0 = w * (.12 + i * .3) + Math.sin(now / 5000 + i) * w * .01, wd = w * (.07 + i * .02), g = mctx.createLinearGradient(x0, 0, x0 + w * .3, h);
-      g.addColorStop(0, "rgba(255,238,190," + a.toFixed(3) + ")"); g.addColorStop(1, "rgba(255,238,190,0)");
-      mctx.fillStyle = g; mctx.beginPath(); mctx.moveTo(x0, 0); mctx.lineTo(x0 + wd, 0); mctx.lineTo(x0 + wd + w * .3, h); mctx.lineTo(x0 + w * .3, h); mctx.closePath(); mctx.fill();
-    }
-  }
+  atmGlowG.globalAlpha = 1;
+  if (usou) { mctx.globalCompositeOperation = "screen"; mctx.drawImage(atmGlow, 0, 0, w, h); mctx.globalCompositeOperation = "source-over"; }
+  /* feixes de luz entrando pela esquerda (só no nível alto): desenhados uma vez numa imagem; a cada quadro é só uma cópia com a força variando */
+  if (nv >= 2) { mctx.globalAlpha = .75 + .25 * Math.sin(now / 3000); mctx.drawImage(atmosFeixes(w, h), 0, 0); mctx.globalAlpha = 1; }
   mctx.drawImage(atmosVinheta(w, h), 0, 0);
   atmosPoeira(nv >= 2 ? 26 : 10, now, w, h, SC);
   mctx.imageSmoothingEnabled = false;

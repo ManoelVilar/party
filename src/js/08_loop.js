@@ -44,7 +44,7 @@ function frame() {
   ctx.setTransform(K, 0, 0, K, -kx * K, -ky * K);
   sprFeitos = 0; const sprOK = zoom === zoomT;                       // caches de piso e móveis só com o zoom parado
   if (NATAL) drawSnowGround(kx, ky, vw, vh);
-  if (!(sprOK && bgDesenha(kx, ky))) { drawFloor(kx, ky, vw, vh); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); }
+  if (!(sprOK && bgDesenha(kx, ky))) { drawFloor(kx, ky, vw, vh); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); drawFloorShadows(kx, ky, vw, vh); }
   const mk = Object.keys(messes);
   mk.forEach(k => drawMess(k, messes[k], Math.max(Math.abs(messes[k].x - me.x), Math.abs(messes[k].y - me.y)) <= 1));
   if (hover && !tileBlocked(hover[0], hover[1])) poly([P(hover[0], hover[1]), P(hover[0] + 1, hover[1]), P(hover[0] + 1, hover[1] + 1), P(hover[0], hover[1] + 1)], "rgba(255,246,216,.22)", "rgba(255,246,216,.9)");
