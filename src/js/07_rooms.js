@@ -238,10 +238,11 @@ function selectPane(p) {
 function configureForRoom(r) {
   $("rpTitle").textContent = r === "cin" ? "Cinema" : "Sala de reuniões";
   const tabs = $("rpTabs"); tabs.innerHTML = "";
-  (r === "cin" ? [["scr", "Compartilhar tela"]] : [["scr", "Tela"], ["sld", "Slides"], ["vid", "Vídeo"]]).forEach(t => {
+  (r === "cin" ? (YT_ENABLED ? [["yt", "YouTube"], ["scr", "Compartilhar tela"]] : [["scr", "Compartilhar tela"]]) : [["scr", "Tela"], ["sld", "Slides"], ["vid", "Vídeo"]]).forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.dataset.p = t[0]; b.textContent = t[1]; b.onclick = () => selectPane(t[0]); tabs.appendChild(b);
   });
   $("meetBox").hidden = r !== "reu"; $("rpMeet").hidden = r !== "reu"; selectPane("scr"); rpErr("");
+  if (r === "cin" && YT_ENABLED) selectPane("yt");                      // cinema abre na aba do YouTube (busca)
 }
 function renderMeetLog() {
   const box = $("meetLog"); if (!box) return; box.innerHTML = "";

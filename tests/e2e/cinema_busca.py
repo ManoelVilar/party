@@ -45,6 +45,9 @@ with sync_playwright() as p:
     ROOM = "party-teste-cinema-1234"
     A, B = mk(ctx, "Ana", ROOM), mk(ctx, "Beto", ROOM)
     for pg in (A, B): ev(pg, "window.PARTY_YT_KEY = 'chave-de-teste'"); goto_cinema(pg)
+    ok(ev(A, "[...document.querySelectorAll('#rpTabs button')].map(b => b.textContent).join('|')") == "YouTube|Compartilhar tela" and ev(A, "!$('pane-yt').hidden && $('pane-scr').hidden"), "o cinema tem a aba YouTube (aberta por padrão) e a de compartilhar tela")
+    ev(A, "document.querySelector('#rpTabs button[data-p=scr]').click()"); ok(ev(A, "$('pane-yt').hidden && !$('pane-scr').hidden"), "clicar na outra aba troca o painel")
+    ev(A, "document.querySelector('#rpTabs button[data-p=yt]').click()")
     ok(ev(A, "roomOf(me.x, me.y) === 'cin'") and ev(A, "!!$('ytUrl') && !!$('ytRes')"), "no cinema o painel tem o campo de busca e a lista de resultados")
     ok("Pesquise" in ev(A, "$('ytUrl').placeholder"), "o campo avisa que dá para pesquisar ou colar o link")
     ev(A, "$('ytUrl').value = 'filme teste'"); ev(A, "$('ytGo').click()")
