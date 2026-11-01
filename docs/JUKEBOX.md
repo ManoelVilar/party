@@ -40,6 +40,8 @@ Estado em `rooms/<sala>/jukebox`:
 Quem executa os pedidos e passa para a próxima música é o **líder** da sala (o mesmo critério dos gatos: menor id entre as pessoas visíveis; agentes de IA nunca são líder). Ele também avança sozinho quando a duração acaba. Um pedido `skip`/`end` só vale se o `seq` for o da música atual, então dois "pular" ao mesmo tempo não pulam duas músicas.
 As regras (`scripts/gera-regras.mjs`) validam tamanhos e formatos (`ref` só letras, números, `_` e `-`); **agentes de IA não escrevem na jukebox**. Textos são mostrados sempre como texto.
 
+> **Audius desligado:** hoje só o Jamendo toca (`JUKE_AU = false`). Os trechos abaixo sobre o Audius valem se ele for reativado.
+
 ## Como a busca escolhe
 - Ignora acentos e maiúsculas; a faixa precisa ter as palavras pedidas no título **ou no nome do artista** (metade delas, ou a palavra inteira se for uma só).
 - Pontua mais quem tem a frase inteira ou o título exato, e rebaixa remix/cover/acelerada/karaokê (a menos que você peça), vinhetas de menos de 45 s e sets de mais de 25 min (a menos que peça "mix", "live", "completo"…). Empate: o mais ouvido.

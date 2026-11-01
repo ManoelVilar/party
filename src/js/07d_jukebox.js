@@ -10,6 +10,8 @@
    ========================================================= */
 const JUKE_SILENT = ["esc1", "esc2", "reu", "cin"];
 const AU_API = "https://api.audius.co/v1", AU_APP = "Party", JUKE_MAX_FILA = 20;
+const JUKE_AU = false;                                              // Audius desligado (código mantido): mude para true para reativar. Os testes usam window.PARTY_AU
+const jAuOn = () => typeof window.PARTY_AU === "boolean" ? window.PARTY_AU : JUKE_AU;
 let jNow = null, jQueue = {}, jReq = null, jDone = "", jBusy = false, jLastSeq = null, jLastPause = null, jCmdAt = 0, jInit = false;
 let jVol = Math.max(0, Math.min(100, parseInt(store.get("pt_jvol") || "70", 10) || 0)), jMute = store.get("pt_jmute") === "1";
 let jAu = null, jAuSeq = null, jAuSeek = 0, jDurSent = null, jErrSeq = null;
@@ -116,11 +118,13 @@ async function jJmUrl(id) {                                         // endereço
 }
 /* busca por nome em todos os players de música: Audius e, com chave, Jamendo. poupa (!play): só consulta o segundo player se o primeiro não achou nada certo */
 async function jSearch(q, n, poupa) {
-  n = n || 5; let falhas = 0, fontes = 1, au = [], jm = [];
+  n = n || 5; let falhas = 0, fontes = 0, au = [], jm = [];
+  if (!jAuOn() && !jJmKey()) throw new Error("Nenhum player de música está ligado nesta sala.");
   const buscaJm = async () => { fontes++; try { jm = await jSearchJm(q); } catch (e) { falhas++; } };
-  if (jJmKey() && !poupa) await Promise.all([jSearchAu(q).then(r => { au = r; }, () => { falhas++; }), buscaJm()]);
+  const buscaAu = async () => { fontes++; try { au = await jSearchAu(q); } catch (e) { falhas++; } };
+  if (!poupa) await Promise.all([jAuOn() && buscaAu(), jJmKey() && buscaJm()]);
   else {
-    try { au = await jSearchAu(q); } catch (e) { falhas++; }
+    if (jAuOn()) await buscaAu();
     if (jJmKey() && !au.some(i => !i.approx)) await buscaJm();
   }
   if (falhas >= fontes) throw new Error("Não consegui buscar agora (rede ou bloqueio). Tente de novo em instantes.");
@@ -131,8 +135,9 @@ async function jSearch(q, n, poupa) {
 }
 async function jResolve(q) {
   q = String(q || "").trim(); if (!q) throw new Error("Diga o nome da música ou cole um link. Ex.: !play lofi hip hop");
-  if (parseYouTube(q)) throw new Error("Vídeos do YouTube agora tocam no PC do cinema. Aqui é música: diga o nome ou cole um link do Audius/Jamendo.");
+  if (parseYouTube(q)) throw new Error("Vídeos do YouTube agora tocam no PC do cinema. Aqui é música: diga o nome ou cole um link do Jamendo.");
   if (/^https?:\/\/(www\.)?audius\.co\//i.test(q)) {
+    if (!jAuOn()) throw new Error("O Audius está desligado. Diga o nome da música ou cole um link do Jamendo.");
     let j; try { j = await jFetch(AU_API + "/resolve?url=" + encodeURIComponent(q) + "&app_name=" + AU_APP); } catch (e) { throw new Error("Não consegui abrir esse link agora (rede ou bloqueio)."); }
     const it = jTrack(j && j.data); if (it) return it; throw new Error("Essa faixa do catálogo não está disponível para tocar.");
   }
@@ -169,7 +174,7 @@ function jukeCommand(raw) {
   const cmd = JUKE_CMDS[jNorm(m[1])]; if (!cmd) return false;                                    // "!algo" desconhecido é só conversa
   const arg = m[2].trim(), now = Date.now();
   if (now - jCmdAt < 800) return true; jCmdAt = now;
-  const need = () => { if (jNow) return true; jSys("Não tem nada tocando. Use !play nome da música ou um link do Audius."); return false; };
+  const need = () => { if (jNow) return true; jSys("Não tem nada tocando. Use !play nome da música."); return false; };
   const pickN = a => { const n = /^\d{1,2}$/.test(a) ? parseInt(a, 10) : 0; return n && jPick && now - jPick.ts < 120000 && n <= jPick.list.length ? n : 0; };
   if (cmd === "escolher" || (cmd === "play" && pickN(arg))) {
     const n = pickN(arg);
@@ -185,7 +190,7 @@ function jukeCommand(raw) {
       jSys("Escolha com !play 1" + (list.length > 1 ? " … !play " + list.length : "") + " (vale por 2 minutos).");
     }).catch(e => jSys(e.message || "Não consegui buscar."));
   } else if (cmd === "play") {
-    if (!arg) { jSys("Use: !play nome da música ou link do Audius/Jamendo."); return true; }
+    if (!arg) { jSys("Use: !play nome da música ou link do Jamendo."); return true; }
     jSys("Procurando…");
     jAdd(arg).then(it => { jSys("Adicionada: " + it.title + (jNow ? " (posição " + Object.keys(jQueue).length + " na fila)" : "") + (parseYouTube(arg) || /^https?:/i.test(arg) ? "" : (it.approx ? " · resultado aproximado" : "") + " · não era essa? use !buscar " + arg.slice(0, 30))); }).catch(e => jSys(e.message || "Não consegui adicionar."));
   } else if (cmd === "fila") {
@@ -239,7 +244,7 @@ function jPlayErr() {
   jSys("Não deu para tocar «" + cleanText(jNow.title, 60) + "». Pulando…"); jReqSend("skip").catch(() => {});
 }
 function jAuSync(want, pos) {
-  if (!want || (jNow.src !== "au" && jNow.src !== "jm")) { if (jAu && !jAu.paused) try { jAu.pause(); } catch (e) { /* ok */ } return; }
+  if (!want || ((jNow.src !== "au" || !jAuOn()) && jNow.src !== "jm")) { if (jAu && !jAu.paused) try { jAu.pause(); } catch (e) { /* ok */ } return; }
   jAuEl();
   if (jAuSeq !== jNow.seq) {
     jAuSeq = jNow.seq; jAuSeek = 0;
@@ -291,7 +296,7 @@ function jLead() {
     else if (r.t === "clear") ref.child("queue").remove();
     return;
   }
-  if (jNow && jNow.src === "yt") { jAdvance(); return; }                 // item antigo do YouTube: a jukebox não toca mais, pula
+  if (jNow && (jNow.src === "yt" || (jNow.src === "au" && !jAuOn()))) { jAdvance(); return; }                 // item antigo do YouTube: a jukebox não toca mais, pula
   if (jNow && jNow.pause == null) { if (t - jNow.t0 > (jNow.dur || 600) * 1000 + 2500) jAdvance(); }     // acabou (e ninguém avisou): vem a próxima; sem duração conhecida, 10 min
   else if (!jNow && Object.keys(jQueue).length) jAdvance();
 }

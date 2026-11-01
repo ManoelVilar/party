@@ -541,7 +541,7 @@
     <div class="jknow"><b id="jkTitle">Nada tocando</b><span id="jkBy" class="muted"></span>
       <div class="jkbar"><i id="jkBar"></i></div><span id="jkTime" class="muted"></span></div>
     <div class="jkctl"><button id="jkPlay" type="button">⏸ Pausar</button><button id="jkSkip" type="button">⏭ Pular</button><button id="jkStop" type="button" class="no" title="Para e limpa a fila">⏹ Parar</button><button id="jkDance" type="button" hidden>💃 Dançar</button></div>
-    <form id="jkForm" class="row"><input id="jkIn" type="text" placeholder="Nome da música ou link do Audius/Jamendo" autocomplete="off" aria-label="Música para adicionar"><button class="primary" type="submit">Adicionar</button></form>
+    <form id="jkForm" class="row"><input id="jkIn" type="text" placeholder="Nome da música ou link do Jamendo" autocomplete="off" aria-label="Música para adicionar"><button class="primary" type="submit">Adicionar</button></form>
     <div id="jkMsg" class="muted" role="status"></div>
     <ul id="jkQueue"></ul>
     <div class="jkctl"><button id="jkClear" type="button">Limpar fila</button><button id="jkMute" type="button" aria-label="Ligar ou desligar o som da jukebox">🔊 Som</button>
@@ -603,7 +603,7 @@
     <ul>
       <li>Google (scripts e banco do Firebase) e quem hospeda o site (Netlify ou GitHub), que mantêm registros de acesso.</li>
       <li>Cloudflare (cdnjs), apenas quando alguém usa slides em PDF.</li>
-      <li>Jukebox: quando alguém pede uma música pelo nome, seu aparelho consulta o catálogo aberto Audius (que vê seu IP e o texto buscado) e toca o áudio a partir de lá. Se a sala tiver a chave do Jamendo, a busca também consulta o Jamendo, que vê seu IP e o texto buscado. Cinema: ao pesquisar um vídeo, a busca é feita na API do YouTube (Google) e fica guardada por 7 dias no banco da sala para poupar a cota; ao exibir um vídeo, seu aparelho carrega o player incorporado do YouTube (Google), que vê seu IP e pode usar cookies. Nada disso é carregado se ninguém usar a jukebox ou o cinema.</li>
+      <li>Jukebox: quando alguém pede uma música pelo nome, seu aparelho consulta o catálogo aberto Jamendo (que vê seu IP e o texto buscado) e toca o áudio a partir de lá. Cinema: ao pesquisar um vídeo, a busca é feita na API do YouTube (Google) e fica guardada por 7 dias no banco da sala para poupar a cota; ao exibir um vídeo, seu aparelho carrega o player incorporado do YouTube (Google), que vê seu IP e pode usar cookies. Nada disso é carregado se ninguém usar a jukebox ou o cinema.</li>
       <li>A fonte do jogo está embutida no site: não consultamos o Google Fonts.</li>
     </ul>
 
