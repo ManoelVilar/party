@@ -4,6 +4,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ## [Não lançado]
 
+### Corrigido
+- **Cinema sem a aba do YouTube**: o painel só mostrava "Compartilhar tela". Agora tem a aba **YouTube** (aberta por padrão, com a busca) ao lado de "Compartilhar tela".
+
 ### Alterado
 - **Jukebox só com Jamendo**: o Audius foi desligado (`JUKE_AU = false` em `src/js/07d_jukebox.js`; o código fica e dá para reativar). Faixas antigas do Audius na fila são puladas. Sem player ligado, a busca avisa.
 - **Telão do cinema com a capa do YouTube**: ao exibir um vídeo, a capa dele aparece no telão para todos (o vídeo em si toca no painel; não dá para copiar o quadro de um player do YouTube para o desenho). Se o servidor da imagem não liberar o uso, o telão mostra o ícone de play como antes.
