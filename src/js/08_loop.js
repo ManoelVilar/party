@@ -149,6 +149,7 @@ function frame() {
   posterize();                                                       // paleta limitada = visual 8-bit
   if (NATAL) natalSnow(now);
   mctx.setTransform(1, 0, 0, 1, 0, 0); mctx.imageSmoothingEnabled = false; mctx.drawImage(lo, 0, 0, cv.width, cv.height);
+  atmosDesenha(now, kx, ky, K, cv.width / LW);                        // luz, brilho, vinheta e partículas (nível de qualidade em 08b_atmos.js)
 
   /* rótulos e balões na resolução da tela (texto nítido) */
   const SC = cv.width / LW, U = (cv.width / (cv.clientWidth || cv.width)) / 1.39;           // U: rótulos mantêm o mesmo tamanho na tela em qualquer resolução
@@ -206,6 +207,7 @@ function loop() {
   const c = performance.now() - t0;
   loopCost += (c - loopCost) * .1;
   if (!loopSlow && loopCost > 17) loopSlow = true; else if (loopSlow && loopCost < 10) loopSlow = false;
+  qualVigia(loopSlow);
   if (perfOn) { perfFrames++; if (c > perfWorst) perfWorst = c; perfTick(t0 + c); }
 }
 function perfTick(t) {                                                // medidor opcional: !fps no chat (mostra quadros por segundo, custo médio e pior quadro)
