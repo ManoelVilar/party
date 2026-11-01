@@ -136,18 +136,13 @@
   #mixpanel { position:fixed; right:8px; top:56px; z-index:72; width:min(360px,calc(100vw - 16px)); max-height:calc(100vh - 70px); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; }
   #mixpanel[hidden] { display:none; }
   #jukepanel { position:fixed; right:8px; top:56px; z-index:72; width:min(400px,calc(100vw - 16px)); max-height:calc(100vh - 70px); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; }
-  #jukepanel[hidden], #jukeyt[hidden] { display:none; }
-  /* o player do YouTube mora dentro da jukebox; com o painel fechado e uma faixa do YouTube tocando, o painel sai da tela mas continua desenhado (display:none faria o navegador pausar o vídeo) */
-  #jukepanel.ytkeep[hidden] { display:grid !important; left:-10000px; right:auto; top:0; visibility:hidden; pointer-events:none; }
+  #jukepanel[hidden] { display:none; }
   .jknow { display:grid; gap:4px; background:var(--panel2); border:3px solid var(--line); padding:8px; } .jknow b { color:var(--accent); overflow-wrap:anywhere; }
   .jkbar { height:8px; background:var(--lo); border:2px solid var(--line); } .jkbar i { display:block; height:100%; width:0; background:var(--accent); }
   .jkctl { display:flex; gap:6px; flex-wrap:wrap; align-items:center; } .jkvol { display:flex; gap:6px; align-items:center; margin-left:auto; } .jkvol input { width:110px; }
   #jkQueue { list-style:none; margin:0; padding:0; display:grid; gap:4px; max-height:180px; overflow:auto; }
   #jkQueue li { display:flex; gap:6px; align-items:center; background:var(--panel2); border:2px solid var(--line); padding:3px 8px; } #jkQueue li > span { margin-right:auto; overflow-wrap:anywhere; }
   #jkQueue li button { width:30px; height:30px; padding:0; } .jkhelp { font-size:.8rem; }
-  #jukeyt { width:206px; margin:0 auto; background:var(--panel); border:3px solid var(--line); }
-  #jukeyt .jyhead { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:2px 6px; font-size:.8rem; } #jukeyt .jyhead button { padding:2px 6px; font-size:.75rem; }
-  #jukeyt iframe, #jukeyt #jukeyt-in { width:200px; height:200px; display:block; margin:0 auto 3px; }
   .mxhead { display:flex; align-items:center; justify-content:space-between; gap:8px; } .mxhead b { color:var(--accent); }
   .mxhead button { width:36px; height:36px; padding:0; }
   .mxnote { font-size:.8rem; }
@@ -193,6 +188,7 @@
   .cc .acts button { padding:3px 8px; font-size:.8rem; }
 
   #roompanel { display:grid; gap:8px; }
+  #ytRes { display:grid; gap:3px; max-height:150px; overflow:auto; } #ytRes button { text-align:left; padding:4px 6px; font-size:.82rem; } #ytRes:empty { display:none; }
   .rphead { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .rphead b { color:var(--accent); font-size:1.1rem; margin-right:auto; }
   .rpgrid { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:10px; }
@@ -544,9 +540,8 @@
     <div class="mxhead"><b>🎵 Jukebox</b><button id="jkClose" type="button" aria-label="Fechar">✕</button></div>
     <div class="jknow"><b id="jkTitle">Nada tocando</b><span id="jkBy" class="muted"></span>
       <div class="jkbar"><i id="jkBar"></i></div><span id="jkTime" class="muted"></span></div>
-    <div id="jukeyt" hidden><div class="jyhead"><span>🎵 YouTube</span><button id="jukeytKick" type="button" hidden>🔈 Ligar o som</button></div><div id="jukeyt-in"></div></div>
     <div class="jkctl"><button id="jkPlay" type="button">⏸ Pausar</button><button id="jkSkip" type="button">⏭ Pular</button><button id="jkStop" type="button" class="no" title="Para e limpa a fila">⏹ Parar</button><button id="jkDance" type="button" hidden>💃 Dançar</button></div>
-    <form id="jkForm" class="row"><input id="jkIn" type="text" placeholder="Nome da música ou link do YouTube" autocomplete="off" aria-label="Música para adicionar"><button class="primary" type="submit">Adicionar</button></form>
+    <form id="jkForm" class="row"><input id="jkIn" type="text" placeholder="Nome da música ou link do Audius/Jamendo" autocomplete="off" aria-label="Música para adicionar"><button class="primary" type="submit">Adicionar</button></form>
     <div id="jkMsg" class="muted" role="status"></div>
     <ul id="jkQueue"></ul>
     <div class="jkctl"><button id="jkClear" type="button">Limpar fila</button><button id="jkMute" type="button" aria-label="Ligar ou desligar o som da jukebox">🔊 Som</button>
@@ -573,7 +568,7 @@
     <ul>
       <li>Nome, código da sala (para voltar sozinho à sala ao recarregar a página, até você clicar em “Sair da sala”), personagem, roupas salvas, zoom, a escolha do tema de Natal e o volume/mudo que você deu a cada pessoa, no armazenamento local do navegador (<code>localStorage</code>).</li>
       <li>Um identificador criado pelo Firebase Authentication, no armazenamento do navegador: anônimo em salas temporárias (sem e-mail, telefone nem senha) ou o da sua conta, se você entrar nela.</li>
-      <li>O jogo <b>não define cookies</b> e não usa publicidade nem estatísticas de acesso. A única exceção é o player do YouTube da <b>jukebox</b>, que só é carregado quando alguém pede uma música do YouTube e pode definir cookies do próprio YouTube. Para apagar tudo, limpe os dados do site no navegador.</li>
+      <li>O jogo <b>não define cookies</b> e não usa publicidade nem estatísticas de acesso. A única exceção é o player do YouTube do <b>cinema</b>, que só é carregado quando alguém exibe um vídeo do YouTube e pode definir cookies do próprio YouTube. Para apagar tudo, limpe os dados do site no navegador.</li>
     </ul>
 
     <h3>Conta (opcional)</h3>
@@ -608,7 +603,7 @@
     <ul>
       <li>Google (scripts e banco do Firebase) e quem hospeda o site (Netlify ou GitHub), que mantêm registros de acesso.</li>
       <li>Cloudflare (cdnjs), apenas quando alguém usa slides em PDF.</li>
-      <li>Jukebox: quando alguém pede uma música pelo nome, seu aparelho consulta o catálogo aberto Audius (que vê seu IP e o texto buscado) e toca o áudio a partir de lá. Quando a música é do YouTube, seu aparelho consulta o título no YouTube e carrega o player incorporado do YouTube (Google), que vê seu IP e pode usar cookies. Nada disso é carregado se ninguém usar a jukebox.</li>
+      <li>Jukebox: quando alguém pede uma música pelo nome, seu aparelho consulta o catálogo aberto Audius (que vê seu IP e o texto buscado) e toca o áudio a partir de lá. Se a sala tiver a chave do Jamendo, a busca também consulta o Jamendo, que vê seu IP e o texto buscado. Cinema: ao pesquisar um vídeo, a busca é feita na API do YouTube (Google) e fica guardada por 7 dias no banco da sala para poupar a cota; ao exibir um vídeo, seu aparelho carrega o player incorporado do YouTube (Google), que vê seu IP e pode usar cookies. Nada disso é carregado se ninguém usar a jukebox ou o cinema.</li>
       <li>A fonte do jogo está embutida no site: não consultamos o Google Fonts.</li>
     </ul>
 

@@ -2,7 +2,7 @@
    CINEMA E SALA DE REUNIÕES (painel, YouTube sincronizado, apresentações, chat)
    ========================================================= */
 let cinema = {}, rpBuilt = false, rpRoom = null, viewPref = null;
-const YT_ENABLED = false;                                    // YouTube desativado por enquanto (código mantido para reativar depois). Ao reativar, atualize a política de privacidade em src/head.html: o player do YouTube pode definir cookies
+const YT_ENABLED = true;                                     // YouTube no PC do cinema (busca por nome ou link). A política de privacidade em src/head.html descreve o player do YouTube, que pode definir cookies
 let yt = null, ytReady = false, ytId = null, ytLoading = false, ytStuck = 0, ytAutoMuted = false;
 const meetMsgs = [];
 
@@ -172,7 +172,7 @@ function buildRoomPanel() {
     '<div id="vHands" class="vhands" hidden></div><div id="vToast" class="vtoast" hidden></div><div class="vtool"><span id="vVolBox" class="vvol" hidden><button id="vMute" type="button">🔈</button><input type="range" id="vVol" min="0" max="100" step="5" value="100" aria-label="Volume da transmissão (só para você)" title="Volume da transmissão (só para você)"></span><button id="vHand2" type="button" title="Levantar a mão (H)">✋</button><button id="vFull" type="button" title="Tela cheia (F)">⛶ Tela cheia</button></div>' +
     '<div class="vbar" id="vBar"><button id="vPrev" type="button">◀</button><b id="vPage" class="panel" style="padding:4px 12px"></b><button id="vNext" type="button">▶</button><button id="vHand" type="button">✋ Mão</button><button id="vExit" type="button">↙ Voltar à janela</button></div></div><div id="vCaption" class="muted" style="margin-top:4px;font-size:.85rem"></div></div>' +
     '<div class="rpctl"><div class="tabs" id="rpTabs"></div>' +
-    '<div class="pane" id="pane-yt"><div class="row"><input type="url" id="ytUrl" placeholder="Cole o link do YouTube"><button id="ytGo" class="primary">Carregar</button></div>' +
+    '<div class="pane" id="pane-yt"><div class="row"><input type="text" id="ytUrl" placeholder="Pesquise no YouTube ou cole o link" autocomplete="off"><button id="ytGo" class="primary">Buscar</button></div><div id="ytRes"></div>' +
     '<div class="row"><button id="ytBack">−10s</button><button id="ytPlay">Play/Pausa</button><button id="ytFwd">+10s</button><input type="range" id="ytVol" min="0" max="100" value="80" title="Volume (só para você)"></div>' +
     '<div class="row"><button id="ytEnd" class="no">Encerrar exibição</button></div><div class="muted" style="font-size:.8rem">A reprodução é sincronizada entre todos que estão no cinema. O volume é só seu.</div><div class="err"></div></div>' +
     '<div class="pane" id="pane-vid" hidden><input type="file" id="vidFile" accept="video/*"><div class="row"><button id="vidBc" class="primary">Transmitir para a sala</button><button id="vidStop" class="no">Parar</button></div>' +
@@ -185,9 +185,16 @@ function buildRoomPanel() {
     '<form class="say" id="meetForm"><input id="meetIn" maxlength="200" placeholder="Mensagem para a reunião" autocomplete="off"><button class="primary" type="submit">Enviar</button></form></div></div></div>';
   $("rpMeet").onclick = meetOpen;
   $("rpToggle").onclick = () => { const b = $("rpBody"); b.hidden = !b.hidden; $("rpToggle").textContent = b.hidden ? "Expandir" : "Recolher"; };
+  const ytLoad = (id) => { viewPref = "yt"; cinemaSet({ src: "yt", id, state: "play", pos: 0 }); setLoading(true); setTimeout(() => setLoading(false), 6000); $("ytRes").textContent = ""; };
   $("ytGo").onclick = () => {
-    rpErr(""); const id = parseYouTube($("ytUrl").value); if (!id) return rpErr("Link inválido. Cole um link do YouTube (youtube.com/watch?v=..., youtu.be/..., shorts).");
-    viewPref = "yt"; cinemaSet({ src: "yt", id, state: "play", pos: 0 }); setLoading(true); setTimeout(() => setLoading(false), 6000);
+    rpErr(""); const v = $("ytUrl").value.trim(); if (!v) return rpErr("Escreva o nome do vídeo ou cole um link do YouTube.");
+    const id = parseYouTube(v); if (id) return ytLoad(id);
+    if (/^https?:\/\//i.test(v)) return rpErr("Link inválido. Cole um link do YouTube (youtube.com/watch?v=..., youtu.be/..., shorts) ou escreva o nome do vídeo.");
+    const box = $("ytRes"); box.textContent = "Buscando..."; $("ytGo").disabled = true;
+    ytBuscaVideos(v).then(list => {
+      box.textContent = ""; if (!list.length) return rpErr("Não achei vídeos para «" + v.slice(0, 40) + "».");
+      list.forEach(it => { const b = document.createElement("button"); b.type = "button"; b.textContent = it.title + (it.dur ? " (" + jFmt(it.dur * 1000) + ")" : ""); b.onclick = () => ytLoad(it.ref); box.appendChild(b); });
+    }).catch(e => { box.textContent = ""; rpErr(e && e.message ? e.message : "Não consegui buscar agora."); }).finally(() => { $("ytGo").disabled = false; });
   };
   $("handBtn").onclick = toggleHand;
   $("vFull").onclick = toggleViewerFull; $("vHand").onclick = toggleHand; $("vHand2").onclick = toggleHand; $("vExit").onclick = toggleViewerFull;
