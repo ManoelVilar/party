@@ -296,6 +296,7 @@
 
   /* jogos nas TVs da sala */
   #gamepanel { display:grid; gap:8px; }
+  @media (min-width: 900px) { body.full:has(#gamepanel:not([hidden])) .top { left:8px; transform:none; max-width:calc(100vw - 566px); } }   /* painel de jogos aberto: a barra de cima fica à esquerda dele (o "Sair da sala" não fica escondido atrás) */
   body.full #gamepanel { position:fixed; right:8px; top:56px; z-index:23; width:min(330px,calc(100vw - 16px)); max-height:calc(100vh - 70px); overflow:auto; }
   .gp-head { display:flex; align-items:center; justify-content:space-between; gap:8px; } .gp-head b { color:var(--accent); }
   .gp-head button { padding:4px 8px; font-size:.8rem; }
