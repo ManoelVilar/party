@@ -5069,21 +5069,20 @@ async function jSearchYt(q, n) {
   return out;
 }
 let jYtWarnAt = 0;
-async function jSearch(q, n) {                                    // lista de itens da fila, do melhor para o pior (YouTube primeiro, se houver chave)
-  n = n || 5; let falhas = 0, fontes = 0, yt = [], au = [];
-  if (jYtKey()) {
-    fontes++;
-    try { yt = await jSearchYt(q, n); } catch (e) {
-      falhas++; if (Date.now() - jYtWarnAt > 600000) { jYtWarnAt = Date.now(); jSys("A busca do YouTube não respondeu (chave inválida ou cota do dia esgotada). Usando só o catálogo aberto."); }
-    }
+async function jSearch(q, n, poupa) {                              // lista de itens da fila, do melhor para o pior: catálogo aberto (sem anúncio) primeiro; YouTube completa (poupa: só se o catálogo aberto não achou nada certo)
+  n = n || 5; let falhas = 0, fontes = 1, yt = [], au = [];
+  const buscaYt = async () => { try { yt = await jSearchYt(q, n); } catch (e) {
+    falhas++; if (Date.now() - jYtWarnAt > 600000) { jYtWarnAt = Date.now(); jSys("A busca do YouTube não respondeu (chave inválida ou cota do dia esgotada). Usando só o catálogo aberto."); }
+  } };
+  if (jYtKey() && !poupa) { fontes++; await Promise.all([jSearchAu(q).then(r => { au = r; }, () => { falhas++; }), buscaYt()]); }       // !buscar: as duas fontes ao mesmo tempo
+  else {
+    try { au = await jSearchAu(q); } catch (e) { falhas++; }
+    if (jYtKey() && !au.some(i => !i.approx)) { fontes++; await buscaYt(); }                                                         // !play: só vai ao YouTube se o catálogo aberto não achou certo (poupa a cota)
   }
-  fontes++; try { au = await jSearchAu(q); } catch (e) { falhas++; }
   if (falhas >= fontes) throw new Error("Não consegui buscar agora (rede ou bloqueio). Cole um link do YouTube.");
-  const exatos = au.filter(i => !i.approx), aprox = au.filter(i => i.approx);
-  const out = yt.slice(0, exatos.length ? Math.ceil(n * .6) : n);
-  exatos.forEach(it => { if (out.length < n) out.push(it); });
-  yt.slice(out.filter(i => i.src === "yt").length).forEach(it => { if (out.length < n) out.push(it); });
-  aprox.forEach(it => { if (out.length < n) out.push(it); });
+  const exatos = au.filter(i => !i.approx), aprox = au.filter(i => i.approx), out = [];
+  const poe = it => { if (out.length < n && !out.includes(it)) out.push(it); };
+  exatos.slice(0, yt.length ? Math.ceil(n * .6) : n).forEach(poe); yt.forEach(poe); exatos.forEach(poe); aprox.forEach(poe);
   return out;
 }
 async function jResolve(q) {
@@ -5098,7 +5097,7 @@ async function jResolve(q) {
     let j; try { j = await jFetch(AU_API + "/resolve?url=" + encodeURIComponent(q) + "&app_name=" + AU_APP); } catch (e) { throw new Error("Não consegui abrir esse link agora (rede ou bloqueio)."); }
     const it = jTrack(j && j.data); if (it) return it; throw new Error("Essa faixa do catálogo não está disponível para tocar.");
   }
-  const lista = await jSearch(q, 5);
+  const lista = await jSearch(q, 5, true);
   if (lista.length) return lista[0];
   throw new Error("Não achei «" + q.slice(0, 40) + "». Confira o nome (artista + música ajuda), veja opções com !buscar ou cole um link do YouTube.");
 }
@@ -5138,13 +5137,13 @@ function jukeCommand(raw) {
     jSearch(arg, 5).then(list => {
       if (!list.length) { jSys("Não achei «" + arg.slice(0, 40) + "». Confira o nome (artista + música ajuda) ou cole um link do YouTube."); return; }
       jPick = { list, ts: Date.now() };
-      list.forEach((it, i) => jSys((i + 1) + ". " + it.title + (it.dur ? " (" + jFmt(it.dur * 1000) + ")" : "") + (it.src === "yt" ? " · YouTube" : "") + (it.approx ? " · aproximado" : "")));
+      list.forEach((it, i) => jSys((i + 1) + ". " + it.title + (it.dur ? " (" + jFmt(it.dur * 1000) + ")" : "") + (it.src === "yt" ? " · YouTube (pode ter anúncio)" : "") + (it.approx ? " · aproximado" : "")));
       jSys("Escolha com !play 1" + (list.length > 1 ? " … !play " + list.length : "") + " (vale por 2 minutos).");
     }).catch(e => jSys(e.message || "Não consegui buscar."));
   } else if (cmd === "play") {
     if (!arg) { jSys("Use: !play nome da música ou link do YouTube."); return true; }
     jSys("Procurando…");
-    jAdd(arg).then(it => { jSys("Adicionada: " + it.title + (jNow ? " (posição " + Object.keys(jQueue).length + " na fila)" : "") + (parseYouTube(arg) || /^https?:/i.test(arg) ? "" : (it.approx ? " · resultado aproximado" : "") + " · não era essa? use !buscar " + arg.slice(0, 30))); }).catch(e => jSys(e.message || "Não consegui adicionar."));
+    jAdd(arg).then(it => { jSys("Adicionada: " + it.title + (jNow ? " (posição " + Object.keys(jQueue).length + " na fila)" : "") + (it.src === "yt" && !parseYouTube(arg) ? " · do YouTube (pode ter anúncio)" : "") + (parseYouTube(arg) || /^https?:/i.test(arg) ? "" : (it.approx ? " · resultado aproximado" : "") + " · não era essa? use !buscar " + arg.slice(0, 30))); }).catch(e => jSys(e.message || "Não consegui adicionar."));
   } else if (cmd === "fila") {
     const ks = Object.keys(jQueue).sort();
     if (jNow) jSys("Agora: " + jNow.title);
