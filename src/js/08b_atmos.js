@@ -21,7 +21,7 @@ function qualVigia(lento) {                                          // chamado 
   if (qualPref !== "auto") return;
   if (!lento) { qualLentoDesde = 0; return; }
   const t = performance.now(); if (!qualLentoDesde) qualLentoDesde = t;
-  if (t - qualLentoDesde > 4000 && qualAuto > 0) { qualAuto--; qualLentoDesde = 0; setStatus("Visual ajustado para " + (qualAuto ? "Média" : "Leve") + " para manter o jogo fluido (botão 🎨 muda).", 4000); }
+  if (t - qualLentoDesde > 4000 && qualAuto > 0) { qualAuto--; qualLentoDesde = 0; if (!window.PARTY_TESTE) setStatus("Visual ajustado para " + (qualAuto ? "Média" : "Leve") + " para manter o jogo fluido (botão 🎨 muda).", 4000); }
 }
 
 /* o que brilha: tipo do objeto -> altura (z) do ponto de luz, raio (em px de mundo), cor e força */

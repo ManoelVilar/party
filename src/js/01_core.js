@@ -69,8 +69,8 @@ function posterize() {
 const TS = 192, T1 = mkCanvas(TS, TS), T2 = mkCanvas(TS, TS), t1 = T1.getContext("2d"), t2 = T2.getContext("2d");
 function outlinedTo(g, sx, sy, k, fn) {
   t1.setTransform(1, 0, 0, 1, 0, 0); t1.clearRect(0, 0, TS, TS); t1.setTransform(k, 0, 0, k, TS / 2, 150); fn(t1);
-  t2.setTransform(1, 0, 0, 1, 0, 0); t2.globalCompositeOperation = "source-over"; t2.clearRect(0, 0, TS, TS); t2.drawImage(T1, 0, 0);
-  t2.globalCompositeOperation = "source-in"; t2.fillStyle = OUTLINE; t2.fillRect(0, 0, TS, TS); t2.globalCompositeOperation = "source-over";
+  t2.setTransform(1, 0, 0, 1, 0, 0); t2.globalCompositeOperation = "source-over"; t2.clearRect(0, 0, TS, TS); t2.drawImage(T1, 0, 0);   // contorno com as próprias cores: a silhueta escurecida por cima (sem filtro, que pesa a cada quadro)
+  t2.globalCompositeOperation = "source-atop"; t2.fillStyle = "rgba(26,16,38,.7)"; t2.fillRect(0, 0, TS, TS); t2.globalCompositeOperation = "source-over";
   g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
   const ox = Math.round(sx) - TS / 2, oy = Math.round(sy) - 150;
   for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) g.drawImage(T2, ox + d[0], oy + d[1]);

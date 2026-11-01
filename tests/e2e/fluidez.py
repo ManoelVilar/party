@@ -12,8 +12,8 @@ with sync_playwright() as p:
         K.evaluate("window.__n = 0"); K.wait_for_timeout(ms); return K.evaluate("window.__n") * 1000 / ms
     base = fps()
     ok(base > 40 and not K.evaluate("loopSlow"), "aparelho rápido: desenha a cada quadro, sem modo 30 (%.0f fps)" % base)
-    K.evaluate("window.__busy = 20"); K.wait_for_timeout(1500)
-    ok(K.evaluate("loopSlow"), "quadros caros (20 ms) ligam o modo 30")
+    K.evaluate("window.__busy = 14"); K.wait_for_timeout(1500)
+    ok(K.evaluate("loopSlow"), "quadros caros (14 ms + desenho) ligam o modo 30")
     slow = fps(2000)
     ok(22 <= slow <= 34, "e travam em ~30 quadros por segundo certinhos (%.0f)" % slow)
     K.evaluate("window.__busy = 0"); K.wait_for_timeout(2500)
@@ -27,7 +27,7 @@ with sync_playwright() as p:
         K.evaluate("(b) => { window.__busy = b; me.x = 6; me.y = 11; meRef.update({ x: 6, y: 11 }); path = []; camX = 0; camY = 0; }", busy)
         K.wait_for_timeout(700); K.evaluate("window.__busy = 0")
         return K.evaluate("camX + camY")
-    a = cam_after(0); b2 = cam_after(20)
+    a = cam_after(0); b2 = cam_after(14)
     ok(a > 1 and abs(a - b2) / max(abs(a), 1) < .35, "a câmera acompanha na mesma velocidade a 60 e a 30 quadros (%.1f x %.1f)" % (a, b2))
     # medidor
     K.evaluate("document.body.classList.add('sh-chat')"); K.fill("#inSay", "!fps"); K.press("#inSay", "Enter"); K.wait_for_timeout(1800)
