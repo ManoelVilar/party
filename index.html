@@ -3476,20 +3476,30 @@ function otherTabPlaying() {
   });
 }
 async function autoEnter(s) {
-  if (await otherTabPlaying()) return;                                               // outra aba já está na sala: nada de entrar duas vezes
+  if (await otherTabPlaying()) {                                                     // outra aba já está na sala: nada de entrar duas vezes (e avisa por quê, em vez de ficar parado)
+    const t = $("tBusy"); t.textContent = "Outra aba do jogo já está aberta neste navegador. Feche-a e recarregue, ou toque em Jogar sem login."; t.hidden = false; return;
+  }
   const box = document.querySelector("#title .tbox"); $("tBusy").hidden = false; box.classList.add("busy");
-  let fail = "";
-  try {
-    if (!fbInit()) throw new Error("O Firebase não carregou. Confira a conexão e recarregue a página.");
-    await authFirstP;
-    if (s.mode === "perm" && !isRealUser(fbUser)) fail = "Entre na sua conta de novo para voltar à sua sala.";
-    else {
-      $("inName").value = s.name;
-      await enter(s.mode, s);
-      if (!$("app").hidden) return;                                                  // entrou: o jogo cuida do resto
-    }
-  } catch (e) { fail = enterMsg(e); }
-  autoClear(); $("tBusy").hidden = true; box.classList.remove("busy");
+  let fail = "", definitivo = false;
+  for (let tentativa = 0; tentativa < 3; tentativa++) {                              // rede lenta ao recarregar não pode derrubar a sessão: tenta de novo antes de desistir
+    fail = "";
+    try {
+      if (!fbInit()) throw new Error("O Firebase não carregou. Confira a conexão e recarregue a página.");
+      await authFirstP;
+      if (s.mode === "perm" && !isRealUser(fbUser)) { fail = "Entre na sua conta de novo para voltar à sua sala."; definitivo = true; }
+      else {
+        $("inName").value = s.name;
+        await enter(s.mode, s);
+        if (tabInGame) return;                                                       // entrou: o jogo cuida do resto
+        fail = $("err").textContent || "";                   // enter() não lança: o motivo fica na caixa de erro
+        definitivo = /recusou|privada|expirou|não encontrada|permanentes/i.test(fail);
+      }
+    } catch (e) { fail = enterMsg(e); definitivo = /recusou|privada|expirou|não encontrada/i.test(fail); }
+    if (definitivo) break;
+    await new Promise(r => setTimeout(r, 1500 * (tentativa + 1)));
+  }
+  if (definitivo) autoClear();                                                       // só esquece a sessão se o servidor recusou de verdade; falha de rede mantém para a próxima tentativa
+  $("tBusy").hidden = true; box.classList.remove("busy");
   showLogin(s.mode === "perm" ? "acct" : "temp"); if (fail) errBox(fail);
 }
 $("btnEnter").onclick = () => enter("temp");

@@ -27,6 +27,9 @@ def mk(ctx, name, room):
     pg.fill("#inName", name); pg.fill("#inRoom", room); pg.click("#btnEnter"); pg.wait_for_timeout(900)
     return pg
 
+def wait_for(pg, js, ms=6000):
+    try: pg.wait_for_function(js, timeout=ms); return True
+    except Exception: return False
 def ev(pg, js): return pg.evaluate(js)
 
 with sync_playwright() as p:
@@ -63,6 +66,13 @@ with sync_playwright() as p:
     A.evaluate("localStorage.pt_auto = JSON.stringify({ mode: 'again', room: 'x', name: 'Ana' })"); A.reload(); A.wait_for_timeout(1200)
     ok(ev(A, "(!$('title').hidden && document.body.classList.contains('title'))"), "código de sala inválido no lembrete é ignorado")
 
+    # rede lenta ao voltar: a primeira tentativa falha, a segunda entra, e o lembrete não some
+    A.evaluate("localStorage.pt_auto = ''"); A.reload(); A.wait_for_timeout(800)
+    A.evaluate("localStorage.pt_auto = JSON.stringify({ mode: 'again', room: 'party-teste-retry-1234', name: 'Rui' })")
+    A.evaluate("(() => { const orig = prepareRoom; window.__tent = 0; prepareRoom = async (...a) => { window.__tent++; if (window.__tent === 1) throw new Error('Não conectou.'); return orig(...a); }; })()")
+    A.evaluate("autoEnter(autoSaved())")
+    ok(wait_for(A, "!document.body.classList.contains('title')", 9000) and ev(A, "window.__tent") >= 2, "falha de rede passageira ao voltar: tenta de novo e entra sozinho")
+    A.evaluate("localStorage.pt_auto = ''"); A.goto(URL); A.wait_for_timeout(800)          # (fecha a aba para não contar como "outra aba jogando" nos próximos testes)
     # segunda aba do mesmo navegador não entra sozinha enquanto a primeira joga
     B1 = mk(ctx, "Caio", ROOM)
     ok(ev(B1, "!document.body.classList.contains('title')"), "primeira aba entra")
@@ -71,6 +81,7 @@ with sync_playwright() as p:
     B2.goto(URL); B2.wait_for_timeout(1500)
     ok(ev(B2, "!$('title').hidden && document.body.classList.contains('title')"), "segunda aba mostra a tela inicial (não entra duas vezes)")
     ok(ev(B2, "!!localStorage.pt_auto"), "e não apaga o lembrete da sala")
+    ok(ev(B2, "!$('tBusy').hidden && $('tBusy').textContent.includes('outra aba') || $('tBusy').textContent.includes('Outra aba')"), "e avisa por que não entrou sozinha")
     B2.close(); B1.close()
 
     # entrar de novo, e outra pessoa na mesma sala continua vendo só quem está
