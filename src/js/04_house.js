@@ -433,15 +433,35 @@ function drawDoor(d) {
 }
 
 /* ---------- piso (desenhado só na área visível) ---------- */
+const SEM_SOMBRA = { quadro: 1, painel: 1, tapete: 1, tapete2: 1, tapete3: 1, tapete4: 1, tela: 1 };
 function drawFloor(kx, ky, vw, vh) {
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const r = rid[y][x]; if (!r) continue;
     const c = P(x + .5, y + .5); if (c[0] < kx - 40 || c[0] > kx + vw + 40 || c[1] < ky - 30 || c[1] > ky + vh + 30) continue;
-    const R = ROOMBY[r], col = (x + y) % 2 ? R.floor[0] : R.floor[1];
+    const R = ROOMBY[r], col = (x + y) % 2 ? R.floor[0] : R.floor[1], hv = ((x * 73856093) ^ (y * 19349663)) >>> 0, v = hv % 100;
     poly([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], col, R.pat === "carpet" ? null : "rgba(26,16,38,.14)");
-    if (R.pat === "wood") { poly([P(x, y + .5), P(x + 1, y + .5), P(x + 1, y + .53), P(x, y + .53)], "rgba(26,16,38,.1)"); poly([P(x + .5, y), P(x + .53, y), P(x + .53, y + .5), P(x + .5, y + .5)], "rgba(26,16,38,.08)"); }
-    if (R.pat === "tile") poly([P(x + .08, y + .08), P(x + .92, y + .08), P(x + .92, y + .92), P(x + .08, y + .92)], null, "rgba(255,246,216,.4)");
-    if (isWall(x, y - 1)) poly([P(x, y), P(x + 1, y), P(x + 1, y + .3), P(x, y + .3)], "rgba(26,16,38,.18)");
-    if (isWall(x - 1, y)) poly([P(x, y), P(x + .3, y), P(x + .3, y + 1), P(x, y + 1)], "rgba(26,16,38,.18)");
+    if (v < 22) poly([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], "rgba(255,246,216,.06)"); else if (v >= 78) poly([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], "rgba(26,16,38,.06)");   // cada piso com um tom um pouco diferente
+    if (R.pat === "wood") {                                                         // tábuas com veios e emendas alternadas
+      poly([P(x, y + .5), P(x + 1, y + .5), P(x + 1, y + .53), P(x, y + .53)], "rgba(26,16,38,.1)");
+      const sx = (y % 2 ? .25 : .75) + (v % 7) * .01; poly([P(x + sx, y), P(x + sx + .03, y), P(x + sx + .03, y + .5), P(x + sx, y + .5)], "rgba(26,16,38,.1)");
+      const g = .12 + (v % 5) * .1; poly([P(x + g, y + .2), P(x + g + .3, y + .2), P(x + g + .3, y + .23), P(x + g, y + .23)], "rgba(255,246,216,.07)");
+      poly([P(x + .55 - g * .3, y + .72), P(x + .9 - g * .3, y + .72), P(x + .9 - g * .3, y + .75), P(x + .55 - g * .3, y + .75)], "rgba(26,16,38,.06)");
+    }
+    if (R.pat === "tile") {
+      poly([P(x + .08, y + .08), P(x + .92, y + .08), P(x + .92, y + .92), P(x + .08, y + .92)], null, "rgba(255,246,216,.4)");
+      poly([P(x + .14, y + .14), P(x + .5, y + .14), P(x + .14, y + .5)], "rgba(255,255,255,.09)");                  // brilho de azulejo no canto de cima
+    }
+    if (R.pat === "carpet") for (let i = 0; i < 3; i++) { const a = ((hv >>> (i * 5)) % 90) / 100 + .05, b = ((hv >>> (i * 5 + 2)) % 90) / 100 + .05; poly([P(x + a, y + b), P(x + a + .06, y + b), P(x + a + .06, y + b + .06), P(x + a, y + b + .06)], i % 2 ? "rgba(255,246,216,.08)" : "rgba(26,16,38,.1)"); }
+    if (isWall(x, y - 1)) { poly([P(x, y), P(x + 1, y), P(x + 1, y + .3), P(x, y + .3)], "rgba(26,16,38,.18)"); poly([P(x, y + .3), P(x + 1, y + .3), P(x + 1, y + .55), P(x, y + .55)], "rgba(26,16,38,.07)"); }
+    if (isWall(x - 1, y)) { poly([P(x, y), P(x + .3, y), P(x + .3, y + 1), P(x, y + 1)], "rgba(26,16,38,.18)"); poly([P(x + .3, y), P(x + .55, y), P(x + .55, y + 1), P(x + .3, y + 1)], "rgba(26,16,38,.07)"); }
   }
+}
+/* sombra de contato dos móveis no chão (luz vinda de cima à esquerda: a sombra cai um pouco para a frente e para a direita); desenhada depois dos tapetes */
+function drawFloorShadows(kx, ky, vw, vh) {
+  OBJS.forEach(o => {
+    if (DEF[o.t].flat || SEM_SOMBRA[o.t]) return;
+    const c = P(o.x + o.w / 2, o.y + o.h / 2); if (c[0] < kx - 120 || c[0] > kx + vw + 120 || c[1] < ky - 100 || c[1] > ky + vh + 100) return;
+    poly([P(o.x - .08, o.y - .02), P(o.x + o.w + .28, o.y - .02), P(o.x + o.w + .28, o.y + o.h + .26), P(o.x - .08, o.y + o.h + .26)], "rgba(26,16,38,.1)");
+    poly([P(o.x + .02, o.y + .04), P(o.x + o.w + .16, o.y + .04), P(o.x + o.w + .16, o.y + o.h + .14), P(o.x + .02, o.y + o.h + .14)], "rgba(26,16,38,.12)");
+  });
 }

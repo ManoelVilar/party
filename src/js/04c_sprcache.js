@@ -51,7 +51,7 @@ function bgDesenha(kx, ky) {
     if (W * H > 7e6) { BGC = false; return false; }
     const c = mkCanvas(W, H), g = c.getContext("2d"), salvo = ctx;
     ctx = g; g.setTransform(K, 0, 0, K, 0, 0);
-    try { drawFloor(-300, -300, WORLD_W + 600, WORLD_H + 600); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); } finally { ctx = salvo; }
+    try { drawFloor(-300, -300, WORLD_W + 600, WORLD_H + 600); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); drawFloorShadows(-300, -300, WORLD_W + 600, WORLD_H + 600); } finally { ctx = salvo; }
     BGC = c;
   }
   lctx.save(); lctx.setTransform(1, 0, 0, 1, 0, 0); lctx.drawImage(BGC, Math.round(kx * K), Math.round(ky * K), LW, LH, 0, 0, LW, LH); lctx.restore();
