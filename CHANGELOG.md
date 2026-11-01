@@ -4,6 +4,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ## [Não lançado]
 
+### Alterado
+- **Iluminação única**: o visual completo (brilho nas luzes, feixes, vinheta, poeira) agora é o único modo. Saiu o botão 🎨, o comando `!visual` e o ajuste automático de qualidade; em aparelho lento o regulador de quadros continua travando em 30 por segundo.
+
 ### Adicionado
 - **Visual (etapa 3)**: bonecos e gatos com **contorno nas cores deles** (versão escura do cabelo, pele e roupa, em vez de preto chapado), **luz de borda** clara em cima/esquerda dos bonecos e sombra no chão em duas camadas (miolo + borda suave).
 - **Visual (etapa 2)**: piso com textura — cada ladrilho com um tom um pouco diferente, tábuas com veios e emendas alternadas, azulejo com brilho no canto, carpete pontilhado, rodapé de sombra mais suave — e **sombra de contato** embaixo dos móveis. O brilho das luzes passou a ser desenhado numa camada pequena (bem mais leve no nível Alto).

@@ -1,29 +1,6 @@
-/* Atmosfera: luz, brilho, vinheta, cor e partículas desenhados por cima da cena já ampliada (resolução da tela), com níveis de qualidade.
-   Nível 2 (alta): brilhos nas luzes, feixes de luz, partículas, vinheta e tom de cor. Nível 1 (média): brilhos, poucas partículas, vinheta. Nível 0 (leve): nada.
-   "Auto" começa em alta no computador e em média no celular, e desce um nível sozinho se o aparelho não acompanha (nunca sobe sozinho, para não oscilar). */
-const QUAL_NOMES = { auto: "Automático", alta: "Alta", media: "Média", leve: "Leve" };
-let qualPref = store.get("pt_qual") || "auto", qualAuto = (typeof matchMedia === "function" && matchMedia("(pointer:coarse)").matches) ? 1 : 2, qualLentoDesde = 0;
-if (!QUAL_NOMES[qualPref]) qualPref = "auto";
-const qualNivel = () => qualPref === "alta" ? 2 : qualPref === "media" ? 1 : qualPref === "leve" ? 0 : qualAuto;
-function qualSet(v) {
-  if (!QUAL_NOMES[v]) return false;
-  qualPref = v; store.set("pt_qual", v); qualAuto = Math.max(qualAuto, 0); qualLentoDesde = 0; qualBotao();
-  setStatus("Visual: " + QUAL_NOMES[v] + (v === "auto" ? " (ajusta sozinho ao seu aparelho)" : ""), 2500);
-  return true;
-}
-function qualBotao() { const b = $("btnQual"); if (b) { b.textContent = "🎨"; b.title = "Visual: " + QUAL_NOMES[qualPref] + " (clique para trocar: Automático, Alta, Média, Leve; no chat: !visual alta)"; b.setAttribute("aria-label", b.title); } }   // só o ícone, para não empurrar os outros botões da barra
-function qualCommand(raw) {                                          // !visual alta|media|leve|auto
-  const m = /^!(?:visual|qualidade)(?:\s+(\S+))?\s*$/i.exec(String(raw || "")); if (!m) return false;
-  const v = jNorm(m[1] || "").replace("é", "e"); if (!v || !qualSet(v)) setStatus("Use: !visual auto, alta, media ou leve.", 3500);
-  return true;
-}
-function qualVigia(lento) {                                          // chamado a cada quadro pelo loop: em "auto", 4 s seguidos no modo lento = desce um nível
-  if (qualPref !== "auto") return;
-  if (!lento) { qualLentoDesde = 0; return; }
-  const t = performance.now(); if (!qualLentoDesde) qualLentoDesde = t;
-  if (t - qualLentoDesde > 4000 && qualAuto > 0) { qualAuto--; qualLentoDesde = 0; if (!window.PARTY_TESTE) setStatus("Visual ajustado para " + (qualAuto ? "Média" : "Leve") + " para manter o jogo fluido (botão 🎨 muda).", 4000); }
-}
-
+/* Atmosfera: luz, brilho, vinheta, cor e partículas desenhados por cima da cena já ampliada (resolução da tela): brilho nas luzes (com a tremida do fogo),
+   feixes de luz, vinheta roxa nas bordas, tom frio em cima/quente embaixo e poeira flutuando. Modo único (o antigo "Alta"); em aparelho lento o regulador de
+   quadros do loop (08_loop.js) trava em 30 por segundo. */
 /* o que brilha: tipo do objeto -> altura (z) do ponto de luz, raio (em px de mundo), cor e força */
 const LUZES = {
   luz:     { z: 80, r: 150, c: "255,206,120", a: .55 },
@@ -84,7 +61,7 @@ function atmosPoeira(n, now, w, h, SC) {
   mctx.restore();
 }
 function atmosDesenha(now, kx, ky, K, SC) {
-  const nv = qualNivel(); if (nv <= 0 || document.body.classList.contains("meet")) return;
+  if (document.body.classList.contains("meet")) return;
   const w = cv.width, h = cv.height;
   mctx.setTransform(1, 0, 0, 1, 0, 0); mctx.imageSmoothingEnabled = true;
   /* brilho das luzes: somado numa imagem pequena (1/4 do tamanho) e ampliado de uma vez com 'screen' (clareia sem estourar); barato mesmo com muitas luzes */
@@ -95,17 +72,14 @@ function atmosDesenha(now, kx, ky, K, SC) {
   for (const e of luzes) {
     const L = e.L, sx = (e.p[0] - kx) * K * gs, sy = (e.p[1] - ky) * K * gs, r = L.r * K * gs;
     if (sx < -r || sx > gw + r || e.p[1] < ky - L.r || e.p[1] > ky2 + L.r) continue;
-    if (nv === 1 && usou >= 6) break;
     const pisca = L.fogo ? .82 + .18 * Math.sin(now / 90 + e.ph) * Math.sin(now / 230) : .94 + .06 * Math.sin(now / 900 + e.ph);
     atmGlowG.globalAlpha = Math.max(0, Math.min(1, L.a * pisca)); atmGlowG.drawImage(atmosBrilho(L.c), sx - r, sy - r, r * 2, r * 2); usou++;
   }
   atmGlowG.globalAlpha = 1;
   if (usou) { mctx.globalCompositeOperation = "screen"; mctx.drawImage(atmGlow, 0, 0, w, h); mctx.globalCompositeOperation = "source-over"; }
   /* feixes de luz entrando pela esquerda (só no nível alto): desenhados uma vez numa imagem; a cada quadro é só uma cópia com a força variando */
-  if (nv >= 2) { mctx.globalAlpha = .75 + .25 * Math.sin(now / 3000); mctx.drawImage(atmosFeixes(w, h), 0, 0); mctx.globalAlpha = 1; }
+  { mctx.globalAlpha = .75 + .25 * Math.sin(now / 3000); mctx.drawImage(atmosFeixes(w, h), 0, 0); mctx.globalAlpha = 1; }
   mctx.drawImage(atmosVinheta(w, h), 0, 0);
-  atmosPoeira(nv >= 2 ? 26 : 10, now, w, h, SC);
+  atmosPoeira(26, now, w, h, SC);
   mctx.imageSmoothingEnabled = false;
 }
-$("btnQual").onclick = () => { const o = ["auto", "alta", "media", "leve"]; qualSet(o[(o.indexOf(qualPref) + 1) % o.length]); };
-qualBotao();
