@@ -5,6 +5,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Alterado
+- **YouTube agora é no cinema**: o PC do cinema ganhou **busca de vídeos** (campo "Pesquise no YouTube ou cole o link", lista com título e duração; escolher começa a exibição para a sala). A busca usa o cache de 7 dias (neste aparelho e compartilhado no Firebase) para poupar a cota. O YouTube do cinema, que estava desligado, foi religado.
+- **Jukebox só com players de música**: saiu o player do YouTube e a busca no YouTube. Entrou o **Jamendo** como segundo player (música independente, tocada inteira), que só liga com uma chave grátis (`JUKE_JM_KEY` em `src/js/07d_jukebox.js`). Com chave, `!play`/`!buscar` consultam os dois players e intercalam os resultados; `!play` só consulta o segundo se o primeiro não achou certo. Link do YouTube na jukebox agora avisa que é no cinema. **Republicar as regras** (`database.rules.json`): `src` aceita `jm`.
 - **Iluminação única**: o visual completo (brilho nas luzes, feixes, vinheta, poeira) agora é o único modo. Saiu o botão 🎨, o comando `!visual` e o ajuste automático de qualidade; em aparelho lento o regulador de quadros continua travando em 30 por segundo.
 
 ### Adicionado

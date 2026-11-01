@@ -5,14 +5,14 @@
        queue = fila de pedidos { src, ref, title, by, dur?, ts }
        req   = pedido de controle { t: skip|pause|resume|stop|clear|end, seq, by, ts }; só o "líder" da sala (mesmo critério dos gatos) executa
    - Todo mundo toca a mesma música no mesmo ponto (a posição vem da hora do servidor), cada um com o seu volume.
-   - Fontes: "yt" = YouTube (player oficial incorporado, só carrega quando uma música do YouTube toca) · "au" = catálogo aberto (Audius), em <audio>.
+   - Fontes (players de música, todos em <audio>): "au" = Audius · "jm" = Jamendo (com chave). Itens "yt" de versões antigas são ignorados. YouTube agora é no PC do cinema.
    - Quem está num escritório, na sala de reuniões ou no cinema não ouve (esses ambientes têm o som próprio).
    ========================================================= */
 const JUKE_SILENT = ["esc1", "esc2", "reu", "cin"];
 const AU_API = "https://api.audius.co/v1", AU_APP = "Party", JUKE_MAX_FILA = 20;
 let jNow = null, jQueue = {}, jReq = null, jDone = "", jBusy = false, jLastSeq = null, jLastPause = null, jCmdAt = 0, jInit = false;
 let jVol = Math.max(0, Math.min(100, parseInt(store.get("pt_jvol") || "70", 10) || 0)), jMute = store.get("pt_jmute") === "1";
-let jAu = null, jAuSeq = null, jAuSeek = 0, jYt = null, jYtReady = false, jYtSeq = null, jYtLoading = false, jYtStuck = 0, jYtMuted = false, jDurSent = null, jErrSeq = null;
+let jAu = null, jAuSeq = null, jAuSeek = 0, jDurSent = null, jErrSeq = null;
 
 const jSrv = () => Date.now() + serverOffset;
 const jPos = () => !jNow ? 0 : jNow.pause != null ? jNow.pause : Math.max(0, jSrv() - jNow.t0);                  // posição em ms
@@ -40,7 +40,7 @@ function jukeNotes(o, now) {
   ctx.globalAlpha = 1;
 }
 
-/* ---------- resolver o que a pessoa pediu: link do YouTube, link do catálogo aberto ou nome da música ---------- */
+/* ---------- resolver o que a pessoa pediu: link do catálogo (Audius/Jamendo) ou nome da música ---------- */
 async function jFetch(url, ms) {
   const ac = new AbortController(), to = setTimeout(() => ac.abort(), ms || 6000);
   try { const r = await fetch(url, { signal: ac.signal }); if (!r.ok) throw new Error("http " + r.status); return await r.json(); } finally { clearTimeout(to); }
@@ -53,8 +53,6 @@ function jTrack(t) {                                               // faixa do c
   return /^[A-Za-z0-9_-]{3,16}$/.test(it.ref) ? it : null;
 }
 /* ---------- busca por nome: junta as fontes, pontua e devolve as melhores ---------- */
-const JUKE_YT_KEY = "AIzaSyDq99tl7hY1jkWb9CB-tWtVxMNGQDbfdFk";                                           // opcional: chave da YouTube Data API v3 (veja docs/JUKEBOX.md). Vazia = só o catálogo aberto.
-const jYtKey = () => typeof window.PARTY_YT_KEY === "string" ? window.PARTY_YT_KEY : JUKE_YT_KEY;   // window.PARTY_YT_KEY (mesmo vazia) tem prioridade; os testes usam "" para não gastar a cota
 const JUKE_RUINS = /remix|cover|slowed|sped ?up|nightcore|karaoke|8d|reverb|bass ?boost|mashup|tribute|instrumental|playback/;
 const jPalavras = s => jNorm(s).replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
 const jDecode = t => String(t || "").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
@@ -93,81 +91,59 @@ function jRankAu(j, q, minCov) {
   });
   return out;
 }
-/* YouTube: a busca oficial (precisa de chave) + a duração dos vídeos; resultados ficam 7 dias neste aparelho para poupar a cota diária */
-const jIsoDur = s => { const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(s || ""); return m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 0; };
-function jYtCache(q, put) {
-  try {
-    const o = JSON.parse(store.get("pt_ytc") || "{}"), k = jNorm(q).trim();
-    if (!put) { const e = o[k]; return e && Date.now() - e.t < 6048e5 ? e.l : null; }
-    o[k] = { t: Date.now(), l: put }; const ks = Object.keys(o); if (ks.length > 40) ks.sort((x, y) => o[x].t - o[y].t).slice(0, ks.length - 40).forEach(d => delete o[d]);
-    store.set("pt_ytc", JSON.stringify(o));
-  } catch (e) { /* sem cache */ }
-  return null;
+/* Jamendo (música independente, grátis, tocada inteira): precisa de uma chave grátis (client_id) de devportal.jamendo.com em JUKE_JM_KEY ou window.PARTY_JM_KEY */
+const JM_API = "https://api.jamendo.com/v3.0", JUKE_JM_KEY = "";
+const jJmKey = () => typeof window.PARTY_JM_KEY === "string" ? window.PARTY_JM_KEY : JUKE_JM_KEY;
+function jJm(t) {
+  if (!t || !t.id || !/^\d{1,10}$/.test(String(t.id))) return null;
+  const it = { src: "jm", ref: String(t.id), title: jClean((t.name || "Sem título") + (t.artist_name ? " — " + t.artist_name : "")) };
+  const d = +t.duration; if (d > 0 && d <= 86400) it.dur = Math.round(d);
+  return it;
 }
-/* cache compartilhado (Firebase ytcache/<hash>): quem busca primeiro gasta a cota, os outros reaproveitam por 7 dias */
-function jYtHash(k) { let a = 5381, b = 52711; for (let i = 0; i < k.length; i++) { const c = k.charCodeAt(i); a = (a * 33 ^ c) >>> 0; b = (b * 31 + c) >>> 0; } return a.toString(36) + b.toString(36); }
-const jShareRef = q => { try { return db.ref("ytcache/" + jYtHash(jNorm(q).trim())); } catch (e) { return null; } };
-async function jShareGet(q) {
-  const r = jShareRef(q); if (!r) return null;
-  try {
-    const v = (await Promise.race([r.once("value"), new Promise((_, no) => setTimeout(no, 2500))])).val();
-    if (v && v.q === jNorm(q).trim() && Date.now() + serverOffset - v.t < 6048e5 && v.l) { const l = Object.values(v.l).filter(i => i && i.ref); return l.length ? l.map(i => Object.assign({ src: "yt" }, i)) : null; }
-  } catch (e) { /* sem cache compartilhado: busca no YouTube */ }
-  return null;
+async function jSearchJm(q) {
+  const qq = jLimpa(q) || q, j = await jFetch(JM_API + "/tracks/?client_id=" + encodeURIComponent(jJmKey()) + "&format=json&limit=30&audioformat=mp32&search=" + encodeURIComponent(qq.slice(0, 80)));
+  const rows = ((j && j.results) || []).map(t => ({ t, c: { title: t.name, user: { name: t.artist_name }, duration: +t.duration } }));
+  const rank = minCov => rows.map(r => ({ r, sc: jScore(r.c, qq, minCov) })).filter(x => x.sc != null).sort((x, y) => y.sc - x.sc).map(x => jJm(x.r.t)).filter(Boolean);
+  const ex = rank(null); if (ex.length) return ex;
+  const ap = rank(.3); ap.forEach(it => { it.approx = true; }); return ap;
 }
-function jSharePut(q, out) {
-  const r = jShareRef(q); if (!r) return;
-  try { r.set({ q: jNorm(q).trim().slice(0, 80), t: Date.now() + serverOffset, l: out.slice(0, 10).map(i => { const o = { ref: i.ref, title: String(i.title).slice(0, 90) }; if (i.dur) o.dur = i.dur; return o; }) }).catch(() => {}); } catch (e) { /* sem cache compartilhado */ }
+const jJmUrls = {};
+async function jJmUrl(id) {                                         // endereço do áudio (muda com o tempo, então é pedido na hora de tocar)
+  if (jJmUrls[id]) return jJmUrls[id];
+  const j = await jFetch(JM_API + "/tracks/?client_id=" + encodeURIComponent(jJmKey()) + "&format=json&audioformat=mp32&id=" + encodeURIComponent(id), 6000);
+  const u = j && j.results && j.results[0] && j.results[0].audio; if (!u || !/^https:\/\//.test(u)) throw new Error("sem áudio");
+  return (jJmUrls[id] = u);
 }
-async function jSearchYt(q, n) {
-  const hit = jYtCache(q); if (hit && hit.length) return hit.slice(0, n);
-  const shared = await jShareGet(q); if (shared) { jYtCache(q, shared); return shared.slice(0, n); }
-  const key = encodeURIComponent(jYtKey()), base = "https://www.googleapis.com/youtube/v3/", enc = encodeURIComponent(q.slice(0, 80));
-  const valid = j => ((j && j.items) || []).filter(v => v && v.id && /^[A-Za-z0-9_-]{11}$/.test(v.id.videoId || "") && v.snippet);
-  let items = valid(await jFetch(base + "search?part=snippet&type=video&videoEmbeddable=true&videoCategoryId=10&maxResults=10&q=" + enc + "&key=" + key, 6000));   // 1º só "Música"
-  if (!items.length) items = valid(await jFetch(base + "search?part=snippet&type=video&videoEmbeddable=true&maxResults=10&q=" + enc + "&key=" + key, 6000));
-  const durs = {};
-  try { const d = await jFetch(base + "videos?part=contentDetails&id=" + items.map(v => v.id.videoId).join(",") + "&key=" + key, 5000); ((d && d.items) || []).forEach(v => { durs[v.id] = jIsoDur(v.contentDetails && v.contentDetails.duration); }); } catch (e) { /* sem duração: segue */ }
-  const out = items.map((v, i) => {
-    const title = jDecode(v.snippet.title) + (v.snippet.channelTitle ? " — " + jDecode(v.snippet.channelTitle) : ""), dur = durs[v.id.videoId] || 0;
-    const it = { src: "yt", ref: v.id.videoId, title: jClean(title) }; if (dur > 0 && dur <= 86400) it.dur = dur;
-    return { it, sc: -i * .4 + jPenaliza(v.snippet.title, dur, q) };
-  }).sort((x, y) => y.sc - x.sc).map(r => r.it);
-  if (out.length) { jYtCache(q, out); jSharePut(q, out); }
-  return out;
-}
-let jYtWarnAt = 0;
-async function jSearch(q, n, poupa) {                              // lista de itens da fila, do melhor para o pior: catálogo aberto (sem anúncio) primeiro; YouTube completa (poupa: só se o catálogo aberto não achou nada certo)
-  n = n || 5; let falhas = 0, fontes = 1, yt = [], au = [];
-  const buscaYt = async () => { try { yt = await jSearchYt(q, n); } catch (e) {
-    falhas++; if (Date.now() - jYtWarnAt > 600000) { jYtWarnAt = Date.now(); jSys("A busca do YouTube não respondeu (chave inválida ou cota do dia esgotada). Usando só o catálogo aberto."); }
-  } };
-  if (jYtKey() && !poupa) { fontes++; await Promise.all([jSearchAu(q).then(r => { au = r; }, () => { falhas++; }), buscaYt()]); }       // !buscar: as duas fontes ao mesmo tempo
+/* busca por nome em todos os players de música: Audius e, com chave, Jamendo. poupa (!play): só consulta o segundo player se o primeiro não achou nada certo */
+async function jSearch(q, n, poupa) {
+  n = n || 5; let falhas = 0, fontes = 1, au = [], jm = [];
+  const buscaJm = async () => { fontes++; try { jm = await jSearchJm(q); } catch (e) { falhas++; } };
+  if (jJmKey() && !poupa) await Promise.all([jSearchAu(q).then(r => { au = r; }, () => { falhas++; }), buscaJm()]);
   else {
     try { au = await jSearchAu(q); } catch (e) { falhas++; }
-    if (jYtKey() && !au.some(i => !i.approx)) { fontes++; await buscaYt(); }                                                         // !play: só vai ao YouTube se o catálogo aberto não achou certo (poupa a cota)
+    if (jJmKey() && !au.some(i => !i.approx)) await buscaJm();
   }
-  if (falhas >= fontes) throw new Error("Não consegui buscar agora (rede ou bloqueio). Cole um link do YouTube.");
-  const exatos = au.filter(i => !i.approx), aprox = au.filter(i => i.approx), out = [];
-  const poe = it => { if (out.length < n && !out.includes(it)) out.push(it); };
-  exatos.slice(0, yt.length ? Math.ceil(n * .6) : n).forEach(poe); yt.forEach(poe); exatos.forEach(poe); aprox.forEach(poe);
+  if (falhas >= fontes) throw new Error("Não consegui buscar agora (rede ou bloqueio). Tente de novo em instantes.");
+  const exatos = [], out = [], aprox = au.concat(jm).filter(i => i.approx);
+  for (let i = 0; i < Math.max(au.length, jm.length); i++) [au[i], jm[i]].forEach(it => { if (it && !it.approx) exatos.push(it); });   // intercala os players
+  exatos.concat(aprox).forEach(it => { if (out.length < n) out.push(it); });
   return out;
 }
 async function jResolve(q) {
   q = String(q || "").trim(); if (!q) throw new Error("Diga o nome da música ou cole um link. Ex.: !play lofi hip hop");
-  const yid = parseYouTube(q);
-  if (yid) {
-    let title = "YouTube · " + yid;
-    try { const j = await jFetch("https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + yid), 4000); if (j && j.title) title = jClean(j.title); } catch (e) { /* sem título: segue com o id */ }
-    return { src: "yt", ref: yid, title };
-  }
+  if (parseYouTube(q)) throw new Error("Vídeos do YouTube agora tocam no PC do cinema. Aqui é música: diga o nome ou cole um link do Audius/Jamendo.");
   if (/^https?:\/\/(www\.)?audius\.co\//i.test(q)) {
     let j; try { j = await jFetch(AU_API + "/resolve?url=" + encodeURIComponent(q) + "&app_name=" + AU_APP); } catch (e) { throw new Error("Não consegui abrir esse link agora (rede ou bloqueio)."); }
     const it = jTrack(j && j.data); if (it) return it; throw new Error("Essa faixa do catálogo não está disponível para tocar.");
   }
+  const jmId = /^https?:\/\/(www\.)?jamendo\.com\/track\/(\d+)/i.exec(q);
+  if (jmId && jJmKey()) {
+    let j; try { j = await jFetch(JM_API + "/tracks/?client_id=" + encodeURIComponent(jJmKey()) + "&format=json&id=" + jmId[2]); } catch (e) { throw new Error("Não consegui abrir esse link agora (rede ou bloqueio)."); }
+    const it = jJm(j && j.results && j.results[0]); if (it) return it; throw new Error("Essa faixa não está disponível para tocar.");
+  }
   const lista = await jSearch(q, 5, true);
   if (lista.length) return lista[0];
-  throw new Error("Não achei «" + q.slice(0, 40) + "». Confira o nome (artista + música ajuda), veja opções com !buscar ou cole um link do YouTube.");
+  throw new Error("Não achei «" + q.slice(0, 40) + "». Confira o nome (artista + música ajuda) ou veja opções com !buscar.");
 }
 async function jEnqueue(it) {
   if (Object.keys(jQueue).length >= JUKE_MAX_FILA) throw new Error("A fila está cheia (" + JUKE_MAX_FILA + "). Espere tocar algumas.");
@@ -193,7 +169,7 @@ function jukeCommand(raw) {
   const cmd = JUKE_CMDS[jNorm(m[1])]; if (!cmd) return false;                                    // "!algo" desconhecido é só conversa
   const arg = m[2].trim(), now = Date.now();
   if (now - jCmdAt < 800) return true; jCmdAt = now;
-  const need = () => { if (jNow) return true; jSys("Não tem nada tocando. Use !play nome da música ou um link do YouTube."); return false; };
+  const need = () => { if (jNow) return true; jSys("Não tem nada tocando. Use !play nome da música ou um link do Audius."); return false; };
   const pickN = a => { const n = /^\d{1,2}$/.test(a) ? parseInt(a, 10) : 0; return n && jPick && now - jPick.ts < 120000 && n <= jPick.list.length ? n : 0; };
   if (cmd === "escolher" || (cmd === "play" && pickN(arg))) {
     const n = pickN(arg);
@@ -203,15 +179,15 @@ function jukeCommand(raw) {
     if (!arg) { jSys("Use: !buscar nome da música (mostra opções; escolha com !play 1, !play 2…)."); return true; }
     jSys("Procurando…");
     jSearch(arg, 5).then(list => {
-      if (!list.length) { jSys("Não achei «" + arg.slice(0, 40) + "». Confira o nome (artista + música ajuda) ou cole um link do YouTube."); return; }
+      if (!list.length) { jSys("Não achei «" + arg.slice(0, 40) + "». Confira o nome (artista + música ajuda) ou veja opções com !buscar."); return; }
       jPick = { list, ts: Date.now() };
-      list.forEach((it, i) => jSys((i + 1) + ". " + it.title + (it.dur ? " (" + jFmt(it.dur * 1000) + ")" : "") + (it.src === "yt" ? " · YouTube (pode ter anúncio)" : "") + (it.approx ? " · aproximado" : "")));
+      list.forEach((it, i) => jSys((i + 1) + ". " + it.title + (it.dur ? " (" + jFmt(it.dur * 1000) + ")" : "") + (it.approx ? " · aproximado" : "")));
       jSys("Escolha com !play 1" + (list.length > 1 ? " … !play " + list.length : "") + " (vale por 2 minutos).");
     }).catch(e => jSys(e.message || "Não consegui buscar."));
   } else if (cmd === "play") {
-    if (!arg) { jSys("Use: !play nome da música ou link do YouTube."); return true; }
+    if (!arg) { jSys("Use: !play nome da música ou link do Audius/Jamendo."); return true; }
     jSys("Procurando…");
-    jAdd(arg).then(it => { jSys("Adicionada: " + it.title + (jNow ? " (posição " + Object.keys(jQueue).length + " na fila)" : "") + (it.src === "yt" && !parseYouTube(arg) ? " · do YouTube (pode ter anúncio)" : "") + (parseYouTube(arg) || /^https?:/i.test(arg) ? "" : (it.approx ? " · resultado aproximado" : "") + " · não era essa? use !buscar " + arg.slice(0, 30))); }).catch(e => jSys(e.message || "Não consegui adicionar."));
+    jAdd(arg).then(it => { jSys("Adicionada: " + it.title + (jNow ? " (posição " + Object.keys(jQueue).length + " na fila)" : "") + (parseYouTube(arg) || /^https?:/i.test(arg) ? "" : (it.approx ? " · resultado aproximado" : "") + " · não era essa? use !buscar " + arg.slice(0, 30))); }).catch(e => jSys(e.message || "Não consegui adicionar."));
   } else if (cmd === "fila") {
     const ks = Object.keys(jQueue).sort();
     if (jNow) jSys("Agora: " + jNow.title);
@@ -240,21 +216,19 @@ function jNeedClick() {
   setStatus("🎵 A jukebox está tocando. Toque ou clique em qualquer lugar (ou aperte uma tecla) para liberar o som.", 6000);
 }
 /* som automático: o navegador só libera áudio com som depois de uma interação. Qualquer toque ou tecla na página (digitar no chat conta)
-   libera na hora: desmuta o YouTube, retoma o áudio bloqueado e "abençoa" o <audio> (iPhone) para as próximas faixas da fila tocarem sozinhas. */
+   libera na hora: retoma o áudio bloqueado e "abençoa" o <audio> (iPhone) para as próximas faixas da fila tocarem sozinhas. */
 const JUKE_SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
-let jBlessed = false, jGest = false, jYtUnmSeq = null;   // jGest: a pessoa já tocou/apertou algo na página (o navegador libera o som); jYtUnmSeq: faixa em que já religamos o som sozinhos
+let jBlessed = false;   // jGest: a pessoa já tocou/apertou algo na página (o navegador libera o som); jYtUnmSeq: faixa em que já religamos o som sozinhos
 function jAuEl() {
   if (!jAu) { jAu = new Audio(); jAu.preload = "auto"; jAu.setAttribute("playsinline", ""); jAu.onended = () => { if (jAu.src !== JUKE_SILENCE) jEnded(); }; jAu.onerror = () => { if (jAu.src !== JUKE_SILENCE) jPlayErr(); }; }   // o silêncio de "abençoar" não conta como faixa
   return jAu;
 }
 function jUnlock() {
-  jGest = true;
   if (!jInit) return;
   if (!jBlessed) {
     jBlessed = true; const a = jAuEl();
     if (!a.src) { a.src = JUKE_SILENCE; const p = a.play(); if (p && p.then) p.then(() => { if (a.src === JUKE_SILENCE) { a.pause(); a.removeAttribute("src"); jAuSeq = null; } }).catch(() => { jBlessed = false; }); }
   }
-  if (jYtMuted && jYt && jYtReady) { try { jYtMuted = false; jYt.unMute(); jYt.setVolume(jVol); jYt.playVideo(); $("jukeytKick").hidden = true; } catch (e) { /* ok */ } }
   if (jNeedClick.on) jNeedClick.on = false;
   if (jNow && jNow.pause == null) jSync();
 }
@@ -265,9 +239,17 @@ function jPlayErr() {
   jSys("Não deu para tocar «" + cleanText(jNow.title, 60) + "». Pulando…"); jReqSend("skip").catch(() => {});
 }
 function jAuSync(want, pos) {
-  if (!want || jNow.src !== "au") { if (jAu && !jAu.paused) try { jAu.pause(); } catch (e) { /* ok */ } return; }
+  if (!want || (jNow.src !== "au" && jNow.src !== "jm")) { if (jAu && !jAu.paused) try { jAu.pause(); } catch (e) { /* ok */ } return; }
   jAuEl();
-  if (jAuSeq !== jNow.seq) { jAuSeq = jNow.seq; jAuSeek = 0; jAu.src = AU_API + "/tracks/" + encodeURIComponent(jNow.ref) + "/stream?app_name=" + AU_APP; }
+  if (jAuSeq !== jNow.seq) {
+    jAuSeq = jNow.seq; jAuSeek = 0;
+    if (jNow.src === "au") jAu.src = AU_API + "/tracks/" + encodeURIComponent(jNow.ref) + "/stream?app_name=" + AU_APP;
+    else {                                                          // Jamendo: o endereço do áudio vem de uma consulta
+      const sq = jNow.seq; try { jAu.pause(); } catch (e) { /* ok */ } jAu.removeAttribute("src");
+      jJmUrl(jNow.ref).then(u => { if (jNow && jNow.seq === sq && jAuSeq === sq) { jAu.src = u; jSync(); } }, () => { if (jNow && jNow.seq === sq) jPlayErr(); });
+    }
+  }
+  if (!jAu.getAttribute("src")) return;
   jAu.volume = jVol / 100;
   const t = pos / 1000;
   if (jAu.readyState >= 1 && Math.abs(jAu.currentTime - t) > 2.5 && Date.now() - jAuSeek > 4000) { jAuSeek = Date.now(); try { jAu.currentTime = t; } catch (e) { /* ok */ } }
@@ -278,36 +260,12 @@ function jSendDur(d) {
   if (!jNow || jDurSent === jNow.seq || !(d > 0)) return; jDurSent = jNow.seq;
   roomRef.child("jukebox/now/dur").set(Math.min(86400, Math.round(d))).catch(() => {});
 }
-function jYtSync(want, pos) {
-  const box = $("jukeyt"), on = want && jNow && jNow.src === "yt";
-  box.hidden = !on; $("jukepanel").classList.toggle("ytkeep", !!on);   // o player fica dentro do painel da jukebox; painel fechado = fora da tela, mas ainda ativo
-  if (!on) { if (jYt && jYtReady) try { if (jYt.getPlayerState() === 1) jYt.pauseVideo(); } catch (e) { /* ok */ } return; }
-  if (!jYt) {
-    if (jYtLoading) return; jYtLoading = true; setTimeout(() => { if (!jYt) jYtLoading = false; }, 9000);
-    ytLoadAPI(() => {
-      if (jYt) return;
-      jYt = new window.YT.Player("jukeyt-in", { width: 200, height: 200, videoId: jNow ? jNow.ref : "", playerVars: { autoplay: 1, controls: 0, playsinline: 1, rel: 0, modestbranding: 1, disablekb: 1 },
-        events: { onReady: () => { jYtReady = true; jYtSeq = null; jSync(); }, onStateChange: e => { if (e.data === 0) jEnded(); if (e.data === 1 && jYtMuted && jGest && jYtUnmSeq !== jYtSeq) { jYtUnmSeq = jYtSeq; try { jYtMuted = false; jYt.unMute(); jYt.setVolume(jVol); $("jukeytKick").hidden = true; } catch (x) { /* ok */ } } }, onError: () => jPlayErr() } });
-    });
-    return;
-  }
-  if (!jYtReady) return;
-  try {
-    if (jYtSeq !== jNow.seq) { jYtSeq = jNow.seq; jYtStuck = 0; if (jGest && jYtMuted) { jYtMuted = false; $("jukeytKick").hidden = true; }   // música nova: depois de um toque o som já está liberado, não herda o mudo da anterior
-      jYt.loadVideoById({ videoId: jNow.ref, startSeconds: pos / 1000 }); }
-    if (jYtMuted) jYt.mute(); else { jYt.unMute(); jYt.setVolume(jVol); }
-    const st = jYt.getPlayerState(), cur = jYt.getCurrentTime();
-    if (st === 1 || st === 3) { jYtStuck = 0; if (st === 1 && Math.abs(cur - pos / 1000) > 3) jYt.seekTo(Math.max(0, pos / 1000), true); }
-    else if (st !== 0) { jYtStuck++; jYt.playVideo(); if (jYtStuck === (jGest ? 10 : 3) && !jYtMuted) { jYtMuted = true; jYt.mute(); jYt.playVideo(); $("jukeytKick").hidden = false; } }   // autoplay com som bloqueado: toca sem som e oferece ligar
-    if (!jNow.dur) { const d = jYt.getDuration(); if (d > 0) jSendDur(d); }
-  } catch (e) { /* player ainda carregando */ }
-}
 function jSync() {
   if (!jInit) return;
   const want = !!jNow && jNow.pause == null && !jSilent() && !jMute && jVol > 0;
-  if (!jNow) { jAuSync(false); jYtSync(false); return; }
+  if (!jNow) { jAuSync(false); return; }
   const pos = jPos();
-  jAuSync(want, pos); jYtSync(want, pos);
+  jAuSync(want, pos);
 }
 
 /* ---------- líder: executa os pedidos e passa para a próxima ---------- */
@@ -333,6 +291,7 @@ function jLead() {
     else if (r.t === "clear") ref.child("queue").remove();
     return;
   }
+  if (jNow && jNow.src === "yt") { jAdvance(); return; }                 // item antigo do YouTube: a jukebox não toca mais, pula
   if (jNow && jNow.pause == null) { if (t - jNow.t0 > (jNow.dur || 600) * 1000 + 2500) jAdvance(); }     // acabou (e ninguém avisou): vem a próxima; sem duração conhecida, 10 min
   else if (!jNow && Object.keys(jQueue).length) jAdvance();
 }
@@ -355,7 +314,7 @@ function jRender() {
   if (!jInit || $("jukepanel").hidden) return;
   const n = jNow;
   $("jkTitle").textContent = n ? n.title : "Nada tocando";
-  $("jkBy").textContent = n ? "pedido por " + cleanName(n.by) + (n.src === "yt" ? " · YouTube" : " · catálogo aberto") : "Peça com !play no chat ou pelo campo abaixo.";
+  $("jkBy").textContent = n ? "pedido por " + cleanName(n.by) + (n.src === "jm" ? " · Jamendo" : " · Audius") : "Peça com !play no chat ou pelo campo abaixo.";
   $("jkPlay").textContent = n && n.pause != null ? "▶ Continuar" : "⏸ Pausar"; $("jkPlay").disabled = !n; $("jkSkip").disabled = !n; $("jkStop").disabled = !n && !Object.keys(jQueue).length;
   const ks = Object.keys(jQueue).sort(), ul = $("jkQueue"); ul.innerHTML = "";
   if (!ks.length) { const li = document.createElement("li"); li.className = "muted"; li.textContent = "Fila vazia"; ul.appendChild(li); }
@@ -403,7 +362,6 @@ function initJukebox() {
   $("jkVol").oninput = () => jSetVol(+$("jkVol").value);
   $("jkMute").onclick = () => { jMute = !jMute; store.set("pt_jmute", jMute ? "1" : "0"); jSync(); jRender(); };
   $("jkDance").onclick = () => { if (me.act && me.act.type === "dance") endAct(); else jukeDance(); jRender(); };
-  $("jukeytKick").onclick = () => { jYtMuted = false; $("jukeytKick").hidden = true; try { if (jYt && jYtReady) { jYt.unMute(); jYt.setVolume(jVol); jYt.playVideo(); } } catch (e) { /* ok */ } };
   $("jkForm").onsubmit = e => {
     e.preventDefault(); const q = $("jkIn").value.trim(); if (!q) return; $("jkIn").value = ""; $("jkMsg").textContent = "Procurando…";
     jAdd(q).then(it => { $("jkMsg").textContent = "Adicionada: " + it.title; }).catch(err => { $("jkMsg").textContent = err.message || "Não consegui adicionar."; });

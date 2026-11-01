@@ -295,12 +295,12 @@ const rules = {
         },
 
         /* jukebox: tocando agora (now), fila (queue) e pedidos de controle (req). Todos os membros mexem (agentes de IA, não).
-           src "yt" = YouTube (ref = id de 11 caracteres) · "au" = catálogo aberto (ref = id curto). Texto só é exibido como texto no cliente. */
+           src "au" = Audius (ref = id curto) · "jm" = Jamendo (ref = número) · "yt" = itens antigos do YouTube (não tocam mais). Texto só é exibido como texto no cliente. */
         jukebox: {
           ...readM, ...writeM,
           now: {
             ".validate": "newData.hasChildren(['src', 'ref', 'title', 'seq', 't0'])",
-            src: { ".validate": "newData.isString() && newData.val().matches(/^(yt|au)$/)" },
+            src: { ".validate": "newData.isString() && newData.val().matches(/^(yt|au|jm)$/)" },
             ref: { ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{3,16}$/)" },
             title: { ".validate": str(1, 90) },
             by: { ".validate": str(1, 14) },
@@ -313,7 +313,7 @@ const rules = {
           queue: {
             "$q": {
               ".validate": "newData.hasChildren(['src', 'ref', 'title', 'ts'])",
-              src: { ".validate": "newData.isString() && newData.val().matches(/^(yt|au)$/)" },
+              src: { ".validate": "newData.isString() && newData.val().matches(/^(yt|au|jm)$/)" },
               ref: { ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{3,16}$/)" },
               title: { ".validate": str(1, 90) },
               by: { ".validate": str(1, 14) },

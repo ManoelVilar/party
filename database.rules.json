@@ -379,7 +379,7 @@
           "now": {
             ".validate": "newData.hasChildren(['src', 'ref', 'title', 'seq', 't0'])",
             "src": {
-              ".validate": "newData.isString() && newData.val().matches(/^(yt|au)$/)"
+              ".validate": "newData.isString() && newData.val().matches(/^(yt|au|jm)$/)"
             },
             "ref": {
               ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{3,16}$/)"
@@ -410,7 +410,7 @@
             "$q": {
               ".validate": "newData.hasChildren(['src', 'ref', 'title', 'ts'])",
               "src": {
-                ".validate": "newData.isString() && newData.val().matches(/^(yt|au)$/)"
+                ".validate": "newData.isString() && newData.val().matches(/^(yt|au|jm)$/)"
               },
               "ref": {
                 ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{3,16}$/)"
