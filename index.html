@@ -5155,7 +5155,7 @@ function jRankAu(j, q, minCov) {
   return out;
 }
 /* Jamendo (música independente, grátis, tocada inteira): precisa de uma chave grátis (client_id) de devportal.jamendo.com em JUKE_JM_KEY ou window.PARTY_JM_KEY */
-const JM_API = "https://api.jamendo.com/v3.0", JUKE_JM_KEY = "";
+const JM_API = "https://api.jamendo.com/v3.0", JUKE_JM_KEY = "525f1926";
 const jJmKey = () => typeof window.PARTY_JM_KEY === "string" ? window.PARTY_JM_KEY : JUKE_JM_KEY;
 function jJm(t) {
   if (!t || !t.id || !/^\d{1,10}$/.test(String(t.id))) return null;
