@@ -176,5 +176,33 @@ check("jogador grava a tacada (posições, vez e grupo)", me(B, sPlaying).update
 check("terceiro não grava tacada em partida ativa", me({ uid: "caio" }, sPlaying).update(R + "/games/tv1", { bl: RACK, sh: 1, t: 1 }), false);
 check("kind desconhecido é recusado", me(A).write(R + "/games/tv1", { ...sinuca, kind: "xadrez" }), false);
 
+/* decorar a casa */
+const dcRoom = { meta: { kind: "temp", owner: "ana", created: NOW }, players: { ana: validPlayer, beto: validPlayer, caio: validPlayer } };
+const dcDb = targaryen.database(rules, { rooms: { "party-sol-lua-4821": dcRoom } }, NOW);
+const dcEd = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { ...dcRoom, editors: { beto: true } } } }, NOW);
+const movel = { t: "sofa", x: 12, y: 11, f: "d", by: "ana", at: NOW };
+check("dono coloca móvel", me(A, dcDb).write(R + "/decor/m1", movel), true);
+check("quem não foi liberado não coloca móvel", me(B, dcDb).write(R + "/decor/m1", { ...movel, by: "beto" }), false);
+check("editor liberado pelo dono coloca móvel", me(B, dcEd).write(R + "/decor/m1", { ...movel, by: "beto" }), true);
+check("quem não é editor segue sem poder (mesmo com outro liberado)", me({ uid: "caio" }, dcEd).write(R + "/decor/m1", { ...movel, by: "caio" }), false);
+check("não coloca móvel em nome de outro (by forjado)", me(B, dcEd).write(R + "/decor/m1", movel), false);
+check("tipo fora do catálogo é recusado (ex.: tv)", me(A, dcDb).write(R + "/decor/m1", { ...movel, t: "tv" }), false);
+check("posição fora do mapa é recusada", me(A, dcDb).write(R + "/decor/m1", { ...movel, x: 99 }), false);
+check("direção inválida é recusada", me(A, dcDb).write(R + "/decor/m1", { ...movel, f: "x" }), false);
+check("campo desconhecido no móvel é recusado", me(A, dcDb).write(R + "/decor/m1", { ...movel, extra: 1 }), false);
+check("id do móvel longo demais é recusado", me(A, dcDb).write(R + "/decor/" + "m".repeat(25), movel), false);
+const dcCom = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { ...dcRoom, editors: { beto: true }, decor: { m1: movel } } } }, NOW);
+check("editor guarda (apaga) móvel", me(B, dcCom).write(R + "/decor/m1", null), true);
+check("quem não é editor não apaga móvel", me({ uid: "caio" }, dcCom).write(R + "/decor/m1", null), false);
+check("qualquer um da sala vê os móveis", me({ uid: "caio" }, dcCom).read(R + "/decor"), true);
+check("só o dono libera editor", me(A, dcDb).write(R + "/editors/beto", true), true);
+check("editor não libera outro editor", me(B, dcEd).write(R + "/editors/caio", true), false);
+check("só o dono tira a permissão", me(A, dcEd).write(R + "/editors/beto", null), true);
+check("valor de editor tem de ser true", me(A, dcDb).write(R + "/editors/beto", "sim"), false);
+const dcAgent = targaryen.database(rules, { rooms: { "party-sol-lua-4821": { ...dcRoom, editors: { beto: true }, acl: { beto: { role: "agent" } } } } }, NOW);
+check("agente de IA nunca decora, mesmo liberado", me(B, dcAgent).write(R + "/decor/m1", { ...movel, by: "beto" }), false);
+const catalogo = require("fs").readFileSync(require("path").join(__dirname, "../../src/js/04d_decor.js"), "utf8").match(/^const DECOR = \[([\s\S]*?)\];/m)[1].match(/t: "(\w+)"/g).map(x => x.slice(4, -1));
+check("todo móvel do catálogo é aceito pelas regras", { allowed: catalogo.every(t => me(A, dcDb).write(R + "/decor/m1", { ...movel, t }).allowed) }, true);
+
 console.log(`\n${passed} passaram, ${failed} falharam.`);
 process.exit(failed ? 1 : 0);

@@ -13,6 +13,8 @@
   function fire(p){ls.forEach(l=>{
     if(l.ev==="value"){ if(p.startsWith(l.p)||l.p.startsWith(p)) setTimeout(()=>l.cb(snap(l.p)),0); }
     else if(l.ev==="child_added"){ if(p.startsWith(l.p+"/")){const ck=split(p)[split(l.p).length]; const cp=l.p+"/"+ck; if(!l.seen.has(ck)&&get(cp)!=null){l.seen.add(ck);setTimeout(()=>l.cb(snap(cp)),0);}}}
+    else if(l.ev==="child_changed"){ if(p.startsWith(l.p+"/")){const ck=split(p)[split(l.p).length]; const cp=l.p+"/"+ck; if(get(cp)!=null){ if(l.seen.has(ck))setTimeout(()=>l.cb(snap(cp)),0); else l.seen.add(ck); }}}
+    else if(l.ev==="child_removed"){ if(p.startsWith(l.p+"/")&&split(p).length>split(l.p).length){const ck0=split(p)[split(l.p).length]; if(get(l.p+"/"+ck0)!=null)l.seen.add(ck0);} if(p.startsWith(l.p+"/")||p===l.p){const ks=p===l.p?[...l.seen]:[split(p)[split(l.p).length]]; ks.forEach(ck=>{const cp=l.p+"/"+ck; if(l.seen.has(ck)&&get(cp)==null){l.seen.delete(ck);setTimeout(()=>l.cb(snap(cp)),0);}});}}
   });}
   function ref(path){path=path||"";return{
     child:c=>ref(path+"/"+c), key:split(path).pop(),
@@ -23,6 +25,7 @@
     on:(ev,cb)=>{const l={p:path,ev,cb,seen:new Set()};ls.push(l);
       if(ev==="value"){ if(path===".info/serverTimeOffset")setTimeout(()=>cb({val:()=>0}),0); else if(path===".info/connected"){conn.push(cb);setTimeout(()=>cb({val:()=>true}),0);} else setTimeout(()=>cb(snap(path)),0);}
       else if(ev==="child_added"){const v=get(path);if(v)for(const k in v){l.seen.add(k);setTimeout(()=>cb(snap(path+"/"+k)),0);}}
+      else if(ev==="child_changed"||ev==="child_removed"){const v=get(path);if(v)for(const k in v)l.seen.add(k);}
       return cb;},
     off:()=>{}, limitToLast:()=>ref(path), once:()=>Promise.resolve(snap(path)),
     onDisconnect:()=>({remove:()=>Promise.resolve(),set:()=>Promise.resolve(),cancel:()=>Promise.resolve()}),

@@ -137,6 +137,9 @@
   #mixpanel[hidden] { display:none; }
   #jukepanel { position:fixed; right:8px; top:56px; z-index:72; width:min(400px,calc(100vw - 16px)); max-height:calc(100vh - 70px); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; }
   #jukepanel[hidden] { display:none; }
+  #decorpanel { position:fixed; left:8px; top:56px; z-index:72; width:min(300px,calc(100vw - 16px)); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; padding:10px; }
+  #decorpanel[hidden] { display:none; }
+  .dccat { display:grid; grid-template-columns:1fr 1fr; gap:4px; } .dccat button.on { outline:2px solid var(--accent, #f6c445); }
   .jknow { display:grid; gap:4px; background:var(--panel2); border:3px solid var(--line); padding:8px; } .jknow b { color:var(--accent); overflow-wrap:anywhere; }
   .jkbar { height:8px; background:var(--lo); border:2px solid var(--line); } .jkbar i { display:block; height:100%; width:0; background:var(--accent); }
   .jkctl { display:flex; gap:6px; flex-wrap:wrap; align-items:center; } .jkvol { display:flex; gap:6px; align-items:center; margin-left:auto; } .jkvol input { width:110px; }
@@ -476,6 +479,7 @@
     <button id="btnCam" class="off">📹 Câmera</button>
     <button id="btnMix" title="Volume da voz de cada pessoa e mutar" aria-pressed="false">🎚 Vozes</button>
     <button id="btnMeet" title="Modo reunião: palco grande com a apresentação e as câmeras na lateral" hidden>🖥 Modo reunião</button>
+    <button id="btnDecor" title="Decorar a casa: colocar, mover e guardar móveis" aria-pressed="false" hidden>🛏 Decorar</button>
     <button id="btnJuke" title="Jukebox: música para a sala toda (comandos !play, !pular...)" aria-pressed="false">🎵 Jukebox</button>
     <button id="btnWard">Guarda-roupa</button>
     <button id="btnCatsT">Gatos</button>
@@ -535,6 +539,13 @@
     <div class="mxhead"><b>🎚 Volume das vozes</b><button id="mixClose" type="button" aria-label="Fechar">✕</button></div>
     <div class="muted mxnote">Só muda o que <b>você</b> ouve; ninguém fica sabendo. Fica salvo neste aparelho.</div>
     <div id="mixList"></div>
+  </div>
+  <div id="decorpanel" class="panel" hidden role="dialog" aria-label="Decorar a casa">
+    <div class="mxhead"><b>🛏 Decorar a casa</b><button id="dcClose" type="button" aria-label="Fechar">✕</button></div>
+    <div id="dcCat" class="dccat"></div>
+    <div class="jkctl"><button id="dcRot" type="button" title="Girar (R)">↻ Girar</button><button id="dcDrop" type="button" class="no">Guardar</button></div>
+    <div id="dcMsg" class="muted" role="status"></div>
+    <div class="muted">Toque no chão para colocar. Toque num móvel colocado para pegar. R gira, Esc sai.</div>
   </div>
   <div id="jukepanel" class="panel" hidden role="dialog" aria-label="Jukebox">
     <div class="mxhead"><b>🎵 Jukebox</b><button id="jkClose" type="button" aria-label="Fechar">✕</button></div>

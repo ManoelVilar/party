@@ -13,6 +13,7 @@ function sprEstado(o) {
   const t = o.t;
   if (t === "gamer") return deskLit(o.x, o.y) ? "1" : "0";
   if (t === "estante") return NATAL && o.y === 9 && (o.x === 14 || o.x === 15) ? null : "";         // lareira de Natal é animada
+  if (t === "sofa") return (adj(o.x - 1, o.y, "sofa") ? "1" : "0") + (adj(o.x + 1, o.y, "sofa") ? "1" : "0") + o.f;   // o desenho depende dos sofás vizinhos e do lado
   if (t === "planta") return NATAL ? "n" : "";                                                       // árvore de Natal: parte fixa no cache, luzes todo quadro
   return SPR_TIPOS.has(t) ? "" : null;
 }
