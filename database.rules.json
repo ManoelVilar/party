@@ -635,7 +635,7 @@
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 44"
             },
             "y": {
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 19"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 33"
             },
             "f": {
               ".validate": "newData.isString() && newData.val().matches(/^[dulr]$/)"

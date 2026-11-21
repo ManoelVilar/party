@@ -281,7 +281,8 @@ cv.addEventListener("pointermove", e => { const t = tileAt(e); hover = isWall(t[
 cv.addEventListener("pointerleave", () => { hover = null; });
 cv.addEventListener("pointerdown", e => {
   if (!meRef || ptrs.size > 1) return;
-  if (decorClick(e)) return;                                           // modo decorar: o toque coloca/pega móvel em vez de andar
+  if (decorClick(e)) return;
+  if (farmWorldClick(e)) return;                                           // modo decorar: o toque coloca/pega móvel em vez de andar
   if (me.act && me.act.type === "sleep") return wake();
   if (me.act && me.act.type === "shower") return;
   const t = tileAt(e), x = t[0], y = t[1];

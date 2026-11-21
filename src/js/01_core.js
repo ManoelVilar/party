@@ -26,7 +26,7 @@ let iceTurnOk = TURN_FIXO.length > 0, iceReady = null;                          
 /* =========================================================
    NÚCLEO: constantes, utilitários, pipeline pixel art
    ========================================================= */
-const COLS = 45, ROWS = 20, TW = 64, TH = 32, VW = 800, VH = 520, ART = 1.5;
+const COLS = 45, ROWS = 34, TW = 64, TH = 32, VW = 800, VH = 520, ART = 1.5;
 let LW = Math.round(VW / ART), LH = Math.round(VH / ART);   // resolução "de arte": ~533 x 347 pixels (pixels finos, visual 8-bit)
 const OX = ROWS * TW / 2 + 40, OY = 130;
 const WORLD_W = OX + COLS * TW / 2 + 80, WORLD_H = OY + (COLS + ROWS) * TH / 2 + 70;
