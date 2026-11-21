@@ -204,6 +204,14 @@ check("agente de IA nunca decora, mesmo liberado", me(B, dcAgent).write(R + "/de
 const catalogo = require("fs").readFileSync(require("path").join(__dirname, "../../src/js/04d_decor.js"), "utf8").match(/^const DECOR = \[([\s\S]*?)\];/m)[1].match(/t: "(\w+)"/g).map(x => x.slice(4, -1));
 check("todo móvel do catálogo é aceito pelas regras", { allowed: catalogo.every(t => me(A, dcDb).write(R + "/decor/m1", { ...movel, t }).allowed) }, true);
 
+/* pets: nome e espécie editáveis */
+check("renomeia o pet", me(A).update(R + "/cats/sombra", { name: "Mimi", kind: "galinha" }), true);
+check("nome vazio é recusado", me(A).update(R + "/cats/sombra", { name: "" }), false);
+check("nome com mais de 14 letras é recusado", me(A).update(R + "/cats/sombra", { name: "x".repeat(15) }), false);
+check("espécie desconhecida é recusada", me(A).update(R + "/cats/sombra", { kind: "dragao" }), false);
+const especies = require("fs").readFileSync(require("path").join(__dirname, "../../src/js/03b_pets.js"), "utf8").match(/^const PET_ORDER = \[(.*?)\];/m)[1].match(/"(\w+)"/g).map(x => x.slice(1, -1));
+check("toda espécie do acervo é aceita pelas regras", { allowed: especies.every(k => me(A).update(R + "/cats/neblina", { kind: k }).allowed) }, true);
+
 /* fazenda */
 const D1 = 60 * 60000;
 const farmDb = (extra = {}) => targaryen.database(rules, { farm: { ana: { n: "Ana", c: 50, f: { beto: true, caio: true }, p: { 0: { k: 0, t: NOW - D1, w: 0, e: 0, b: 0 }, 1: { k: 4, t: NOW - 1000, w: 0, e: 1, b: 0 } }, ...extra }, beto: { n: "Beto", c: 10 } } }, NOW);

@@ -371,10 +371,10 @@ function currentActions() {
   Object.keys(messes).forEach(k => { const m = messes[k]; if (Math.max(Math.abs(m.x - me.x), Math.abs(m.y - me.y)) <= 1) a.push({ k: "mess" + k, l: m.type === "poop" ? "🧹 Recolher cocô (usa 1 saco)" : "🧽 Limpar xixi", fn: () => cleanMess(k) }); });
   for (const id in CATS) {
     const c = cats[id]; if (!c || c.x == null) continue;
-    if (!catNear(id)) { if (catDist(id) <= 18 && !catBusyMsg(id)) a.push({ k: "call" + id, l: "📣 Chamar · " + CATS[id].name, fn: () => callCat(id) }); continue; }
-    a.push({ k: "pet" + id, l: "🐾 Carinho · " + CATS[id].name, fn: () => catAction(id, "pet") });
-    a.push({ k: "treat" + id, l: "🍗 Petisco · " + CATS[id].name, fn: () => catAction(id, "treat") });
-    a.push({ k: "play" + id, l: "🧶 Brincar · " + CATS[id].name, fn: () => catAction(id, "play") });
+    if (!catNear(id)) { if (catDist(id) <= 18 && !catBusyMsg(id)) a.push({ k: "call" + id, l: "📣 Chamar · " + petName(id), fn: () => callCat(id) }); continue; }
+    a.push({ k: "pet" + id, l: "🐾 Carinho · " + petName(id), fn: () => catAction(id, "pet") });
+    a.push({ k: "treat" + id, l: "🍗 Petisco · " + petName(id), fn: () => catAction(id, "treat") });
+    a.push({ k: "play" + id, l: "🧶 Brincar · " + petName(id), fn: () => catAction(id, "play") });
   }
   DOORS.forEach(d => {
     if (Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) <= 2 && roomOf(me.x, me.y) !== d.office && !doorOpenFor(d)) {

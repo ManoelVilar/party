@@ -184,6 +184,16 @@
   #btnCatsT { position:relative; }
   #btnCatsT.alerta::after { content:""; position:absolute; top:2px; right:2px; width:9px; height:9px; border-radius:50%; background:#ff5a5a; box-shadow:0 0 0 2px rgba(0,0,0,.35); }
   .cats { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:8px; }
+  #petedit { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:60; width:min(460px,calc(100vw - 20px)); max-height:86vh; overflow:auto; display:grid; gap:8px; }
+  #petedit[hidden] { display:none; }
+  #petedit .pehead { display:flex; justify-content:space-between; align-items:center; }
+  #petedit .pelab { font-size:.85rem; color:var(--muted); display:grid; gap:4px; }
+  #petedit input { font:inherit; padding:6px 8px; background:#1d1230; color:inherit; border:2px solid var(--line); }
+  #peGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:6px; }
+  #peGrid button { display:grid; justify-items:center; gap:2px; padding:4px; font-size:.75rem; background:#2a1b40; border:3px solid var(--line); color:inherit; cursor:pointer; }
+  #peGrid button.sel { border-color:var(--accent); }
+  #peGrid canvas { width:64px; height:64px; image-rendering:pixelated; }
+  #petedit .pebtns { display:flex; gap:8px; }
   .cc { background:#2a1b40; border:3px solid var(--line); padding:8px; cursor:pointer; }
   .cc.sel { border-color:var(--accent); }
   .cc .ttl { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
@@ -488,7 +498,7 @@
     <button id="btnFarm" title="Fazenda: plante, colha e visite as fazendas dos amigos" aria-pressed="false">🌱 Fazenda</button>
     <button id="btnJuke" title="Jukebox: música para a sala toda (comandos !play, !pular...)" aria-pressed="false">🎵 Jukebox</button>
     <button id="btnWard">Guarda-roupa</button>
-    <button id="btnCatsT">Gatos</button>
+    <button id="btnCatsT">Pets</button>
     <button id="btnChatT">Chat</button>
     <button id="btnNatal" title="Ligar/desligar o tema de Natal" aria-pressed="false">🎄 Natal</button>
     <button id="btnFull" title="Tela cheia (F)">Tela cheia</button>
