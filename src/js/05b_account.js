@@ -57,6 +57,7 @@ function renderAcct() {
   $("acctOut").hidden = !!u; $("acctIn").hidden = !u;
   if (firstAuth) { firstAuth = false; if (u && !inviteIn) selectTab("acct"); }
   if (!u) { $("tLogin").textContent = "Entrar na conta"; return; }
+  try { friendsStart(); } catch (e) { /* ok */ }
   $("acctWho").textContent = "Conectado como " + (u.displayName || u.email || "sua conta");
   const ok = !!u.emailVerified;
   $("acctState").textContent = ok ? "Conta confirmada. Sua sala permanente fica guardada nesta conta: você volta a ela quando quiser, de qualquer aparelho."
@@ -140,6 +141,7 @@ $("btnOut").onclick = () => acctRun(async () => { autoClear(); acctRoomFor = "";
       $("inviteBox").hidden = false; $("modeTabs").hidden = true; $("modeTemp").hidden = true; $("modeAcct").hidden = true;
       $("inviteInfo").textContent = "Convite para a sala " + r + ". Escreva seu nome, monte o personagem e entre. Quem tem o link entra com as permissões que o dono escolheu.";
     }
+    else if (/^[a-z0-9-]{4,40}$/.test(r) && !r.startsWith("perm-") && !t) { $("inRoom").value = r; }      // link de amigo para uma sala temporária: já preenche o código
   } catch (e) {}
 })();
 

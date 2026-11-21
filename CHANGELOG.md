@@ -5,6 +5,13 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Adicionado
+- **Ícones em pixel art na fazenda e nos amigos**: 19 ícones novos na paleta do jogo (planta, amigos, regar, cesta, pegadas, moeda, lápis, trigo, diabo, erva, praga, casa, aviso, ok e as 5 culturas) no lugar dos emojis dos botões e painéis; `🛏`, `🥣`, `🧽`, `🛑`, `🐈`, `⛔`, `⚠` e `✅` também passam a usar ícone.
+- **Amigos em geral**: o painel 👥 funciona fora das salas (botão na tela da conta, depois de entrar). Mostra se cada amigo está online e em que sala (`presence/<uid>`, só amigos leem) e tem **Ir até lá** (sala temporária, preenche o código) e **Chamar para a sala** (dentro de uma sala). **Republicar as regras** (`presence`).
+- **Fazenda só com conta**: plantar, colher, ampliar e visitar exigem estar logado (as regras também exigem conta para escrever na fazenda). Convidados veem a terra vazia e uma dica para entrar numa conta.
+
+### Corrigido
+- **Bichos do quintal**: andavam de costas, atravessavam cerca, lagoa e árvores e a velocidade dependia dos quadros por segundo. Agora andam só por tiles livres, sem sobrepor outros bichos, com velocidade por tempo e viram para o lado certo (teste de 400 s simulados).
+
 - **Fazenda dentro do mapa**: a casa ganhou um **quintal** (Fazenda) atrás dos Quartos 1 e 2, com trilha, cerca em volta da horta, portão, celeiro, poço, lagoa, espantalho, árvores, flores e bichos andando (galinhas, vaca, ovelha, porco, pato, coelho). A horta 6×6 fica no chão do quintal e é a do **dono da sala**: quem entra no quintal abre a fazenda sozinha e toca nos canteiros (a até 3 casas de distância) para plantar, regar, limpar e colher; 👣 Andar volta a andar normal. O mapa passou de 20 para 34 linhas. **Republicar as regras.**
 - **Plantas vivas**: 5 culturas desenhadas em 7 estágios (semente, broto, pequena, crescida, madura, **murcha**, **estragada**), balançam com o vento, "pulam" ao mudar de estágio, brilham quando maduras e têm animações ao plantar, regar (gotas e terra molhada), limpar, colher (moedas subindo) e estragar (moscas). Madura e não colhida: murcha depois do dobro do tempo (ou 15 min) e rende 1 a menos; depois do dobro disso estraga de vez (rende 0, só limpa o canteiro).
 - **Amigos (👥)**: pedido e aceite entre contas, lista com quem está na sala, **chamar o amigo para a sala** (voz e chat são da sala; sala permanente gera um convite de membro de 24 h) e remover. Só amigos veem a fazenda do dono e podem ajudar ou aprontar. O antigo "adicionar amigo" da fazenda foi substituído por este sistema. **Republicar as regras** (`friends`, `friendReq`, `friendInv`; `farm/<uid>/f` e `farmInv` saíram).

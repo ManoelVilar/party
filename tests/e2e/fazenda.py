@@ -11,7 +11,7 @@ def ok(cond, msg):
     if not cond: print("FALHOU:", msg); sys.exit(1)
     passed += 1; print("ok -", msg)
 
-def mk(ctx, name, room):
+def mk(ctx, name, room, real=True):
     pg = ctx.new_page(); pg.on("pageerror", lambda e: errors.append(str(e)))
     def route(r):
         u = r.request.url
@@ -21,6 +21,7 @@ def mk(ctx, name, room):
         else: r.abort()
     pg.route("**/*", route); pg.goto(URL); pg.wait_for_timeout(500); pg.locator("#tGuest").is_visible() and pg.click("#tGuest")
     pg.fill("#inName", name); pg.fill("#inRoom", room); pg.click("#btnEnter"); pg.wait_for_timeout(900)
+    if real: pg.evaluate("fbUser = { uid: uid, isAnonymous: false, emailVerified: true }")      # simula conta de verdade (o stub não faz login por e-mail)
     return pg
 
 def ev(pg, js): return pg.evaluate(js)
@@ -41,7 +42,13 @@ with sync_playwright() as p:
     b = p.chromium.launch(); ctx = b.new_context(viewport={"width": 1280, "height": 800})
     ROOM = "party-teste-fazenda-1234"
     A, B = mk(ctx, "Ana", ROOM), mk(ctx, "Beto", ROOM)
-    A.click("#btnFarm"); perto(A); ok(ev(A, "farmOn && !$('farmpanel').hidden") and wait_for(A, "farmMine && farmMine.c === 50"), "abre a fazenda e cria com 50 moedas")
+    G = mk(ctx, "Gabi", ROOM, real=False); G.bring_to_front(); G.evaluate("me.x = 8; me.y = 21; meRef.update({x: 8, y: 21})"); G.wait_for_timeout(1500)
+    ok(not G.evaluate("farmOn"), "convidado (sem conta) não abre a fazenda sozinho no quintal")
+    G.click("#btnFarm"); G.wait_for_timeout(300); G.evaluate("farmTool = 'plant:0'; farmAct(0)")
+    ok("conta" in G.evaluate("$('fzMsg').textContent") and G.evaluate("!farmMine"), "convidado não planta nem cria fazenda: pede para entrar numa conta")
+    ok(G.evaluate("document.querySelectorAll('#fzTools button').length") == 0, "convidado não vê as ferramentas da fazenda")
+    G.close()
+    A.bring_to_front(); A.click("#btnFarm"); perto(A); ok(ev(A, "farmOn && !$('farmpanel').hidden") and wait_for(A, "farmMine && farmMine.c === 50"), "abre a fazenda e cria com 50 moedas")
     ok(ev(A, "[...Array(FARM_N).keys()].filter(i => farmOpen(farmMine, i)).length") == 6, "o terreno começa com 6 canteiros liberados (de 36)")
     ok("Minha fazenda" in ev(A, "$('fzTitle').textContent") and "50" in ev(A, "$('fzCoins').textContent"), "título e moedas aparecem")
     ok(ev(A, "!!bfs(10, 10, 8, 21, tileBlocked)"), "dá para andar da sala até o quintal pelos quartos")
@@ -75,6 +82,8 @@ with sync_playwright() as p:
     tool(A, "Limpar"); plot(A, 0); ok(wait_for(A, "farmMine.p[0].b === 0 && farmMine.p[0].e === 0"), "a dona limpa tudo de uma vez")
     ok(ev(A, "farmUnits(farmMine.p[0])") == 2, "sem estrago, a colheita é 3 - 1 roubado = 2")
     tool(A, "Colher"); plot(A, 0); ok(wait_for(A, "!farmMine.p || !farmMine.p[0]") and ev(A, "farmMine.c") == 45 + 2 * 4, "colher paga as unidades que sobraram e libera o canteiro")
+    bad = ev(A, "(() => { let t = Date.now(), n = 0; for (let i = 0; i < 4000; i++) { t += 100; farmAnimais([], () => false, t); farmAn.forEach(a => { const tx = Math.floor(a.x + .5), ty = Math.floor(a.y + .5), it = ITEM[tx + '_' + ty]; if (roomOf(tx, ty) !== 'faz' || farmIdx(tx, ty) >= 0 || (it && DEF[it.t].solid)) n++; }); } return n; })()")
+    ok(bad == 0, "os bichos do quintal nunca pisam em cerca, horta, lagoa, árvore ou fora do quintal (400 s simulados)")
     # ciclo: madura -> murcha -> estragada
     ev(A, "farmRef(uid).child('p/2').set({k: 0, t: jSrv() - 3 * 60000 - 1000, w: 0, e: 0, b: 0})"); ok(wait_for(A, "farmStage(farmMine.p[2]) === 4"), "passou do tempo de crescer: madura")
     ev(A, "farmRef(uid).child('p/2/t').set(jSrv() - 3 * 60000 - farmRotMs(farmMine.p[2]) - 1000)"); ok(wait_for(A, "farmStage(farmMine.p[2]) === 5 && farmUnits(farmMine.p[2]) === 2"), "sem colher a tempo: murcha e rende uma unidade a menos")

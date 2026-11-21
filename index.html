@@ -143,6 +143,7 @@
   #farmpanel[hidden] { display:none; }
   #friendpanel { position:fixed; right:8px; top:56px; z-index:74; width:min(400px,calc(100vw - 16px)); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; padding:10px; }
   #friendpanel[hidden] { display:none; }
+  #friendpanel { z-index:80; } .frdot { width:10px; height:10px; border-radius:50%; background:#6a4f95; border:2px solid #2b1b3a; flex:0 0 auto; } .frdot.on { background:#5ad1b4; }
   .frlist { display:grid; gap:4px; } .frh { color:var(--accent); font-weight:bold; margin-top:6px; } .frrow { display:flex; flex-wrap:wrap; gap:4px; align-items:center; background:#2a1b40; border:2px solid var(--line); padding:4px 6px; } .frrow span { flex:1 1 120px; overflow-wrap:anywhere; }
   .fzgrid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; } .fzplot.lock { background:#2f4a2c; border:2px dashed #4e7a49; opacity:.45; cursor:not-allowed; }  .fzplot { padding:0; border:2px solid #3a2414; background:#7a4e2a; aspect-ratio:1; line-height:0; }
   .fzplot canvas { width:100%; height:100%; image-rendering:pixelated; } .fzplot.ripe { outline:2px solid #f6c445; }
@@ -469,6 +470,7 @@
         <div class="muted" id="acctState"></div>
         <div class="coderow">
           <button type="button" id="btnEnterPerm" class="gold">ENTRAR NA MINHA SALA</button>
+          <button type="button" id="btnFriendsT">👥 Amigos</button>
         </div>
         <div class="coderow" id="rowRename">
           <input type="text" id="acctRoomName" maxlength="30" placeholder="Nome da minha sala" aria-label="Nome da minha sala" autocomplete="off">
@@ -561,7 +563,7 @@
     <div id="mixList"></div>
   </div>
   <div id="friendpanel" class="panel" hidden role="dialog" aria-label="Amigos">
-    <div class="mxhead"><b>👥 Amigos</b><button id="frClose" type="button" aria-label="Fechar">✕</button></div>
+    <div class="mxhead"><b><i class="ico" data-i="amigos"></i> Amigos</b><button id="frClose" type="button" aria-label="Fechar">✕</button></div>
     <div id="frList" class="frlist"></div>
     <div id="frMsg" class="muted" role="status"></div>
   </div>
@@ -818,7 +820,7 @@ function iconImg(name, px) { return `<img class="pix" src="${iconURL(name)}" wid
 /* Ícones em pixel art do jogo (12x12), no lugar dos emojis genéricos dos botões e das interações.
    Cada ícone é um mapa de letras (paleta abaixo; "." = transparente). Em HTML: <i class="ico" data-i="nome"></i> (preenchido no início por icoPreenche);
    em texto montado por código: icoHTML("nome"). Sem ícone com esse nome, o texto segue com o emoji original. */
-const ICO_PAL = { I: "#fff6d8", M: "#b9a8d6", A: "#ffd166", G: "#5ad1b4", R: "#ff6b6b", D: "#6a4f95" };   // paleta do jogo: creme, lilás, amarelo, verde-água, vermelho, roxo
+const ICO_PAL = { I: "#fff6d8", M: "#b9a8d6", A: "#ffd166", G: "#5ad1b4", R: "#ff6b6b", D: "#6a4f95", B: "#6cc0ff", O: "#ff9a4a", N: "#b9824a", P: "#ff8fb8", L: "#8fd35e", K: "#3a2a5a" };   // paleta do jogo: creme, lilás, amarelo, verde-água, vermelho, roxo
 const ICO_MAPS = {
   mao:      ["...I..I.....", "...I.II.I...", ".I.I.II.I...", ".I.IIIIII...", ".IIIIIIII...", "..IIIIIII...", "...IIIII....", "....IIII....", "....IIII....", "............", "............", "............"],
   cadeado:  ["....IIII....", "...I....I...", "...I....I...", "...I....I...", "..AAAAAAAA..", "..AAAAAAAA..", "..AAA..AAA..", "..AAA..AAA..", "..AAAAAAAA..", "..AAAAAAAA..", "............", "............"],
@@ -857,6 +859,25 @@ const ICO_MAPS = {
   robo:     ["....MM......", "....MM......", "..IIIIIIII..", ".IIIIIIIIII.", ".IIGGIIGGII.", ".IIGGIIGGII.", ".IIIIIIIIII.", ".IIMMMMMMII.", "..IIIIIIII..", "............", "............", "............"],
   pino:     ["...RRRR.....", "..RRRRRR....", "..RRIIRR....", "..RRIIRR....", "..RRRRRR....", "...RRRR.....", "....RR......", ".....R......", "............", "............", "............", "............"],
   caixa:    ["............", "..AAAAAAAA..", ".AAAAAAAAAA.", ".AIIIIIIIIA.", ".AAAAAAAAAA.", ".AAAAAAAAAA.", ".AAAAAAAAAA.", ".AAAAAAAAAA.", ".AAAAAAAAAA.", "............", "............", "............"],
+  planta:   ["............", "..LL....LL..", ".LLLL..LLLL.", ".LLLLLLLLLL.", "..LLLLLLLL..", "....LLLL....", ".....LL.....", ".....LL.....", ".....LL.....", ".NNNNNNNNNN.", ".NNNNNNNNNN.", "............"],
+  amigos:   ["............", "...II..MM...", "..IIII.MMMM.", "..IIII.MMMM.", "...II..MMMM.", ".IIIIII.MM..", "IIIIIIIMMMM.", "IIIIIIIMMMM.", "IIIIIIIMMMM.", "............", "............", "............"],
+  agua:     ["............", ".....B......", ".....BB.....", "....BBBB....", "...BBBBBB...", "..BBBBBBBB..", "..BIBBBBBB..", "..BIBBBBBB..", "..BBBBBBBB..", "...BBBBBB...", "....BBBB....", "............"],
+  cesta:    ["...NNNNNN...", "..N......N..", "..N......N..", ".ORROORROOR.", ".OOROORORRO.", "NNNNNNNNNNNN", ".NANNANNANN.", ".NNNNNNNNNN.", "..NANNANNN..", "...NNNNNN...", "............", "............"],
+  pegadas:  ["............", "..II........", ".IIII...II..", ".IIII..IIII.", "..II...IIII.", ".IIII...II..", ".IIII.......", "..II........", "............", "............", "............", "............"],
+  moeda:    ["....AAAA....", "..AAAAAAAA..", ".AAIIAAAAAA.", ".AIAAAAAAAA.", "AAIAAKKAAAAA", "AAAAAKKAAAAA", "AAAAAKKAAAAA", "AAAAAKKAAAAA", ".AAAAAAAAAA.", ".AAAAAAAAAA.", "..AAAAAAAA..", "....AAAA...."],
+  lapis:    [".........AA.", "........AAAA", ".......AAAA.", "......AAAA..", ".....AAAA...", "....AAAA....", "...NIII.....", "..NNII......", ".NNN........", "NN..........", "............", "............"],
+  trigo:    ["............", ".....A......", "..A..AA.A...", "..AA.A.AA...", "...AAAAA....", "....AAA.....", ".....A......", ".....L......", ".....L......", ".....L......", "............", "............"],
+  diabo:    ["R........R..", "RR......RR..", ".RKKKKKKR...", "..KKKKKKK...", "..KAKKKAK...", "..KKKKKKK...", "..KKRRRKK...", "...KKKKK....", "............", "............", "............", "............"],
+  erva:     ["............", "............", "...L...L....", "..LL..LL.L..", "..LL.LLL.LL.", ".LLLLLLLLLL.", "LLLLLLLLLLLL", "NNNNNNNNNNNN", "............", "............", "............", "............"],
+  praga:    ["............", "..R.....R...", "...R...R....", "....RRR.....", "..R.RKR.R...", "...RRRRR....", "..R.RRR.R...", "...RRRRR....", "....RRR.....", "............", "............", "............"],
+  casa:     ["....AA......", "...AAAA.....", "..AAAAAA....", ".AAAAAAAAA..", "AAAAAAAAAAA.", ".IIIIIIIII..", ".IIIIKKIII..", ".IIIIKKIII..", ".IIIIKKIII..", "............", "............", "............"],
+  aviso:    ["............", ".....AA.....", "....AAAA....", "....AKKA....", "...AAKKAA...", "...AAKKAA...", "..AAAAAAAA..", "..AAAKKAAA..", ".AAAAAAAAAA.", "AAAAAAAAAAAA", "............", "............"],
+  check:    ["............", "..........G.", ".........GG.", "........GGG.", "G......GGG..", "GG....GGG...", ".GG..GGG....", "..GGGGG.....", "...GGG......", "............", "............", "............"],
+  cenoura:  ["...LL.LL....", "....LLL.....", ".....L......", "...OOOOO....", "...OOOOOO...", "....OOOOO...", "....OOOO....", ".....OOO....", ".....OO.....", "......O.....", "............", "............"],
+  tomate:   ["....LLL.....", "...LLLLLL...", "....RRRR....", "..RRRRRRRR..", ".RRIRRRRRRR.", ".RRIRRRRRRR.", ".RRRRRRRRRR.", ".RRRRRRRRRR.", "..RRRRRRRR..", "...RRRRRR...", "............", "............"],
+  milho:    ["....L..L....", ".....LL.....", "...AAAAAA...", "..AAIAAAAA..", "..AIAAIAAA..", "..AAAAAAIA..", "..AAIAAAAA..", "..AAAAIAAA..", "...AAAAAA...", "....L..L....", ".....LL.....", "............"],
+  morango:  ["....LLLL....", "...LLLLLL...", "..RRRRRRRR..", ".RRIRRIRRRR.", ".RRRRRRRRRR.", ".RIRRRIRRIR.", "..RRRRRRRR..", "...RIRRRR...", "....RRRR....", ".....RR.....", "............", "............"],
+  abobora:  ["....LL......", ".....L......", "..OOOLOOO...", ".OOOOOOOOOO.", "OOIOOOOOOOOO", "OOIOOOOOOOOO", "OOIOOOOOOOOO", "OOOOOOOOOOOO", ".OOOOOOOOOO.", "..OOOOOOOO..", "............", "............"],
   gato:     ["..I......I..", ".III....III.", ".IIIIIIIIII.", ".IIIIIIIIII.", ".IIAIIIIAII.", ".IIIIRRIIII.", ".IIIIIIIIII.", "..IIIIIIII..", "............", "............", "............", "............"],
   estrela:  ["....AA......", "....AA......", "...AAAA.....", "AAAAAAAAAAAA", ".AAAAAAAAAA.", "..AAAAAAAA..", "..AAAAAAAA..", ".AAAA..AAAA.", ".AAA....AAA.", "............", "............", "............"],
 };
@@ -879,6 +900,7 @@ const EMOJI_ICO = {
   "✋": "mao", "🔒": "cadeado", "🎱": "bola8", "🔈": "som", "🔉": "som", "🔊": "som", "🔇": "mudo", "🖥": "tv", "🎬": "tv", "🎵": "nota", "🧹": "vassoura", "🚪": "porta", "🤖": "robo",
   "⛶": "tela", "🎚": "mixer", "🎄": "arvore", "🎨": "paleta", "💃": "danca", "🏆": "trofeu", "📣": "mega", "⏹": "parar", "⏸": "pausar", "⏭": "pular", "▶": "tocar", "✕": "fechar",
   "📍": "pino", "📦": "caixa", "💗": "coracao", "🍗": "petisco", "🧶": "novelo", "🐾": "pata", "🔑": "chave", "🍽": "comida", "🚿": "chuveiro", "😴": "cama", "⭐": "estrela",
+  "🌱": "planta", "👥": "amigos", "💧": "agua", "🧺": "cesta", "👣": "pegadas", "💰": "moeda", "🪙": "moeda", "✏": "lapis", "🌾": "trigo", "😈": "diabo", "🌿": "erva", "🐛": "praga", "🏠": "casa", "⛔": "aviso", "⚠": "aviso", "✅": "check", "🥕": "cenoura", "🍅": "tomate", "🌽": "milho", "🍓": "morango", "🎃": "abobora", "🛏": "cama", "🥣": "comida", "🧽": "vassoura", "🛑": "parar", "🐈": "gato",
   "🎤": "mic", "🎙": "micoff", "📷": "cam", "📹": "camoff", "💬": "chat",
 };
 const EMOJI_RE = new RegExp("^\\s*(" + Object.keys(EMOJI_ICO).join("|") + ")\\uFE0F?\\s*");
@@ -3662,6 +3684,7 @@ function renderAcct() {
   $("acctOut").hidden = !!u; $("acctIn").hidden = !u;
   if (firstAuth) { firstAuth = false; if (u && !inviteIn) selectTab("acct"); }
   if (!u) { $("tLogin").textContent = "Entrar na conta"; return; }
+  try { friendsStart(); } catch (e) { /* ok */ }
   $("acctWho").textContent = "Conectado como " + (u.displayName || u.email || "sua conta");
   const ok = !!u.emailVerified;
   $("acctState").textContent = ok ? "Conta confirmada. Sua sala permanente fica guardada nesta conta: você volta a ela quando quiser, de qualquer aparelho."
@@ -3745,6 +3768,7 @@ $("btnOut").onclick = () => acctRun(async () => { autoClear(); acctRoomFor = "";
       $("inviteBox").hidden = false; $("modeTabs").hidden = true; $("modeTemp").hidden = true; $("modeAcct").hidden = true;
       $("inviteInfo").textContent = "Convite para a sala " + r + ". Escreva seu nome, monte o personagem e entre. Quem tem o link entra com as permissões que o dono escolheu.";
     }
+    else if (/^[a-z0-9-]{4,40}$/.test(r) && !r.startsWith("perm-") && !t) { $("inRoom").value = r; }      // link de amigo para uma sala temporária: já preenche o código
   } catch (e) {}
 })();
 
@@ -5937,11 +5961,11 @@ setInterval(() => { if (meetOn) meetTick(); }, 700);                  // slide, 
    (roubar uma parte da colheita madura, soltar erva daninha ou praga). As regras do Firebase limitam o que um visitante escreve (ver scripts/gera-regras.mjs).
    Os números de FARM_CROPS (g = minutos para amadurecer) precisam ser os mesmos das regras (há teste). */
 const FARM_CROPS = [
-  { n: "Cenoura", g: 3, s: 5, v: 4, c1: "#f08a24", c2: "#3f9b3f" },
-  { n: "Tomate", g: 8, s: 12, v: 9, c1: "#d9372b", c2: "#3f9b3f" },
-  { n: "Milho", g: 15, s: 25, v: 18, c1: "#f2cf3a", c2: "#4fa840" },
-  { n: "Morango", g: 30, s: 55, v: 40, c1: "#e8456a", c2: "#3a9150" },
-  { n: "Abóbora", g: 60, s: 110, v: 80, c1: "#e8872a", c2: "#3b8a3b" }
+  { n: "Cenoura", e: "🥕", g: 3, s: 5, v: 4, c1: "#f08a24", c2: "#3f9b3f" },
+  { n: "Tomate", e: "🍅", g: 8, s: 12, v: 9, c1: "#d9372b", c2: "#3f9b3f" },
+  { n: "Milho", e: "🌽", g: 15, s: 25, v: 18, c1: "#f2cf3a", c2: "#4fa840" },
+  { n: "Morango", e: "🍓", g: 30, s: 55, v: 40, c1: "#e8456a", c2: "#3a9150" },
+  { n: "Abóbora", e: "🎃", g: 60, s: 110, v: 80, c1: "#e8872a", c2: "#3b8a3b" }
 ];
 /* Terreno expansível: grade fixa de 6×6 (índice = linha*6 + coluna, estável entre níveis). O nível s libera um retângulo no canto superior esquerdo. */
 const FARM_COLS = 6, FARM_N = 36, FARM_X0 = 6, FARM_Y0 = 22;                              // a horta ocupa x 6..11, y 22..27 do quintal
@@ -6028,7 +6052,9 @@ function farmExpand() {
   db.ref().update(up).then(() => farmMsg("Terreno ampliado para " + FARM_LAND[lv][0] * FARM_LAND[lv][1] + " canteiros! 🌾")).catch(() => farmMsg("O servidor recusou a ampliação."));
 }
 function farmAct(i) {
-  const own = farmView === uid, d = own ? farmMine : farmTheirs; if (!d || !farmMine) return farmMsg("Carregando a fazenda...");
+  if (!frReal()) return farmMsg("Entre numa conta (aba “Minha conta”) para plantar, colher e usar a fazenda.");
+  const own = farmView === uid, d = own ? farmMine : farmTheirs; if (!own && !d) return farmMsg("Só amigos do dono veem esta fazenda. Peça amizade em 👥 Amigos.");
+  if (!d || !farmMine) return farmMsg("Carregando a fazenda...");
   if (!farmOpen(d, i)) return farmMsg(own ? "Terra ainda não liberada. Use «Ampliar terreno»." : "Esta parte do terreno ainda não foi liberada.");
   const p = farmPlot(i), [tool, arg] = farmTool.split(":"), pp = "p/" + i, up = {};
   const add = (path, v) => { up[path] = v; }, mineC = path => { add("farm/" + uid + "/c", path); };
@@ -6045,7 +6071,7 @@ function farmAct(i) {
     else if (tool === "harvest") {
       if (!farmRipe(p)) return fail("Ainda não está pronto.");
       const n = farmUnits(p), gain = n * FARM_CROPS[p.k].v; add("farm/" + uid + "/" + pp, null);
-      if (!n) { farmMsg("Estragou! 🪰 Você limpou o canteiro, mas não rendeu nada. Colha antes de passar da hora."); farmFxAdd(i, "rot"); }
+      if (!n) { farmMsg("Estragou! Você limpou o canteiro, mas não rendeu nada. Colha antes de passar da hora."); farmFxAdd(i, "rot"); }
       else { mineC((farmMine.c || 0) + gain); farmMsg("Colheu " + n + "× " + FARM_CROPS[p.k].n + (farmStage(p) === 5 ? " (murcha)" : "") + ": +" + gain + " moedas."); farmFxAdd(i, "harvest", "+" + gain, FARM_CROPS[p.k].c1); }
     } else return fail("Isso é para visitas. Na sua fazenda: plantar, regar, limpar e colher.");
   } else {
@@ -6057,12 +6083,12 @@ function farmAct(i) {
       farmFxAdd(i, "clean", "+2", "#ffd166"); mineC((farmMine.c || 0) + 2); farmMsg("Você limpou um pouco. +2 moedas.");
     } else if (tool === "steal") {
       if (!farmRipe(p)) return fail("Ainda não está maduro para roubar.");
-      if (farmRotten(p)) return fail("Estragou: ninguém quer isso. 🪰");
+      if (farmRotten(p)) return fail("Estragou: ninguém quer isso.");
       const s = p.st || {}, slot = s.a === uid || s.b === uid ? null : !s.a ? "a" : !s.b ? "b" : "";
       if (slot === null) return fail("Você já roubou deste canteiro."); if (slot === "") return fail("Já levaram tudo que dava deste canteiro.");
-      add(base + "/st/" + slot, uid); farmFxAdd(i, "steal", "+" + FARM_CROPS[p.k].v, FARM_CROPS[p.k].c1); mineC((farmMine.c || 0) + FARM_CROPS[p.k].v); farmMsg("Roubou 1× " + FARM_CROPS[p.k].n + ": +" + FARM_CROPS[p.k].v + " moedas. 😈");
-    } else if (tool === "weed") { if ((p.e || 0) >= 3) return fail("Já está cheio de erva daninha."); add(base + "/e", (p.e || 0) + 1); farmFxAdd(i, "weed"); farmMsg("Plantou erva daninha. 😈"); }
-    else if (tool === "bug") { if ((p.b || 0) >= 3) return fail("Já está cheio de pragas."); add(base + "/b", (p.b || 0) + 1); farmFxAdd(i, "weed"); farmMsg("Soltou uma praga. 😈"); }
+      add(base + "/st/" + slot, uid); farmFxAdd(i, "steal", "+" + FARM_CROPS[p.k].v, FARM_CROPS[p.k].c1); mineC((farmMine.c || 0) + FARM_CROPS[p.k].v); farmMsg("Roubou 1× " + FARM_CROPS[p.k].n + ": +" + FARM_CROPS[p.k].v + " moedas. ");
+    } else if (tool === "weed") { if ((p.e || 0) >= 3) return fail("Já está cheio de erva daninha."); add(base + "/e", (p.e || 0) + 1); farmFxAdd(i, "weed"); farmMsg("Plantou erva daninha. "); }
+    else if (tool === "bug") { if ((p.b || 0) >= 3) return fail("Já está cheio de pragas."); add(base + "/b", (p.b || 0) + 1); farmFxAdd(i, "weed"); farmMsg("Soltou uma praga. "); }
     else return fail("Na fazenda de amigo: regar, limpar, roubar, erva daninha ou praga.");
   }
   db.ref().update(up).catch(() => farmMsg("O servidor recusou (sem permissão ou fora do tempo)."));
@@ -6113,7 +6139,7 @@ function farmTile(gx, gy, i, d) {
   if (farmOn && hover && farmIdx(hover[0], hover[1]) === i) sq(.02, .02, .98, .98, 0, "rgba(255,246,216,.25)", "#ffd166");
 }
 function farmWorldPush(list, vis) {
-  const d = farmData(); if (!d) return;
+  const d = farmData() || { s: 1 };                                          // sem acesso (convidado ou não amigo): mostra só a terra vazia
   const now = Date.now(); while (farmFx.length && now - farmFx[0].t0 > 2200) farmFx.shift();
   for (let i = 0; i < FARM_N; i++) {
     const gx = FARM_X0 + i % FARM_COLS, gy = FARM_Y0 + Math.floor(i / FARM_COLS); if (!vis(gx, gy, 40)) continue;
@@ -6122,27 +6148,42 @@ function farmWorldPush(list, vis) {
 }
 /* toque num canteiro (com a fazenda aberta e a ferramenta escolhida) age nele em vez de andar */
 function farmWorldClick(e) {
-  if (!farmOn || farmTool === "walk" || !farmData()) return false;
+  if (!farmOn || farmTool === "walk") return false;
   const t = tileAt(e), i = farmIdx(t[0], t[1]); if (i < 0) return false;
   if (Math.max(Math.abs(me.x - t[0]), Math.abs(me.y - t[1])) > 3) { farmMsg("Chegue mais perto do canteiro (ou escolha 👣 Andar)."); return true; }
   farmAct(i); return true;
 }
 
 /* ---------- animais do quintal (enfeite local, não sincroniza) ---------- */
-const FARM_BICHOS = [["galinha", 22, 24], ["galinha", 25, 27], ["pato", 19, 27], ["vaca", 31, 25], ["ovelha", 24, 22], ["porco", 33, 28], ["coelho", 15, 24], ["galinha", 38, 27]];
-const farmAn = FARM_BICHOS.map((b, k) => ({ k: b[0], x: b[1], y: b[2], tx: b[1], ty: b[2], until: 0, seed: k * 7 + 3, st: "sit", dir: 1 }));
+const FARM_BICHOS = [["galinha", 22, 24, .9], ["galinha", 25, 27, .9], ["pato", 19, 26, .8], ["vaca", 31, 25, .5], ["ovelha", 24, 22, .6], ["porco", 33, 28, .6], ["coelho", 15, 23, 1.1], ["galinha", 38, 27, .9]];
+const farmAn = FARM_BICHOS.map((b, k) => ({ k: b[0], x: b[1], y: b[2], tx: b[1], ty: b[2], sp: b[3], until: 0, seed: k * 7 + 3, st: "sit", dir: 1, last: 0 }));
+function farmAnLivre(tx, ty, a) {                                                  // o bicho pode pisar neste tile? (quintal, sem objeto sólido, fora da horta e sem outro bicho)
+  if (roomOf(tx, ty) !== "faz" || tx < 14 || farmIdx(tx, ty) >= 0) return false;
+  const it = ITEM[tx + "_" + ty]; if (it && DEF[it.t].solid) return false;
+  return !farmAn.some(o => o !== a && Math.abs(o.x - tx) < .8 && Math.abs(o.y - ty) < .8);
+}
+function farmAnCaminhoLivre(a, tx, ty) {                                           // linha reta até o destino sem passar por nada
+  const n = Math.ceil(Math.hypot(tx - a.x, ty - a.y) * 3);
+  for (let i = 1; i <= n; i++) { const u = i / n; if (!farmAnLivre(Math.floor(a.x + (tx - a.x) * u + .5), Math.floor(a.y + (ty - a.y) * u + .5), a)) return false; }
+  return true;
+}
 function farmAnimais(list, vis, now) {
   farmAn.forEach(a => {
-    if (now > a.until) {                                                    // escolhe outro destino perto (dentro do pasto, longe do celeiro e da horta)
-      a.until = now + 2500 + Math.random() * 5000;
-      if (Math.random() < .55) { const nx = Math.max(14, Math.min(42, a.x + (Math.random() * 6 - 3))), ny = Math.max(21, Math.min(31, a.y + (Math.random() * 6 - 3))); if (!ITEM[Math.round(nx) + "_" + Math.round(ny)] && !(nx > 34 && ny < 24.5) && farmIdx(Math.round(nx), Math.round(ny)) < 0) { a.tx = nx; a.ty = ny; } }
-      else a.tx = a.x, a.ty = a.y, a.st = Math.random() < .5 ? "eat" : Math.random() < .2 ? "sleep" : "sit";
+    const dt = Math.min(.1, (now - (a.last || now)) / 1000); a.last = now;
+    if (now > a.until) {                                                            // escolhe: andar para um ponto livre perto ou ficar parado fazendo algo
+      a.until = now + 2500 + Math.random() * 5500;
+      let ok = false;
+      if (Math.random() < .55) for (let t = 0; t < 8 && !ok; t++) { const nx = Math.round(a.x + Math.random() * 8 - 4), ny = Math.round(a.y + Math.random() * 6 - 3); if (farmAnLivre(nx, ny, a) && farmAnCaminhoLivre(a, nx, ny)) { a.tx = nx; a.ty = ny; ok = true; } }
+      if (!ok) { a.tx = a.x; a.ty = a.y; a.st = Math.random() < .5 ? "eat" : Math.random() < .25 ? "sleep" : "sit"; }
     }
     const dx = a.tx - a.x, dy = a.ty - a.y, dist = Math.hypot(dx, dy);
-    if (dist > .05) { const sp = .012 * (a.k === "vaca" ? .6 : 1); a.x += dx / dist * sp * 16; a.y += dy / dist * sp * 16; a.st = "walk"; a.dir = dx - dy > 0 ? 1 : -1; }
-    else if (a.st === "walk") a.st = "sit";
+    if (dist > .06) {
+      const step = Math.min(dist, a.sp * dt), nx = a.x + dx / dist * step, ny = a.y + dy / dist * step;
+      if (farmAnLivre(Math.floor(nx + .5), Math.floor(ny + .5), a)) { a.x = nx; a.y = ny; a.st = "walk"; if (Math.abs(dx - dy) > .05) a.dir = dx - dy > 0 ? 1 : -1; }
+      else { a.tx = a.x; a.ty = a.y; a.st = "sit"; a.until = now + 800; }              // deu de cara com algo: para e escolhe outro rumo
+    } else if (a.st === "walk") a.st = "sit";
     if (!vis(a.x, a.y)) return;
-    list.push({ d: a.x + a.y + 1.015, run: () => { const w = P(a.x + .5, a.y + .5, 0); ctx.fillStyle = "rgba(26,16,38,.18)"; ctx.beginPath(); ctx.ellipse(w[0], w[1], 12, 5, 0, 0, 7); ctx.fill(); outlined(w[0], w[1], g => drawCat(g, 0, 0, a.k, a.st, a.dir > 0, now, a.seed, null, true)); } });
+    list.push({ d: a.x + a.y + 1.015, run: () => { const w = P(a.x + .5, a.y + .5, 0); ctx.fillStyle = "rgba(26,16,38,.18)"; ctx.beginPath(); ctx.ellipse(w[0], w[1], 12, 5, 0, 0, 7); ctx.fill(); outlined(w[0], w[1], g => drawCat(g, 0, 0, a.k, a.st, a.dir < 0, now, a.seed, null, true)); } });
   });
 }
 
@@ -6157,18 +6198,19 @@ function farmWatch(u, keepTool) {                                               
 function farmRender() {
   const own = farmView === uid, d = farmData();
   if (!farmOn) return;
-  $("fzTitle").textContent = own ? "🌱 Minha fazenda" : "🌱 Fazenda de " + cleanName((d && d.n) || "amigo");
-  $("fzCoins").textContent = "💰 " + ((farmMine && farmMine.c) || 0) + " moedas";
+  const tt = $("fzTitle"); tt.innerHTML = icoHTML("planta") + " "; tt.appendChild(document.createTextNode(own ? "Minha fazenda" : "Fazenda de " + cleanName((d && d.n) || "amigo")));
+  $("fzCoins").innerHTML = icoHTML("moeda") + " <b>" + ((farmMine && farmMine.c) || 0) + "</b> moedas";
   const lv = farmLevel(d), nx = FARM_LAND[lv], eb = $("fzLand");
   eb.hidden = !own; eb.textContent = nx ? "🌾 Ampliar terreno: " + nx[0] * nx[1] + " canteiros (" + nx[2] + " moedas)" : "🌾 Terreno no tamanho máximo (" + farmAcres(d) + ")"; eb.disabled = !nx;
   const bar = $("fzTools"); bar.textContent = "";
-  const tools = (own ? FARM_CROPS.map((C, k) => ["plant:" + k, C.n + " (" + C.s + ")"]).concat([["water", "💧 Regar"], ["clean", "🧹 Limpar"], ["harvest", "🧺 Colher"]])
+  if (!frReal()) { eb.hidden = true; $("fzFriends").textContent = ""; farmMsg("Entre numa conta (aba “Minha conta”) para plantar, colher e usar a fazenda."); return; }
+  const tools = (own ? FARM_CROPS.map((C, k) => ["plant:" + k, C.e + " " + C.n + " (" + C.s + ")"]).concat([["water", "💧 Regar"], ["clean", "🧹 Limpar"], ["harvest", "🧺 Colher"]])
     : [["water", "💧 Regar"], ["clean", "🧹 Ajudar a limpar"], ["steal", "😈 Roubar"], ["weed", "🌿 Erva daninha"], ["bug", "🐛 Praga"]]).concat([["walk", "👣 Andar"]]);
   tools.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t[1]; b.className = farmTool === t[0] ? "on" : ""; b.onclick = () => { farmTool = t[0]; farmRender(); }; bar.appendChild(b); });
   const fr = $("fzFriends"); fr.textContent = "";
   const sec = (txt) => { const h = document.createElement("div"); h.className = "muted"; h.textContent = txt; fr.appendChild(h); };
-  if (own) { sec("Seus amigos podem visitar a fazenda: ajudam (+2 moedas) ou aprontam. 😈"); fr.appendChild(mkBtn("👥 Gerenciar amigos", "primary", () => friendPanel(true))); }
-  else sec("Você está na fazenda de " + cleanName((d && d.n) || "um amigo") + ": ajude ou apronte. 😈");
+  if (own) { sec("Seus amigos podem visitar a fazenda: ajudam (+2 moedas) ou aprontam. "); fr.appendChild(mkBtn("👥 Gerenciar amigos", "primary", () => friendPanel(true))); }
+  else sec("Você está na fazenda de " + cleanName((d && d.n) || "um amigo") + ": ajude ou apronte. ");
 }
 function farmEnsure(snapVal) {
   if (snapVal) { farmMine = farmClean(snapVal); return; }
@@ -6180,8 +6222,8 @@ function farmPanel(show) {
   farmOn = show === undefined ? !farmOn : !!show; farmAuto = false; $("farmpanel").hidden = !farmOn; $("btnFarm").setAttribute("aria-pressed", String(farmOn)); $("btnFarm").classList.toggle("on", farmOn);
   if (farmOn) { farmMsg(""); farmListen(); farmRender(); }
 }
-function farmListen() {                                                    // escuta a minha fazenda (moedas) uma vez
-  if (farmListening || !db || !uid) return; farmListening = true;
+function farmListen() {                                                    // escuta a minha fazenda (moedas) uma vez; só conta de verdade tem fazenda
+  if (farmListening || !db || !uid || !frReal()) return; farmListening = true;
   const f1 = s => { const v = s.val(); farmSnapSeen = true; if (v || farmOn || roomOwnerUid() === uid) farmEnsure(v); farmRender(); }, r1 = farmRef(uid); r1.on("value", f1); farmRefs.push({ tag: "mine", ref: r1, fn: f1 });
 }
 const roomOwnerUid = () => (roomMeta && roomMeta.owner) || uid;
@@ -6190,11 +6232,13 @@ function farmSync() {                                                      // a 
   farmListen(); if (farmOn && farmSnapSeen && !farmMine) farmEnsure(null);                  // abriu a fazenda numa sala de outro: cria a minha também (moedas)
   const ow = roomOwnerUid(); if (ow !== farmView) farmWatch(ow); else if (ow !== uid && !farmTheirs && Date.now() - farmTry > 4000) farmWatch(ow, true);   // sem acesso ainda: tenta de novo (o dono pode ter acabado de adicionar)
   const yard = roomOf(me.x, me.y) === "faz";
-  if (yard && !farmOn && !farmAuto && !farmDismissed) { farmPanel(true); farmAuto = true; }
+  if (yard && !frReal() && !farmGuestTip) { farmGuestTip = true; setStatus("Você está na fazenda. Entre numa conta para plantar e colher.", 5000); }
+  if (!yard) farmGuestTip = false;
+  if (yard && frReal() && !farmOn && !farmAuto && !farmDismissed) { farmPanel(true); farmAuto = true; }
   else if (!yard && farmOn && farmAuto) { farmPanel(false); }
   if (!yard) farmDismissed = false;
 }
-let farmDismissed = false;
+let farmDismissed = false, farmGuestTip = false;
 function farmStart() {
   $("btnFarm").onclick = () => { farmDismissed = farmOn; farmPanel(); }; $("fzClose").onclick = () => { farmDismissed = true; farmPanel(false); }; $("fzLand").onclick = farmExpand;
   clearInterval(farmStart.t); farmStart.t = setInterval(() => { farmSync(); if (farmOn) farmRender(); }, 1000);
@@ -6204,57 +6248,73 @@ function farmStart() {
    friends/<eu>/<amigo> = {n,t} · friendReq/<para>/<de> = {n,t} · friendInv/<para>/<de> = {room,n,t,tok?}
    Só contas de verdade têm amigos (convidado anônimo não: o id some quando limpa o navegador).
    ========================================================= */
-let friendsOn = false, frData = {}, frReqs = {}, frInvs = {}, frListening = false, frSeenReq = {}, frSeenInv = {};
-const frReal = () => !!fbUser && isRealUser(fbUser) && !!uid && fbUser.uid === uid;
-const frName = () => cleanName(myName).slice(0, 14) || "Amigo";
+let friendsOn = false, frData = {}, frReqs = {}, frInvs = {}, frPres = {}, frPresRefs = {}, frListening = false, frSeenReq = {}, frSeenInv = {};
+const frReal = () => !!fbUser && isRealUser(fbUser) && !!db;
+const frMe = () => fbUser.uid;                                                   // vale dentro e fora de uma sala (tela inicial, conta)
+const frName = () => cleanName(myName || (fbUser && (fbUser.displayName || (fbUser.email || "").split("@")[0])) || "").slice(0, 14) || "Amigo";
 const frMsg = t => { const el = $("frMsg"); if (el) el.textContent = t || ""; };
 const frRef = p => db.ref(p);
 
 function friendListen() {                                          // escuta a minha lista, os pedidos e os convites (uma vez por sessão)
-  if (frListening || !db || !frReal()) return; frListening = true;
+  if (frListening || !frReal()) return; frListening = true;
   const on = (path, fn) => { try { frRef(path).on("value", s => { fn(s.val() || {}); friendRender(); }, () => {}); } catch (e) {} };
-  on("friends/" + uid, v => { frData = v; });
-  on("friendReq/" + uid, v => {
+  on("friends/" + frMe(), v => { frData = v; frWatchPresence(); });
+  on("friendReq/" + frMe(), v => {
     for (const k in v) if (!frSeenReq[k]) { frSeenReq[k] = 1; if (frSeenReq._ready) setStatus("👥 " + cleanName(v[k].n) + " quer ser seu amigo. Abra 👥 Amigos.", 6000); }
     frSeenReq._ready = true; frReqs = v; friendBadge();
   });
-  on("friendInv/" + uid, v => {
+  on("friendInv/" + frMe(), v => {
     for (const k in v) if (!frSeenInv[k + v[k].t]) { frSeenInv[k + v[k].t] = 1; if (frSeenInv._ready) setStatus("🚪 " + cleanName(v[k].n) + " te chamou para a sala dele(a). Abra 👥 Amigos.", 7000); }
     frSeenInv._ready = true; frInvs = v; friendBadge();
   });
 }
+/* presença: onde cada amigo está agora (só amigos leem). Some sozinha quando a pessoa sai ou desconecta. */
+let frPresRoom = "";
+function frWatchPresence() {
+  for (const k in frPresRefs) if (!frData[k]) { frPresRefs[k].off(); delete frPresRefs[k]; delete frPres[k]; }
+  Object.keys(frData).forEach(k => { if (frPresRefs[k]) return; const r = frRef("presence/" + k); frPresRefs[k] = r; r.on("value", sn => { frPres[k] = sn.val() || null; friendRender(); }, () => { frPres[k] = null; }); });
+}
+function frPresenceSync() {
+  if (!frReal()) return;
+  const room = tabInGame && roomRef ? roomRef.key : "";
+  if (room === frPresRoom) return; frPresRoom = room;
+  const r = frRef("presence/" + frMe());
+  if (!room) { r.remove().catch(() => {}); return; }
+  r.set({ room, n: frName(), t: SVT() }).catch(() => {}); try { r.onDisconnect().remove(); } catch (e) { /* ok */ }
+}
+function friendGo(room) { location.hash = "sala=" + room; location.reload(); }
 function friendBadge() { const n = Object.keys(frReqs).length + Object.keys(frInvs).length, b = $("btnFriends"); if (b) { b.classList.toggle("alerta", n > 0); b.textContent = "👥 Amigos" + (n ? " (" + n + ")" : ""); } }
 
 function friendRequest(id, nome) {
   if (!frReal()) return frMsg("Entre numa conta para ter amigos (convidados não podem).");
-  frRef("friendReq/" + id + "/" + uid).set({ n: frName(), t: SVT() }).then(() => frMsg("Pedido enviado para " + cleanName(nome) + ".")).catch(() => frMsg("Não consegui enviar o pedido (a outra pessoa precisa ter conta)."));
+  frRef("friendReq/" + id + "/" + frMe()).set({ n: frName(), t: SVT() }).then(() => frMsg("Pedido enviado para " + cleanName(nome) + ".")).catch(() => frMsg("Não consegui enviar o pedido (a outra pessoa precisa ter conta)."));
 }
 function friendAccept(id) {
   const r = frReqs[id]; if (!r) return;
-  const up = {}; up["friends/" + uid + "/" + id] = { n: cleanName(r.n).slice(0, 14), t: SVT() }; up["friends/" + id + "/" + uid] = { n: frName(), t: SVT() }; up["friendReq/" + uid + "/" + id] = null;
+  const up = {}; up["friends/" + frMe() + "/" + id] = { n: cleanName(r.n).slice(0, 14), t: SVT() }; up["friends/" + id + "/" + frMe()] = { n: frName(), t: SVT() }; up["friendReq/" + frMe() + "/" + id] = null;
   frRef("").update(up).then(() => frMsg("Vocês agora são amigos! 🎉")).catch(() => frMsg("Não consegui aceitar agora."));
 }
-const friendDecline = id => frRef("friendReq/" + uid + "/" + id).remove().catch(() => {});
-function friendRemove(id) { const up = {}; up["friends/" + uid + "/" + id] = null; up["friends/" + id + "/" + uid] = null; frRef("").update(up).catch(() => frMsg("Não consegui remover agora.")); }
+const friendDecline = id => frRef("friendReq/" + frMe() + "/" + id).remove().catch(() => {});
+function friendRemove(id) { const up = {}; up["friends/" + frMe() + "/" + id] = null; up["friends/" + id + "/" + frMe()] = null; frRef("").update(up).catch(() => frMsg("Não consegui remover agora.")); }
 
 /* convida o amigo para a sala em que eu estou (o voip e o chat são da sala). Sala permanente: gera um convite de membro de 24 h. */
 async function friendInvite(id, nome) {
-  if (!roomRef) return;
+  if (!tabInGame || !roomRef) return frMsg("Entre numa sala para chamar amigos para ela.");
   const room = roomRef.key, iv = { room, n: frName(), t: SVT() };
   if (isPermRoom()) {
     if (!isHost()) return frMsg("Só o dono (ou co-anfitrião) convida para uma sala permanente.");
-    const tok = randTok(); try { await roomRef.child("invites/" + tok).set({ role: "member", exp: gNow() + 86400000, by: uid, once: true }); } catch (e) { return frMsg("O servidor recusou o convite da sala."); }
+    const tok = randTok(); try { await roomRef.child("invites/" + tok).set({ role: "member", exp: gNow() + 86400000, by: frMe(), once: true }); } catch (e) { return frMsg("O servidor recusou o convite da sala."); }
     iv.tok = tok;
   }
-  frRef("friendInv/" + id + "/" + uid).set(iv).then(() => frMsg("Convite enviado para " + cleanName(nome) + ".")).catch(() => frMsg("Não consegui convidar agora."));
+  frRef("friendInv/" + id + "/" + frMe()).set(iv).then(() => frMsg("Convite enviado para " + cleanName(nome) + ".")).catch(() => frMsg("Não consegui convidar agora."));
 }
 function friendEnter(from) {
   const v = frInvs[from]; if (!v) return;
-  frRef("friendInv/" + uid + "/" + from).remove().catch(() => {});
+  frRef("friendInv/" + frMe() + "/" + from).remove().catch(() => {});
   if (v.tok) { location.hash = "sala=" + v.room + "&convite=" + v.tok; location.reload(); return; }
   copyText(v.room).then(() => frMsg("Sala " + v.room + " (código copiado). Saia desta sala e entre com esse código."));
 }
-const friendDismissInv = from => frRef("friendInv/" + uid + "/" + from).remove().catch(() => {});
+const friendDismissInv = from => frRef("friendInv/" + frMe() + "/" + from).remove().catch(() => {});
 
 function friendRender() {
   if (!friendsOn) return;
@@ -6262,11 +6322,18 @@ function friendRender() {
   const sec = (t, cls) => { const h = document.createElement("div"); h.className = cls || "muted"; h.textContent = t; box.appendChild(h); };
   if (!frReal()) { sec("Entre numa conta (aba “Minha conta”) para ter amigos, convidar para a sala e deixar eles visitarem a sua fazenda."); return; }
   const row = (label, btns) => { const r = document.createElement("div"); r.className = "frrow"; const s = document.createElement("span"); s.textContent = label; r.appendChild(s); btns.forEach(b => r.appendChild(b)); box.appendChild(r); };
-  const ri = Object.keys(frInvs); if (ri.length) { sec("Convites para a sala", "frh"); ri.forEach(k => row("🚪 " + cleanName(frInvs[k].n), [mkBtn("Entrar", "primary", () => friendEnter(k)), mkBtn("Ignorar", "no", () => friendDismissInv(k))])); }
-  const rq = Object.keys(frReqs); if (rq.length) { sec("Pedidos de amizade", "frh"); rq.forEach(k => row("👤 " + cleanName(frReqs[k].n), [mkBtn("Aceitar", "primary", () => friendAccept(k)), mkBtn("Recusar", "no", () => friendDecline(k))])); }
+  const ri = Object.keys(frInvs); if (ri.length) { sec("Convites para a sala", "frh"); ri.forEach(k => row(cleanName(frInvs[k].n) + " chamou você", [mkBtn("Entrar", "primary", () => friendEnter(k)), mkBtn("Ignorar", "no", () => friendDismissInv(k))])); }
+  const rq = Object.keys(frReqs); if (rq.length) { sec("Pedidos de amizade", "frh"); rq.forEach(k => row(cleanName(frReqs[k].n) + " quer ser seu amigo", [mkBtn("Aceitar", "primary", () => friendAccept(k)), mkBtn("Recusar", "no", () => friendDecline(k))])); }
   const fs = Object.keys(frData); sec("Meus amigos (" + fs.length + ")", "frh"); if (!fs.length) sec("Ainda nenhum. Adicione quem está na sala abaixo.");
-  fs.forEach(k => { const here = !!players[k]; row((here ? "🟢 " : "⚪ ") + cleanName(frData[k].n) + (here ? " · na sala" : ""), [mkBtn("Chamar para a sala", "", () => friendInvite(k, frData[k].n)), mkBtn("Remover", "no", () => friendRemove(k))]); });
-  const cand = Object.keys(players).filter(k => k !== uid && players[k].acct === "user" && !frData[k]);
+  fs.forEach(k => {
+    const here = tabInGame && !!players[k], pr = frPres[k], inMine = here, btns = [];
+    if (tabInGame && roomRef) btns.push(mkBtn("Chamar para a sala", "", () => friendInvite(k, frData[k].n)));
+    if (pr && !inMine && !pr.room.startsWith("perm-")) btns.push(mkBtn("Ir até lá", "primary", () => friendGo(pr.room)));
+    btns.push(mkBtn("Remover", "no", () => friendRemove(k)));
+    row(cleanName(frData[k].n), btns); const r = box.lastChild, dot = document.createElement("b"); dot.className = "frdot" + (pr || here ? " on" : ""); dot.title = pr || here ? "online" : "offline"; r.insertBefore(dot, r.firstChild);
+    if (pr || here) { const st = document.createElement("small"); st.className = "muted"; st.textContent = here ? "na sala com você" : pr.room.startsWith("perm-") ? "numa sala privada (peça um convite)" : "na sala " + pr.room; r.querySelector("span").appendChild(document.createElement("br")); r.querySelector("span").appendChild(st); }
+  });
+  const cand = Object.keys(players).filter(k => k !== frMe() && players[k].acct === "user" && !frData[k]);
   if (cand.length) { sec("Quem está na sala (adicionar)", "frh"); cand.forEach(k => row(cleanName(players[k].name), [mkBtn("Pedir amizade", "primary", () => friendRequest(k, players[k].name))])); }
 }
 function friendPanel(show) {
@@ -6274,8 +6341,8 @@ function friendPanel(show) {
   if (friendsOn) { friendListen(); frMsg(""); friendRender(); }
 }
 function friendsStart() {
-  $("btnFriends").onclick = () => friendPanel(); $("frClose").onclick = () => friendPanel(false);
-  friendListen(); clearInterval(friendsStart.t); friendsStart.t = setInterval(() => { friendListen(); if (friendsOn) friendRender(); }, 3000);
+  $("btnFriends").onclick = () => friendPanel(); $("btnFriendsT").onclick = () => friendPanel(); $("frClose").onclick = () => friendPanel(false);
+  friendListen(); clearInterval(friendsStart.t); friendsStart.t = setInterval(() => { friendListen(); frPresenceSync(); friendBadge(); if (friendsOn) friendRender(); }, 3000);
 }
 /* =========================================================
    DESENHO (laço principal): mundo em pixel art + camada de rótulos
