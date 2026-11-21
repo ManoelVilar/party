@@ -1,6 +1,9 @@
 # Fazenda
 
-Painel 🌱 Fazenda (`src/js/07f_fazenda.js`), um terreno por conta (`farm/<uid>`), 12 canteiros.
+Painel 🌱 Fazenda (`src/js/07f_fazenda.js`), um terreno por conta (`farm/<uid>`).
+
+## Terreno expansível
+Grade fixa 6×6 (índice do canteiro = linha*6 + coluna, não muda ao ampliar). O nível `s` (1 a 8) libera um retângulo no canto: 3×2, 3×3, 4×3, 4×4, 5×4, 5×5, 6×5, 6×6. Preços em `FARM_LAND`: 0, 60, 150, 350, 700, 1400, 2800, 5000 moedas.
 
 ## Plantas
 | Planta | Semente | Crescimento | Valor por unidade |

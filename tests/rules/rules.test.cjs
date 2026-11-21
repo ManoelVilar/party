@@ -225,7 +225,11 @@ check("moedas negativas são recusadas", me(A, farmDb()).write(F + "/c", -5), fa
 check("campo desconhecido na fazenda é recusado", me(A, farmDb()).write(F + "/x", 1), false);
 check("dono planta (canteiro novo)", me(A, farmDb()).write(F + "/p/2", { k: 1, t: NOW, w: 0, e: 0, b: 0 }), true);
 check("planta inexistente (k=9) é recusada", me(A, farmDb()).write(F + "/p/2", { k: 9, t: NOW, w: 0, e: 0, b: 0 }), false);
-check("canteiro fora da grade (12) é recusado", me(A, farmDb()).write(F + "/p/12", { k: 1, t: NOW, w: 0, e: 0, b: 0 }), false);
+check("canteiro fora da grade (36) é recusado", me(A, farmDb()).write(F + "/p/36", { k: 1, t: NOW, w: 0, e: 0, b: 0 }), false);
+check("canteiro 35 (grade 6x6) é aceito", me(A, farmDb()).write(F + "/p/35", { k: 1, t: NOW, w: 0, e: 0, b: 0 }), true);
+check("dono amplia o terreno (nível 2)", me(A, farmDb()).write(F + "/s", 2), true);
+check("nível de terreno acima do máximo é recusado", me(A, farmDb()).write(F + "/s", 9), false);
+check("amigo não amplia o terreno do outro", me(B, farmDb()).write(F + "/s", 8), false);
 check("dono colhe (apaga o canteiro)", me(A, farmDb()).write(F + "/p/0", null), true);
 check("amigo rega (+1)", me(B, farmDb()).write(F + "/p/0/w", 1), true);
 check("amigo não rega +2 de uma vez", me(B, farmDb()).write(F + "/p/0/w", 2), false);

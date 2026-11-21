@@ -141,7 +141,7 @@
   #decorpanel[hidden] { display:none; }
   #farmpanel { position:fixed; right:8px; top:56px; z-index:73; width:min(380px,calc(100vw - 16px)); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; padding:10px; }
   #farmpanel[hidden] { display:none; }
-  .fzgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; } .fzplot { padding:0; border:2px solid #3a2414; background:#7a4e2a; aspect-ratio:1; line-height:0; }
+  .fzgrid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; } .fzplot.lock { background:#2f4a2c; border:2px dashed #4e7a49; opacity:.45; cursor:not-allowed; }  .fzplot { padding:0; border:2px solid #3a2414; background:#7a4e2a; aspect-ratio:1; line-height:0; }
   .fzplot canvas { width:100%; height:100%; image-rendering:pixelated; } .fzplot.ripe { outline:2px solid #f6c445; }
   .fztools { display:flex; flex-wrap:wrap; gap:4px; } .fztools button.on { outline:2px solid var(--accent, #f6c445); } .fzfriends { display:grid; gap:4px; }
   .dccat { display:grid; grid-template-columns:1fr 1fr; gap:4px; } .dccat button.on { outline:2px solid var(--accent, #f6c445); }
@@ -560,6 +560,7 @@
     <div class="mxhead"><b id="fzTitle">🌱 Minha fazenda</b><button id="fzClose" type="button" aria-label="Fechar">✕</button></div>
     <div class="row"><span id="fzCoins" class="muted"></span><button id="fzBack" type="button" hidden>← Minha fazenda</button></div>
     <div id="fzGrid" class="fzgrid"></div>
+    <button id="fzLand" type="button" hidden></button>
     <div id="fzTools" class="fztools"></div>
     <div id="fzMsg" class="muted" role="status"></div>
     <div id="fzFriends" class="fzfriends"></div>

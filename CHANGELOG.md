@@ -5,6 +5,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Adicionado
+- **Terreno expansível na fazenda**: o terreno é uma grade de 6×6 que começa com 6 canteiros liberados (3×2) e cresce comprando terra com moedas: 9 (60), 12 (150), 16 (350), 20 (700), 25 (1400), 30 (2800) e 36 (5000). Botão **Ampliar terreno** abaixo da grade; a terra ainda bloqueada aparece apagada. Quem visita vê só a parte liberada. **Republicar as regras** (`database.rules.json`: `farm/<uid>/s` e canteiros até o 35).
+
 - **Editar pets e novas espécies**: no painel **Pets** (antes "Gatos"), o botão ✏️ Editar de cada bichinho muda o **nome** e a **espécie**. Qualquer pessoa da sala pode trocar, e todo mundo vê na hora. Acervo: gato preto, cinza, laranja e branco, cachorro, porco, galinha, pato, coelho, ovelha e vaca, com as mesmas poses (andar, dormir, comer, brincar...). Para criar mais espécies: uma linha em `PET_SP` e um ramo em `petHead` (`src/js/03b_pets.js`). **Republicar as regras** (`database.rules.json`: `cats/<id>/name` e `kind`).
 
 - **Fazenda (estilo Colheita Feliz)**: botão 🌱 Fazenda abre o seu terreno de 12 canteiros. Compre sementes com moedas (você começa com 50), plante, regue (cada rega encurta 10% do tempo), limpe e colha. Adicione pessoas da sala como amigos: elas visitam a sua fazenda e podem **ajudar** (regar/limpar, +2 moedas) ou **sabotar** (roubar planta madura, erva daninha, pragas; estrago e roubo reduzem a colheita). A fazenda é ligada à conta (visitante perde se limpar o navegador). Detalhes em `docs/FAZENDA.md`. **Republicar as regras** (`database.rules.json`: `farm` e `farmInv`).
