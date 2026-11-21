@@ -18,7 +18,6 @@ const DAY30 = 2592000000;
 /* tempo (em minutos) para cada planta da fazenda amadurecer: os MESMOS números de FARM_CROPS em src/js/07f_fazenda.js (o teste das regras confere) */
 const FARM_NIVEIS = readFileSync(join(root, "src/js/07f_fazenda.js"), "utf8").match(/^const FARM_LAND = \[(.*)\];/m)[1].split("],").length;
 const FARM_G = [...readFileSync(join(root, "src/js/07f_fazenda.js"), "utf8").match(/^const FARM_CROPS = \[([\s\S]*?)\];/m)[1].matchAll(/ g: (\d+),/g)].map(m => +m[1]);
-const FRIEND = "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists()";
 const PK = "root.child('farm/'+$o+'/p/'+$i+'/k').val()", PT = "root.child('farm/'+$o+'/p/'+$i+'/t').val()";
 /* menor tempo possível até amadurecer (planta com 3 regas = 70%): antes disso ninguém rouba */
 const RIPE_LB = `now >= ${PT} + (${FARM_G.map((g, k) => k < FARM_G.length - 1 ? `${PK} === ${k} ? ${Math.floor(g * 60000 * 0.7)} : ` : String(Math.floor(g * 60000 * 0.7))).join("")})`;
@@ -42,6 +41,7 @@ const EXPIRED = `(${A("exp")}.exists() && ${A("exp")}.val() <= now)`;
 const OPEN_TEMP = `(!$room.matches(/^perm-/) && ${kind} !== 'perm')`;
 const MEMBER = `auth != null && !${EXPIRED} && (${OPEN_TEMP} || ${IS_OWNER} || ${A("role")}.exists())`;
 const REAL_USER = `auth.token.firebase.sign_in_provider !== 'anonymous'`;
+const FRIEND = "auth != null && " + REAL_USER + " && root.child('friends/'+$o+'/'+auth.uid).exists()";
 
 /* escritório reservado = marcado pelo anfitrião OU com agente de IA trabalhando (mesa de agente ocupada por alguém que ainda está na sala) */
 const hostOnly = o => `${Rm(`offices/${o}/hostOnly`)}.val() === true`;
@@ -114,7 +114,7 @@ const rules = {
     farm: {
       "$o": {
         ".read": "auth != null && (auth.uid === $o || root.child('friends/'+$o+'/'+auth.uid).exists())",
-        ".write": "auth != null && auth.uid === $o",
+        ".write": "auth != null && auth.uid === $o && " + REAL_USER,
         ".validate": "newData.hasChildren(['n', 'c'])",
         n: { ".validate": str(1, 14) },
         c: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999999" },
@@ -151,6 +151,18 @@ const rules = {
           t: { ".validate": "newData.isNumber()" },
           "$other": { ".validate": false }
         }
+      }
+    },
+    /* onde o amigo está agora: presence/<eu> = {room, n, t}. Só eu e meus amigos leem; eu gravo (conta de verdade); some ao sair/desconectar. */
+    presence: {
+      "$u": {
+        ".read": "auth != null && (auth.uid === $u || root.child('friends/'+$u+'/'+auth.uid).exists())",
+        ".write": "auth != null && auth.uid === $u && " + REAL_USER,
+        ".validate": "newData.hasChildren(['room', 'n', 't'])",
+        room: { ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{4,40}$/)" },
+        n: { ".validate": str(1, 14) },
+        t: { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
       }
     },
     friendReq: {

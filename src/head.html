@@ -143,6 +143,7 @@
   #farmpanel[hidden] { display:none; }
   #friendpanel { position:fixed; right:8px; top:56px; z-index:74; width:min(400px,calc(100vw - 16px)); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; padding:10px; }
   #friendpanel[hidden] { display:none; }
+  #friendpanel { z-index:80; } .frdot { width:10px; height:10px; border-radius:50%; background:#6a4f95; border:2px solid #2b1b3a; flex:0 0 auto; } .frdot.on { background:#5ad1b4; }
   .frlist { display:grid; gap:4px; } .frh { color:var(--accent); font-weight:bold; margin-top:6px; } .frrow { display:flex; flex-wrap:wrap; gap:4px; align-items:center; background:#2a1b40; border:2px solid var(--line); padding:4px 6px; } .frrow span { flex:1 1 120px; overflow-wrap:anywhere; }
   .fzgrid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; } .fzplot.lock { background:#2f4a2c; border:2px dashed #4e7a49; opacity:.45; cursor:not-allowed; }  .fzplot { padding:0; border:2px solid #3a2414; background:#7a4e2a; aspect-ratio:1; line-height:0; }
   .fzplot canvas { width:100%; height:100%; image-rendering:pixelated; } .fzplot.ripe { outline:2px solid #f6c445; }
@@ -469,6 +470,7 @@
         <div class="muted" id="acctState"></div>
         <div class="coderow">
           <button type="button" id="btnEnterPerm" class="gold">ENTRAR NA MINHA SALA</button>
+          <button type="button" id="btnFriendsT">👥 Amigos</button>
         </div>
         <div class="coderow" id="rowRename">
           <input type="text" id="acctRoomName" maxlength="30" placeholder="Nome da minha sala" aria-label="Nome da minha sala" autocomplete="off">
@@ -561,7 +563,7 @@
     <div id="mixList"></div>
   </div>
   <div id="friendpanel" class="panel" hidden role="dialog" aria-label="Amigos">
-    <div class="mxhead"><b>👥 Amigos</b><button id="frClose" type="button" aria-label="Fechar">✕</button></div>
+    <div class="mxhead"><b><i class="ico" data-i="amigos"></i> Amigos</b><button id="frClose" type="button" aria-label="Fechar">✕</button></div>
     <div id="frList" class="frlist"></div>
     <div id="frMsg" class="muted" role="status"></div>
   </div>

@@ -3,11 +3,11 @@
    (roubar uma parte da colheita madura, soltar erva daninha ou praga). As regras do Firebase limitam o que um visitante escreve (ver scripts/gera-regras.mjs).
    Os números de FARM_CROPS (g = minutos para amadurecer) precisam ser os mesmos das regras (há teste). */
 const FARM_CROPS = [
-  { n: "Cenoura", g: 3, s: 5, v: 4, c1: "#f08a24", c2: "#3f9b3f" },
-  { n: "Tomate", g: 8, s: 12, v: 9, c1: "#d9372b", c2: "#3f9b3f" },
-  { n: "Milho", g: 15, s: 25, v: 18, c1: "#f2cf3a", c2: "#4fa840" },
-  { n: "Morango", g: 30, s: 55, v: 40, c1: "#e8456a", c2: "#3a9150" },
-  { n: "Abóbora", g: 60, s: 110, v: 80, c1: "#e8872a", c2: "#3b8a3b" }
+  { n: "Cenoura", e: "🥕", g: 3, s: 5, v: 4, c1: "#f08a24", c2: "#3f9b3f" },
+  { n: "Tomate", e: "🍅", g: 8, s: 12, v: 9, c1: "#d9372b", c2: "#3f9b3f" },
+  { n: "Milho", e: "🌽", g: 15, s: 25, v: 18, c1: "#f2cf3a", c2: "#4fa840" },
+  { n: "Morango", e: "🍓", g: 30, s: 55, v: 40, c1: "#e8456a", c2: "#3a9150" },
+  { n: "Abóbora", e: "🎃", g: 60, s: 110, v: 80, c1: "#e8872a", c2: "#3b8a3b" }
 ];
 /* Terreno expansível: grade fixa de 6×6 (índice = linha*6 + coluna, estável entre níveis). O nível s libera um retângulo no canto superior esquerdo. */
 const FARM_COLS = 6, FARM_N = 36, FARM_X0 = 6, FARM_Y0 = 22;                              // a horta ocupa x 6..11, y 22..27 do quintal
@@ -94,7 +94,9 @@ function farmExpand() {
   db.ref().update(up).then(() => farmMsg("Terreno ampliado para " + FARM_LAND[lv][0] * FARM_LAND[lv][1] + " canteiros! 🌾")).catch(() => farmMsg("O servidor recusou a ampliação."));
 }
 function farmAct(i) {
-  const own = farmView === uid, d = own ? farmMine : farmTheirs; if (!d || !farmMine) return farmMsg("Carregando a fazenda...");
+  if (!frReal()) return farmMsg("Entre numa conta (aba “Minha conta”) para plantar, colher e usar a fazenda.");
+  const own = farmView === uid, d = own ? farmMine : farmTheirs; if (!own && !d) return farmMsg("Só amigos do dono veem esta fazenda. Peça amizade em 👥 Amigos.");
+  if (!d || !farmMine) return farmMsg("Carregando a fazenda...");
   if (!farmOpen(d, i)) return farmMsg(own ? "Terra ainda não liberada. Use «Ampliar terreno»." : "Esta parte do terreno ainda não foi liberada.");
   const p = farmPlot(i), [tool, arg] = farmTool.split(":"), pp = "p/" + i, up = {};
   const add = (path, v) => { up[path] = v; }, mineC = path => { add("farm/" + uid + "/c", path); };
@@ -111,7 +113,7 @@ function farmAct(i) {
     else if (tool === "harvest") {
       if (!farmRipe(p)) return fail("Ainda não está pronto.");
       const n = farmUnits(p), gain = n * FARM_CROPS[p.k].v; add("farm/" + uid + "/" + pp, null);
-      if (!n) { farmMsg("Estragou! 🪰 Você limpou o canteiro, mas não rendeu nada. Colha antes de passar da hora."); farmFxAdd(i, "rot"); }
+      if (!n) { farmMsg("Estragou! Você limpou o canteiro, mas não rendeu nada. Colha antes de passar da hora."); farmFxAdd(i, "rot"); }
       else { mineC((farmMine.c || 0) + gain); farmMsg("Colheu " + n + "× " + FARM_CROPS[p.k].n + (farmStage(p) === 5 ? " (murcha)" : "") + ": +" + gain + " moedas."); farmFxAdd(i, "harvest", "+" + gain, FARM_CROPS[p.k].c1); }
     } else return fail("Isso é para visitas. Na sua fazenda: plantar, regar, limpar e colher.");
   } else {
@@ -123,12 +125,12 @@ function farmAct(i) {
       farmFxAdd(i, "clean", "+2", "#ffd166"); mineC((farmMine.c || 0) + 2); farmMsg("Você limpou um pouco. +2 moedas.");
     } else if (tool === "steal") {
       if (!farmRipe(p)) return fail("Ainda não está maduro para roubar.");
-      if (farmRotten(p)) return fail("Estragou: ninguém quer isso. 🪰");
+      if (farmRotten(p)) return fail("Estragou: ninguém quer isso.");
       const s = p.st || {}, slot = s.a === uid || s.b === uid ? null : !s.a ? "a" : !s.b ? "b" : "";
       if (slot === null) return fail("Você já roubou deste canteiro."); if (slot === "") return fail("Já levaram tudo que dava deste canteiro.");
-      add(base + "/st/" + slot, uid); farmFxAdd(i, "steal", "+" + FARM_CROPS[p.k].v, FARM_CROPS[p.k].c1); mineC((farmMine.c || 0) + FARM_CROPS[p.k].v); farmMsg("Roubou 1× " + FARM_CROPS[p.k].n + ": +" + FARM_CROPS[p.k].v + " moedas. 😈");
-    } else if (tool === "weed") { if ((p.e || 0) >= 3) return fail("Já está cheio de erva daninha."); add(base + "/e", (p.e || 0) + 1); farmFxAdd(i, "weed"); farmMsg("Plantou erva daninha. 😈"); }
-    else if (tool === "bug") { if ((p.b || 0) >= 3) return fail("Já está cheio de pragas."); add(base + "/b", (p.b || 0) + 1); farmFxAdd(i, "weed"); farmMsg("Soltou uma praga. 😈"); }
+      add(base + "/st/" + slot, uid); farmFxAdd(i, "steal", "+" + FARM_CROPS[p.k].v, FARM_CROPS[p.k].c1); mineC((farmMine.c || 0) + FARM_CROPS[p.k].v); farmMsg("Roubou 1× " + FARM_CROPS[p.k].n + ": +" + FARM_CROPS[p.k].v + " moedas. ");
+    } else if (tool === "weed") { if ((p.e || 0) >= 3) return fail("Já está cheio de erva daninha."); add(base + "/e", (p.e || 0) + 1); farmFxAdd(i, "weed"); farmMsg("Plantou erva daninha. "); }
+    else if (tool === "bug") { if ((p.b || 0) >= 3) return fail("Já está cheio de pragas."); add(base + "/b", (p.b || 0) + 1); farmFxAdd(i, "weed"); farmMsg("Soltou uma praga. "); }
     else return fail("Na fazenda de amigo: regar, limpar, roubar, erva daninha ou praga.");
   }
   db.ref().update(up).catch(() => farmMsg("O servidor recusou (sem permissão ou fora do tempo)."));
@@ -179,7 +181,7 @@ function farmTile(gx, gy, i, d) {
   if (farmOn && hover && farmIdx(hover[0], hover[1]) === i) sq(.02, .02, .98, .98, 0, "rgba(255,246,216,.25)", "#ffd166");
 }
 function farmWorldPush(list, vis) {
-  const d = farmData(); if (!d) return;
+  const d = farmData() || { s: 1 };                                          // sem acesso (convidado ou não amigo): mostra só a terra vazia
   const now = Date.now(); while (farmFx.length && now - farmFx[0].t0 > 2200) farmFx.shift();
   for (let i = 0; i < FARM_N; i++) {
     const gx = FARM_X0 + i % FARM_COLS, gy = FARM_Y0 + Math.floor(i / FARM_COLS); if (!vis(gx, gy, 40)) continue;
@@ -188,27 +190,42 @@ function farmWorldPush(list, vis) {
 }
 /* toque num canteiro (com a fazenda aberta e a ferramenta escolhida) age nele em vez de andar */
 function farmWorldClick(e) {
-  if (!farmOn || farmTool === "walk" || !farmData()) return false;
+  if (!farmOn || farmTool === "walk") return false;
   const t = tileAt(e), i = farmIdx(t[0], t[1]); if (i < 0) return false;
   if (Math.max(Math.abs(me.x - t[0]), Math.abs(me.y - t[1])) > 3) { farmMsg("Chegue mais perto do canteiro (ou escolha 👣 Andar)."); return true; }
   farmAct(i); return true;
 }
 
 /* ---------- animais do quintal (enfeite local, não sincroniza) ---------- */
-const FARM_BICHOS = [["galinha", 22, 24], ["galinha", 25, 27], ["pato", 19, 27], ["vaca", 31, 25], ["ovelha", 24, 22], ["porco", 33, 28], ["coelho", 15, 24], ["galinha", 38, 27]];
-const farmAn = FARM_BICHOS.map((b, k) => ({ k: b[0], x: b[1], y: b[2], tx: b[1], ty: b[2], until: 0, seed: k * 7 + 3, st: "sit", dir: 1 }));
+const FARM_BICHOS = [["galinha", 22, 24, .9], ["galinha", 25, 27, .9], ["pato", 19, 26, .8], ["vaca", 31, 25, .5], ["ovelha", 24, 22, .6], ["porco", 33, 28, .6], ["coelho", 15, 23, 1.1], ["galinha", 38, 27, .9]];
+const farmAn = FARM_BICHOS.map((b, k) => ({ k: b[0], x: b[1], y: b[2], tx: b[1], ty: b[2], sp: b[3], until: 0, seed: k * 7 + 3, st: "sit", dir: 1, last: 0 }));
+function farmAnLivre(tx, ty, a) {                                                  // o bicho pode pisar neste tile? (quintal, sem objeto sólido, fora da horta e sem outro bicho)
+  if (roomOf(tx, ty) !== "faz" || tx < 14 || farmIdx(tx, ty) >= 0) return false;
+  const it = ITEM[tx + "_" + ty]; if (it && DEF[it.t].solid) return false;
+  return !farmAn.some(o => o !== a && Math.abs(o.x - tx) < .8 && Math.abs(o.y - ty) < .8);
+}
+function farmAnCaminhoLivre(a, tx, ty) {                                           // linha reta até o destino sem passar por nada
+  const n = Math.ceil(Math.hypot(tx - a.x, ty - a.y) * 3);
+  for (let i = 1; i <= n; i++) { const u = i / n; if (!farmAnLivre(Math.floor(a.x + (tx - a.x) * u + .5), Math.floor(a.y + (ty - a.y) * u + .5), a)) return false; }
+  return true;
+}
 function farmAnimais(list, vis, now) {
   farmAn.forEach(a => {
-    if (now > a.until) {                                                    // escolhe outro destino perto (dentro do pasto, longe do celeiro e da horta)
-      a.until = now + 2500 + Math.random() * 5000;
-      if (Math.random() < .55) { const nx = Math.max(14, Math.min(42, a.x + (Math.random() * 6 - 3))), ny = Math.max(21, Math.min(31, a.y + (Math.random() * 6 - 3))); if (!ITEM[Math.round(nx) + "_" + Math.round(ny)] && !(nx > 34 && ny < 24.5) && farmIdx(Math.round(nx), Math.round(ny)) < 0) { a.tx = nx; a.ty = ny; } }
-      else a.tx = a.x, a.ty = a.y, a.st = Math.random() < .5 ? "eat" : Math.random() < .2 ? "sleep" : "sit";
+    const dt = Math.min(.1, (now - (a.last || now)) / 1000); a.last = now;
+    if (now > a.until) {                                                            // escolhe: andar para um ponto livre perto ou ficar parado fazendo algo
+      a.until = now + 2500 + Math.random() * 5500;
+      let ok = false;
+      if (Math.random() < .55) for (let t = 0; t < 8 && !ok; t++) { const nx = Math.round(a.x + Math.random() * 8 - 4), ny = Math.round(a.y + Math.random() * 6 - 3); if (farmAnLivre(nx, ny, a) && farmAnCaminhoLivre(a, nx, ny)) { a.tx = nx; a.ty = ny; ok = true; } }
+      if (!ok) { a.tx = a.x; a.ty = a.y; a.st = Math.random() < .5 ? "eat" : Math.random() < .25 ? "sleep" : "sit"; }
     }
     const dx = a.tx - a.x, dy = a.ty - a.y, dist = Math.hypot(dx, dy);
-    if (dist > .05) { const sp = .012 * (a.k === "vaca" ? .6 : 1); a.x += dx / dist * sp * 16; a.y += dy / dist * sp * 16; a.st = "walk"; a.dir = dx - dy > 0 ? 1 : -1; }
-    else if (a.st === "walk") a.st = "sit";
+    if (dist > .06) {
+      const step = Math.min(dist, a.sp * dt), nx = a.x + dx / dist * step, ny = a.y + dy / dist * step;
+      if (farmAnLivre(Math.floor(nx + .5), Math.floor(ny + .5), a)) { a.x = nx; a.y = ny; a.st = "walk"; if (Math.abs(dx - dy) > .05) a.dir = dx - dy > 0 ? 1 : -1; }
+      else { a.tx = a.x; a.ty = a.y; a.st = "sit"; a.until = now + 800; }              // deu de cara com algo: para e escolhe outro rumo
+    } else if (a.st === "walk") a.st = "sit";
     if (!vis(a.x, a.y)) return;
-    list.push({ d: a.x + a.y + 1.015, run: () => { const w = P(a.x + .5, a.y + .5, 0); ctx.fillStyle = "rgba(26,16,38,.18)"; ctx.beginPath(); ctx.ellipse(w[0], w[1], 12, 5, 0, 0, 7); ctx.fill(); outlined(w[0], w[1], g => drawCat(g, 0, 0, a.k, a.st, a.dir > 0, now, a.seed, null, true)); } });
+    list.push({ d: a.x + a.y + 1.015, run: () => { const w = P(a.x + .5, a.y + .5, 0); ctx.fillStyle = "rgba(26,16,38,.18)"; ctx.beginPath(); ctx.ellipse(w[0], w[1], 12, 5, 0, 0, 7); ctx.fill(); outlined(w[0], w[1], g => drawCat(g, 0, 0, a.k, a.st, a.dir < 0, now, a.seed, null, true)); } });
   });
 }
 
@@ -223,18 +240,19 @@ function farmWatch(u, keepTool) {                                               
 function farmRender() {
   const own = farmView === uid, d = farmData();
   if (!farmOn) return;
-  $("fzTitle").textContent = own ? "🌱 Minha fazenda" : "🌱 Fazenda de " + cleanName((d && d.n) || "amigo");
-  $("fzCoins").textContent = "💰 " + ((farmMine && farmMine.c) || 0) + " moedas";
+  const tt = $("fzTitle"); tt.innerHTML = icoHTML("planta") + " "; tt.appendChild(document.createTextNode(own ? "Minha fazenda" : "Fazenda de " + cleanName((d && d.n) || "amigo")));
+  $("fzCoins").innerHTML = icoHTML("moeda") + " <b>" + ((farmMine && farmMine.c) || 0) + "</b> moedas";
   const lv = farmLevel(d), nx = FARM_LAND[lv], eb = $("fzLand");
   eb.hidden = !own; eb.textContent = nx ? "🌾 Ampliar terreno: " + nx[0] * nx[1] + " canteiros (" + nx[2] + " moedas)" : "🌾 Terreno no tamanho máximo (" + farmAcres(d) + ")"; eb.disabled = !nx;
   const bar = $("fzTools"); bar.textContent = "";
-  const tools = (own ? FARM_CROPS.map((C, k) => ["plant:" + k, C.n + " (" + C.s + ")"]).concat([["water", "💧 Regar"], ["clean", "🧹 Limpar"], ["harvest", "🧺 Colher"]])
+  if (!frReal()) { eb.hidden = true; $("fzFriends").textContent = ""; farmMsg("Entre numa conta (aba “Minha conta”) para plantar, colher e usar a fazenda."); return; }
+  const tools = (own ? FARM_CROPS.map((C, k) => ["plant:" + k, C.e + " " + C.n + " (" + C.s + ")"]).concat([["water", "💧 Regar"], ["clean", "🧹 Limpar"], ["harvest", "🧺 Colher"]])
     : [["water", "💧 Regar"], ["clean", "🧹 Ajudar a limpar"], ["steal", "😈 Roubar"], ["weed", "🌿 Erva daninha"], ["bug", "🐛 Praga"]]).concat([["walk", "👣 Andar"]]);
   tools.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t[1]; b.className = farmTool === t[0] ? "on" : ""; b.onclick = () => { farmTool = t[0]; farmRender(); }; bar.appendChild(b); });
   const fr = $("fzFriends"); fr.textContent = "";
   const sec = (txt) => { const h = document.createElement("div"); h.className = "muted"; h.textContent = txt; fr.appendChild(h); };
-  if (own) { sec("Seus amigos podem visitar a fazenda: ajudam (+2 moedas) ou aprontam. 😈"); fr.appendChild(mkBtn("👥 Gerenciar amigos", "primary", () => friendPanel(true))); }
-  else sec("Você está na fazenda de " + cleanName((d && d.n) || "um amigo") + ": ajude ou apronte. 😈");
+  if (own) { sec("Seus amigos podem visitar a fazenda: ajudam (+2 moedas) ou aprontam. "); fr.appendChild(mkBtn("👥 Gerenciar amigos", "primary", () => friendPanel(true))); }
+  else sec("Você está na fazenda de " + cleanName((d && d.n) || "um amigo") + ": ajude ou apronte. ");
 }
 function farmEnsure(snapVal) {
   if (snapVal) { farmMine = farmClean(snapVal); return; }
@@ -246,8 +264,8 @@ function farmPanel(show) {
   farmOn = show === undefined ? !farmOn : !!show; farmAuto = false; $("farmpanel").hidden = !farmOn; $("btnFarm").setAttribute("aria-pressed", String(farmOn)); $("btnFarm").classList.toggle("on", farmOn);
   if (farmOn) { farmMsg(""); farmListen(); farmRender(); }
 }
-function farmListen() {                                                    // escuta a minha fazenda (moedas) uma vez
-  if (farmListening || !db || !uid) return; farmListening = true;
+function farmListen() {                                                    // escuta a minha fazenda (moedas) uma vez; só conta de verdade tem fazenda
+  if (farmListening || !db || !uid || !frReal()) return; farmListening = true;
   const f1 = s => { const v = s.val(); farmSnapSeen = true; if (v || farmOn || roomOwnerUid() === uid) farmEnsure(v); farmRender(); }, r1 = farmRef(uid); r1.on("value", f1); farmRefs.push({ tag: "mine", ref: r1, fn: f1 });
 }
 const roomOwnerUid = () => (roomMeta && roomMeta.owner) || uid;
@@ -256,11 +274,13 @@ function farmSync() {                                                      // a 
   farmListen(); if (farmOn && farmSnapSeen && !farmMine) farmEnsure(null);                  // abriu a fazenda numa sala de outro: cria a minha também (moedas)
   const ow = roomOwnerUid(); if (ow !== farmView) farmWatch(ow); else if (ow !== uid && !farmTheirs && Date.now() - farmTry > 4000) farmWatch(ow, true);   // sem acesso ainda: tenta de novo (o dono pode ter acabado de adicionar)
   const yard = roomOf(me.x, me.y) === "faz";
-  if (yard && !farmOn && !farmAuto && !farmDismissed) { farmPanel(true); farmAuto = true; }
+  if (yard && !frReal() && !farmGuestTip) { farmGuestTip = true; setStatus("Você está na fazenda. Entre numa conta para plantar e colher.", 5000); }
+  if (!yard) farmGuestTip = false;
+  if (yard && frReal() && !farmOn && !farmAuto && !farmDismissed) { farmPanel(true); farmAuto = true; }
   else if (!yard && farmOn && farmAuto) { farmPanel(false); }
   if (!yard) farmDismissed = false;
 }
-let farmDismissed = false;
+let farmDismissed = false, farmGuestTip = false;
 function farmStart() {
   $("btnFarm").onclick = () => { farmDismissed = farmOn; farmPanel(); }; $("fzClose").onclick = () => { farmDismissed = true; farmPanel(false); }; $("fzLand").onclick = farmExpand;
   clearInterval(farmStart.t); farmStart.t = setInterval(() => { farmSync(); if (farmOn) farmRender(); }, 1000);

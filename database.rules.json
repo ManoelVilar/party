@@ -17,7 +17,7 @@
     "farm": {
       "$o": {
         ".read": "auth != null && (auth.uid === $o || root.child('friends/'+$o+'/'+auth.uid).exists())",
-        ".write": "auth != null && auth.uid === $o",
+        ".write": "auth != null && auth.uid === $o && auth.token.firebase.sign_in_provider !== 'anonymous'",
         ".validate": "newData.hasChildren(['n', 'c'])",
         "n": {
           ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
@@ -38,24 +38,24 @@
               ".validate": "newData.isNumber() && newData.val() <= now + 60000"
             },
             "w": {
-              ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && data.parent().child('k').exists() && newData.isNumber() && newData.val() === data.val() + 1",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && root.child('friends/'+$o+'/'+auth.uid).exists() && data.parent().child('k').exists() && newData.isNumber() && newData.val() === data.val() + 1",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
             },
             "e": {
-              ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && root.child('friends/'+$o+'/'+auth.uid).exists() && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
             },
             "b": {
-              ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && root.child('friends/'+$o+'/'+auth.uid).exists() && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
             },
             "st": {
               "a": {
-                ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('b').val() !== auth.uid",
+                ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && root.child('friends/'+$o+'/'+auth.uid).exists() && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('b').val() !== auth.uid",
                 ".validate": "newData.isString() && newData.val().length <= 40"
               },
               "b": {
-                ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('a').val() !== auth.uid",
+                ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && root.child('friends/'+$o+'/'+auth.uid).exists() && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('a').val() !== auth.uid",
                 ".validate": "newData.isString() && newData.val().length <= 40"
               },
               "$other": {
@@ -87,6 +87,25 @@
           "$other": {
             ".validate": false
           }
+        }
+      }
+    },
+    "presence": {
+      "$u": {
+        ".read": "auth != null && (auth.uid === $u || root.child('friends/'+$u+'/'+auth.uid).exists())",
+        ".write": "auth != null && auth.uid === $u && auth.token.firebase.sign_in_provider !== 'anonymous'",
+        ".validate": "newData.hasChildren(['room', 'n', 't'])",
+        "room": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{4,40}$/)"
+        },
+        "n": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+        },
+        "t": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
         }
       }
     },

@@ -52,6 +52,13 @@ with sync_playwright() as p:
     B.bring_to_front(); B.wait_for_timeout(400)
     ok(ev(B, "[...document.querySelectorAll('#frList button')].some(b => b.textContent === 'Entrar')"), "o amigo vê o convite com o botão Entrar")
     B.locator("#frList button", has_text="Ignorar").click(); ok(wait_for(B, "Object.keys(frInvs).length === 0"), "ignorar apaga o convite")
+    # amigo em outra sala: presença e "Ir até lá" (funciona de qualquer lugar)
+    C = mk(ctx, "Caio", "party-teste-amigos-2"); idC = ev(C, "uid")
+    ev(A, "db.ref().update({['friends/" + idA + "/" + idC + "']: {n: 'Caio', t: Date.now()}, ['friends/" + idC + "/" + idA + "']: {n: 'Ana', t: Date.now()}})")
+    A.bring_to_front(); ok(wait_for(A, "frPres['" + idC + "'] && frPres['" + idC + "'].room === 'party-teste-amigos-2'", 9000), "a presença do amigo em outra sala chega")
+    A.wait_for_timeout(500)
+    ok(ev(A, "[...document.querySelectorAll('#frList .frrow')].some(r => r.textContent.includes('Caio') && r.textContent.includes('party-teste-amigos-2') && [...r.querySelectorAll('button')].some(b => b.textContent === 'Ir até lá'))"), "o painel mostra onde o amigo está e o botão Ir até lá")
+    ev(A, "db.ref().update({['friends/" + idA + "/" + idC + "']: null, ['friends/" + idC + "/" + idA + "']: null})")
     # remover
     B.locator("#frList button", has_text="Remover").click()
     ok(wait_for(A, "Object.keys(frData).length === 0") and wait_for(B, "Object.keys(frData).length === 0"), "remover desfaz a amizade dos dois lados")

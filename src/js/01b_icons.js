@@ -1,7 +1,7 @@
 /* Ícones em pixel art do jogo (12x12), no lugar dos emojis genéricos dos botões e das interações.
    Cada ícone é um mapa de letras (paleta abaixo; "." = transparente). Em HTML: <i class="ico" data-i="nome"></i> (preenchido no início por icoPreenche);
    em texto montado por código: icoHTML("nome"). Sem ícone com esse nome, o texto segue com o emoji original. */
-const ICO_PAL = { I: "#fff6d8", M: "#b9a8d6", A: "#ffd166", G: "#5ad1b4", R: "#ff6b6b", D: "#6a4f95" };   // paleta do jogo: creme, lilás, amarelo, verde-água, vermelho, roxo
+const ICO_PAL = { I: "#fff6d8", M: "#b9a8d6", A: "#ffd166", G: "#5ad1b4", R: "#ff6b6b", D: "#6a4f95", B: "#6cc0ff", O: "#ff9a4a", N: "#b9824a", P: "#ff8fb8", L: "#8fd35e", K: "#3a2a5a" };   // paleta do jogo: creme, lilás, amarelo, verde-água, vermelho, roxo
 const ICO_MAPS = {
   mao:      ["...I..I.....", "...I.II.I...", ".I.I.II.I...", ".I.IIIIII...", ".IIIIIIII...", "..IIIIIII...", "...IIIII....", "....IIII....", "....IIII....", "............", "............", "............"],
   cadeado:  ["....IIII....", "...I....I...", "...I....I...", "...I....I...", "..AAAAAAAA..", "..AAAAAAAA..", "..AAA..AAA..", "..AAA..AAA..", "..AAAAAAAA..", "..AAAAAAAA..", "............", "............"],
@@ -40,6 +40,25 @@ const ICO_MAPS = {
   robo:     ["....MM......", "....MM......", "..IIIIIIII..", ".IIIIIIIIII.", ".IIGGIIGGII.", ".IIGGIIGGII.", ".IIIIIIIIII.", ".IIMMMMMMII.", "..IIIIIIII..", "............", "............", "............"],
   pino:     ["...RRRR.....", "..RRRRRR....", "..RRIIRR....", "..RRIIRR....", "..RRRRRR....", "...RRRR.....", "....RR......", ".....R......", "............", "............", "............", "............"],
   caixa:    ["............", "..AAAAAAAA..", ".AAAAAAAAAA.", ".AIIIIIIIIA.", ".AAAAAAAAAA.", ".AAAAAAAAAA.", ".AAAAAAAAAA.", ".AAAAAAAAAA.", ".AAAAAAAAAA.", "............", "............", "............"],
+  planta:   ["............", "..LL....LL..", ".LLLL..LLLL.", ".LLLLLLLLLL.", "..LLLLLLLL..", "....LLLL....", ".....LL.....", ".....LL.....", ".....LL.....", ".NNNNNNNNNN.", ".NNNNNNNNNN.", "............"],
+  amigos:   ["............", "...II..MM...", "..IIII.MMMM.", "..IIII.MMMM.", "...II..MMMM.", ".IIIIII.MM..", "IIIIIIIMMMM.", "IIIIIIIMMMM.", "IIIIIIIMMMM.", "............", "............", "............"],
+  agua:     ["............", ".....B......", ".....BB.....", "....BBBB....", "...BBBBBB...", "..BBBBBBBB..", "..BIBBBBBB..", "..BIBBBBBB..", "..BBBBBBBB..", "...BBBBBB...", "....BBBB....", "............"],
+  cesta:    ["...NNNNNN...", "..N......N..", "..N......N..", ".ORROORROOR.", ".OOROORORRO.", "NNNNNNNNNNNN", ".NANNANNANN.", ".NNNNNNNNNN.", "..NANNANNN..", "...NNNNNN...", "............", "............"],
+  pegadas:  ["............", "..II........", ".IIII...II..", ".IIII..IIII.", "..II...IIII.", ".IIII...II..", ".IIII.......", "..II........", "............", "............", "............", "............"],
+  moeda:    ["....AAAA....", "..AAAAAAAA..", ".AAIIAAAAAA.", ".AIAAAAAAAA.", "AAIAAKKAAAAA", "AAAAAKKAAAAA", "AAAAAKKAAAAA", "AAAAAKKAAAAA", ".AAAAAAAAAA.", ".AAAAAAAAAA.", "..AAAAAAAA..", "....AAAA...."],
+  lapis:    [".........AA.", "........AAAA", ".......AAAA.", "......AAAA..", ".....AAAA...", "....AAAA....", "...NIII.....", "..NNII......", ".NNN........", "NN..........", "............", "............"],
+  trigo:    ["............", ".....A......", "..A..AA.A...", "..AA.A.AA...", "...AAAAA....", "....AAA.....", ".....A......", ".....L......", ".....L......", ".....L......", "............", "............"],
+  diabo:    ["R........R..", "RR......RR..", ".RKKKKKKR...", "..KKKKKKK...", "..KAKKKAK...", "..KKKKKKK...", "..KKRRRKK...", "...KKKKK....", "............", "............", "............", "............"],
+  erva:     ["............", "............", "...L...L....", "..LL..LL.L..", "..LL.LLL.LL.", ".LLLLLLLLLL.", "LLLLLLLLLLLL", "NNNNNNNNNNNN", "............", "............", "............", "............"],
+  praga:    ["............", "..R.....R...", "...R...R....", "....RRR.....", "..R.RKR.R...", "...RRRRR....", "..R.RRR.R...", "...RRRRR....", "....RRR.....", "............", "............", "............"],
+  casa:     ["....AA......", "...AAAA.....", "..AAAAAA....", ".AAAAAAAAA..", "AAAAAAAAAAA.", ".IIIIIIIII..", ".IIIIKKIII..", ".IIIIKKIII..", ".IIIIKKIII..", "............", "............", "............"],
+  aviso:    ["............", ".....AA.....", "....AAAA....", "....AKKA....", "...AAKKAA...", "...AAKKAA...", "..AAAAAAAA..", "..AAAKKAAA..", ".AAAAAAAAAA.", "AAAAAAAAAAAA", "............", "............"],
+  check:    ["............", "..........G.", ".........GG.", "........GGG.", "G......GGG..", "GG....GGG...", ".GG..GGG....", "..GGGGG.....", "...GGG......", "............", "............", "............"],
+  cenoura:  ["...LL.LL....", "....LLL.....", ".....L......", "...OOOOO....", "...OOOOOO...", "....OOOOO...", "....OOOO....", ".....OOO....", ".....OO.....", "......O.....", "............", "............"],
+  tomate:   ["....LLL.....", "...LLLLLL...", "....RRRR....", "..RRRRRRRR..", ".RRIRRRRRRR.", ".RRIRRRRRRR.", ".RRRRRRRRRR.", ".RRRRRRRRRR.", "..RRRRRRRR..", "...RRRRRR...", "............", "............"],
+  milho:    ["....L..L....", ".....LL.....", "...AAAAAA...", "..AAIAAAAA..", "..AIAAIAAA..", "..AAAAAAIA..", "..AAIAAAAA..", "..AAAAIAAA..", "...AAAAAA...", "....L..L....", ".....LL.....", "............"],
+  morango:  ["....LLLL....", "...LLLLLL...", "..RRRRRRRR..", ".RRIRRIRRRR.", ".RRRRRRRRRR.", ".RIRRRIRRIR.", "..RRRRRRRR..", "...RIRRRR...", "....RRRR....", ".....RR.....", "............", "............"],
+  abobora:  ["....LL......", ".....L......", "..OOOLOOO...", ".OOOOOOOOOO.", "OOIOOOOOOOOO", "OOIOOOOOOOOO", "OOIOOOOOOOOO", "OOOOOOOOOOOO", ".OOOOOOOOOO.", "..OOOOOOOO..", "............", "............"],
   gato:     ["..I......I..", ".III....III.", ".IIIIIIIIII.", ".IIIIIIIIII.", ".IIAIIIIAII.", ".IIIIRRIIII.", ".IIIIIIIIII.", "..IIIIIIII..", "............", "............", "............", "............"],
   estrela:  ["....AA......", "....AA......", "...AAAA.....", "AAAAAAAAAAAA", ".AAAAAAAAAA.", "..AAAAAAAA..", "..AAAAAAAA..", ".AAAA..AAAA.", ".AAA....AAA.", "............", "............", "............"],
 };
@@ -62,6 +81,7 @@ const EMOJI_ICO = {
   "✋": "mao", "🔒": "cadeado", "🎱": "bola8", "🔈": "som", "🔉": "som", "🔊": "som", "🔇": "mudo", "🖥": "tv", "🎬": "tv", "🎵": "nota", "🧹": "vassoura", "🚪": "porta", "🤖": "robo",
   "⛶": "tela", "🎚": "mixer", "🎄": "arvore", "🎨": "paleta", "💃": "danca", "🏆": "trofeu", "📣": "mega", "⏹": "parar", "⏸": "pausar", "⏭": "pular", "▶": "tocar", "✕": "fechar",
   "📍": "pino", "📦": "caixa", "💗": "coracao", "🍗": "petisco", "🧶": "novelo", "🐾": "pata", "🔑": "chave", "🍽": "comida", "🚿": "chuveiro", "😴": "cama", "⭐": "estrela",
+  "🌱": "planta", "👥": "amigos", "💧": "agua", "🧺": "cesta", "👣": "pegadas", "💰": "moeda", "🪙": "moeda", "✏": "lapis", "🌾": "trigo", "😈": "diabo", "🌿": "erva", "🐛": "praga", "🏠": "casa", "⛔": "aviso", "⚠": "aviso", "✅": "check", "🥕": "cenoura", "🍅": "tomate", "🌽": "milho", "🍓": "morango", "🎃": "abobora", "🛏": "cama", "🥣": "comida", "🧽": "vassoura", "🛑": "parar", "🐈": "gato",
   "🎤": "mic", "🎙": "micoff", "📷": "cam", "📹": "camoff", "💬": "chat",
 };
 const EMOJI_RE = new RegExp("^\\s*(" + Object.keys(EMOJI_ICO).join("|") + ")\\uFE0F?\\s*");
