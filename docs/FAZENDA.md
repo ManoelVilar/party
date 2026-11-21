@@ -27,3 +27,12 @@ O dono adiciona alguém da sala (`farm/<dono>/f/<id>` + convite em `farmInv/<id>
 
 ## Limites da v1
 É um painel, não fica no mundo. Moedas de visita não são validadas contra a ação (confiança entre amigos).
+
+## No mapa (quintal)
+A horta fica em `FARM_X0,FARM_Y0` (x 6..11, y 22..27) do quintal (sala `faz`, y 20..32). É sempre a fazenda do dono da sala. Quem não é amigo do dono não lê `farm/<dono>` (regras) e não vê plantas.
+
+## Ciclo da planta
+0 semente · 1 broto · 2 pequena · 3 crescida · 4 madura · 5 murcha · 6 estragada. Madura vira murcha após `max(15 min, 2×tempo de crescer)` e estraga após o dobro disso. Murcha: −1 unidade. Estragada: 0 unidades, não dá para roubar; colher ou limpar só libera o canteiro.
+
+## Amigos
+`friends/<eu>/<amigo>`, `friendReq/<para>/<de>`, `friendInv/<para>/<de>`. Pedido → aceite grava as duas listas de uma vez. Convite para sala permanente cria um convite de membro (`rooms/<sala>/invites/<tok>`, 24 h, uso único); sala temporária entrega só o código.

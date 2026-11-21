@@ -75,6 +75,13 @@ with sync_playwright() as p:
     tool(A, "Limpar"); plot(A, 0); ok(wait_for(A, "farmMine.p[0].b === 0 && farmMine.p[0].e === 0"), "a dona limpa tudo de uma vez")
     ok(ev(A, "farmUnits(farmMine.p[0])") == 2, "sem estrago, a colheita é 3 - 1 roubado = 2")
     tool(A, "Colher"); plot(A, 0); ok(wait_for(A, "!farmMine.p || !farmMine.p[0]") and ev(A, "farmMine.c") == 45 + 2 * 4, "colher paga as unidades que sobraram e libera o canteiro")
+    # ciclo: madura -> murcha -> estragada
+    ev(A, "farmRef(uid).child('p/2').set({k: 0, t: jSrv() - 3 * 60000 - 1000, w: 0, e: 0, b: 0})"); ok(wait_for(A, "farmStage(farmMine.p[2]) === 4"), "passou do tempo de crescer: madura")
+    ev(A, "farmRef(uid).child('p/2/t').set(jSrv() - 3 * 60000 - farmRotMs(farmMine.p[2]) - 1000)"); ok(wait_for(A, "farmStage(farmMine.p[2]) === 5 && farmUnits(farmMine.p[2]) === 2"), "sem colher a tempo: murcha e rende uma unidade a menos")
+    ev(A, "farmRef(uid).child('p/2/t').set(jSrv() - 3 * 60000 - 2 * farmRotMs(farmMine.p[2]) - 1000)"); ok(wait_for(A, "farmStage(farmMine.p[2]) === 6 && farmUnits(farmMine.p[2]) === 0"), "mais tempo ainda: estraga de vez e não rende nada")
+    ev(A, "farmTool = 'steal'"); c0 = ev(A, "farmMine.c"); ev(A, "farmTool = 'harvest'; farmAct(2)"); ok(wait_for(A, "!farmMine.p || !farmMine.p[2]") and ev(A, "farmMine.c") == c0 and "Estragou" in ev(A, "$('fzMsg').textContent"), "colher planta estragada só limpa o canteiro (0 moedas)")
+    ev(A, "farmRef(uid).child('p/1').set({k: 1, t: jSrv() - 3 * 60000, w: 0, e: 0, b: 0})"); ok(wait_for(A, "farmStage(farmMine.p[1]) === 2 || farmStage(farmMine.p[1]) === 1"), "crescendo passa por estágios (broto, pequena...)")
+    ev(A, "farmRef(uid).child('p/1').remove()")
     # terreno expansível
     A.click("#fzLand"); ok("Faltam" in ev(A, "$('fzMsg').textContent"), "sem moedas não amplia o terreno")
     ev(A, "farmTool = 'plant:0'; farmAct(5)"); ok("não liberada" in ev(A, "$('fzMsg').textContent"), "terra bloqueada não aceita plantio")
