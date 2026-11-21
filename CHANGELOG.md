@@ -4,6 +4,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ## [Não lançado]
 
+### Adicionado
+- **Decorar a casa (estilo Habbo)**: botão 🛏 Decorar com catálogo de 13 móveis (sofá, poltrona, cadeira, mesa, balcão, estante, planta, luminária, cama e 4 tapetes). Toque no chão para colocar (sombra verde/vermelha), toque num móvel colocado para pegar e mover, R gira, Esc sai. Aparece ao vivo para todos. O dono (e co-anfitriões) decoram; o dono libera outras pessoas em **Sala → Na sala agora → Deixar decorar**. Não bloqueia portas, limite de 60 móveis. Detalhes em `docs/DECORAR.md`. **Republicar as regras** (`database.rules.json`: `decor` e `editors`).
+
 ### Corrigido
 - **Cinema sem a aba do YouTube**: o painel só mostrava "Compartilhar tela". Agora tem a aba **YouTube** (aberta por padrão, com a busca) ao lado de "Compartilhar tela".
 

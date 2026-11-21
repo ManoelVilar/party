@@ -115,7 +115,7 @@ setInterval(posSave, 1500); addEventListener("pagehide", posSave); document.addE
 function startGame(name, room) {
   myName = name; tabInGame = true; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
-  posRoom = room;
+  posRoom = room; decorStart();
   const spawnPadrao = () => { let tries = 0; do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30); me.dir = "d"; };
   const salvo = posLoad(room);                                          // recarregou a página ou a internet caiu: volta para onde estava (cinema, reunião e mesas dependem do lugar)
   if (salvo) { me.x = salvo.x; me.y = salvo.y; me.dir = salvo.dir; } else spawnPadrao();
@@ -281,6 +281,7 @@ cv.addEventListener("pointermove", e => { const t = tileAt(e); hover = isWall(t[
 cv.addEventListener("pointerleave", () => { hover = null; });
 cv.addEventListener("pointerdown", e => {
   if (!meRef || ptrs.size > 1) return;
+  if (decorClick(e)) return;                                           // modo decorar: o toque coloca/pega móvel em vez de andar
   if (me.act && me.act.type === "sleep") return wake();
   if (me.act && me.act.type === "shower") return;
   const t = tileAt(e), x = t[0], y = t[1];

@@ -223,6 +223,7 @@ function renderHostPanel() {
     li.appendChild(gpEl("span", "", cleanName(p.name) + (id === uid ? " (você)" : "")));
     if (roomMeta && id === roomMeta.owner) li.appendChild(badge("dono", "host"));
     li.appendChild(badge(ACCT_LABEL[ac], ac === "agent" ? "agent" : ""));
+    if (isRoomOwner() && id !== uid && ac !== "agent") li.appendChild(mkBtn(decorEditors[id] ? "Tirar decoração" : "Deixar decorar", "", () => decorSetEditor(id, !decorEditors[id])));
     if (isHost() && id !== uid && !(roomMeta && id === roomMeta.owner)) li.appendChild(mkBtn("Tirar da sala", "no", () => kick(id)));
     ul.appendChild(li);
   });

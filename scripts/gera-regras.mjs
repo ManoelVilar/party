@@ -15,6 +15,9 @@ const OFFICES = Object.keys(layout.offices);
 const deskKey = d => d.x + "_" + d.y;
 const desksOf = o => layout.desks.filter(d => d.office === o);
 const DAY30 = 2592000000;
+const COLS = 45, ROWS = 20;                                   // tamanho do mapa (igual a src/js/01_core.js)
+/* móveis que podem ser colocados ao decorar a casa: a MESMA lista de DECOR em src/js/04d_decor.js (o teste das regras confere) */
+const DECOR_TIPOS = readFileSync(join(root, "src/js/04d_decor.js"), "utf8").match(/^const DECOR = \[([\s\S]*?)\];/m)[1].match(/t: "(\w+)"/g).map(x => x.slice(4, -1));
 
 /* ---------- trechos reutilizados (todos olham os dados ANTES da escrita, via root) ---------- */
 const Rm = p => `root.child('rooms/'+$room+'/${p}')`;
@@ -357,6 +360,26 @@ const rules = {
             }
           }])),
           "$other": { ".validate": false }
+        },
+
+        /* decorar a casa: quem o dono liberou (editors) e os móveis colocados (decor). Escreve: dono, co-anfitrião ou editor liberado; agente nunca. */
+        editors: {
+          ...readM,
+          "$u": { ".write": `${MEMBER} && ${IS_OWNER}`, ".validate": "newData.val() === true" }
+        },
+        decor: {
+          ...readM,
+          "$id": {
+            ".write": `${MEMBER} && ${NOT_AGENT} && (${IS_HOST} || root.child('rooms/'+$room+'/editors/'+auth.uid).val() === true)`,
+            ".validate": `$id.matches(/^[-A-Za-z0-9_]{1,24}$/) && newData.hasChildren(['t', 'x', 'y', 'f', 'by'])`,
+            t: { ".validate": `newData.isString() && newData.val().matches(/^(${DECOR_TIPOS.join("|")})$/)` },
+            x: { ".validate": num(0, COLS - 1) },
+            y: { ".validate": num(0, ROWS - 1) },
+            f: { ".validate": "newData.isString() && newData.val().matches(/^[dulr]$/)" },
+            by: { ".validate": "newData.val() === auth.uid" },
+            at: { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+            "$other": { ".validate": false }
+          }
         },
 
         /* mesas dos escritórios (uma pessoa ou agente por lugar) e escritórios reservados */

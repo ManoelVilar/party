@@ -47,7 +47,7 @@ function frame() {
   if (!(sprOK && bgDesenha(kx, ky))) { drawFloor(kx, ky, vw, vh); OBJS.forEach(o => { if (DEF[o.t].flat) DEF[o.t].draw(o); }); drawFloorShadows(kx, ky, vw, vh); }
   const mk = Object.keys(messes);
   mk.forEach(k => drawMess(k, messes[k], Math.max(Math.abs(messes[k].x - me.x), Math.abs(messes[k].y - me.y)) <= 1));
-  if (hover && !tileBlocked(hover[0], hover[1])) poly([P(hover[0], hover[1]), P(hover[0] + 1, hover[1]), P(hover[0] + 1, hover[1] + 1), P(hover[0], hover[1] + 1)], "rgba(255,246,216,.22)", "rgba(255,246,216,.9)");
+  if (decorOn) decorGhost(); else if (hover && !tileBlocked(hover[0], hover[1])) poly([P(hover[0], hover[1]), P(hover[0] + 1, hover[1]), P(hover[0] + 1, hover[1] + 1), P(hover[0], hover[1] + 1)], "rgba(255,246,216,.22)", "rgba(255,246,216,.9)");
 
   const list = [], labels = [];
   const vis = (x, y, h) => { const s = P(x + .5, y + .5); return s[0] > kx - 100 && s[0] < kx + vw + 100 && s[1] > ky - 80 && s[1] < ky + vh + 150 + (h || 0); };
@@ -66,7 +66,7 @@ function frame() {
     const st = sprOK ? sprEstado(o) : null;
     list.push({ d, run: () => {
       let ok = false;
-      if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" || o.t === "neon" || o.t === "gamer" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
+      if (st !== null) { natalLuzes = st === "n" ? 1 : 0; try { ok = sprDesenha("o" + o.x + "_" + o.y + o.t + o.f, st, o.x, o.y, o.w, o.h, 120, o.t === "luz" || o.t === "neon" || o.t === "gamer" ? 70 : 8, () => DEF[o.t].draw(o), kx, ky); } finally { natalLuzes = 0; } }
       if (!ok) DEF[o.t].draw(o); else if (st === "n") { natalLuzes = 2; try { DEF[o.t].draw(o); } finally { natalLuzes = 0; } }
     } });
     if (o.t === "jukebox" && jukePlaying()) list.push({ d: d + .08, run: () => jukeNotes(o, now) });
