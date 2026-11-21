@@ -18,7 +18,7 @@ const DAY30 = 2592000000;
 /* tempo (em minutos) para cada planta da fazenda amadurecer: os MESMOS números de FARM_CROPS em src/js/07f_fazenda.js (o teste das regras confere) */
 const FARM_NIVEIS = readFileSync(join(root, "src/js/07f_fazenda.js"), "utf8").match(/^const FARM_LAND = \[(.*)\];/m)[1].split("],").length;
 const FARM_G = [...readFileSync(join(root, "src/js/07f_fazenda.js"), "utf8").match(/^const FARM_CROPS = \[([\s\S]*?)\];/m)[1].matchAll(/ g: (\d+),/g)].map(m => +m[1]);
-const FRIEND = "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true";
+const FRIEND = "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists()";
 const PK = "root.child('farm/'+$o+'/p/'+$i+'/k').val()", PT = "root.child('farm/'+$o+'/p/'+$i+'/t').val()";
 /* menor tempo possível até amadurecer (planta com 3 regas = 70%): antes disso ninguém rouba */
 const RIPE_LB = `now >= ${PT} + (${FARM_G.map((g, k) => k < FARM_G.length - 1 ? `${PK} === ${k} ? ${Math.floor(g * 60000 * 0.7)} : ` : String(Math.floor(g * 60000 * 0.7))).join("")})`;
@@ -110,16 +110,15 @@ const rules = {
       }
     },
 
-    /* fazenda de cada conta. O dono escreve livre; amigo (farm/<dono>/f/<amigo>) só rega, capina/atrapalha e rouba, com limites. Lê: dono e amigos. */
+    /* fazenda de cada conta. O dono escreve livre; amigo (friends/<dono>/<amigo>) só rega, capina/atrapalha e rouba, com limites. Lê: dono e amigos. */
     farm: {
       "$o": {
-        ".read": "auth != null && (auth.uid === $o || root.child('farm/'+$o+'/f/'+auth.uid).val() === true)",
+        ".read": "auth != null && (auth.uid === $o || root.child('friends/'+$o+'/'+auth.uid).exists())",
         ".write": "auth != null && auth.uid === $o",
         ".validate": "newData.hasChildren(['n', 'c'])",
         n: { ".validate": str(1, 14) },
         c: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999999" },
         s: { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= " + FARM_NIVEIS },
-        f: { "$u": { ".validate": "newData.val() === true" } },
         p: {
           "$i": {
             ".validate": "$i.matches(/^([0-9]|[12][0-9]|3[0-5])$/) && newData.hasChildren(['k', 't', 'w', 'e', 'b'])",
@@ -140,13 +139,44 @@ const rules = {
         "$other": { ".validate": false }
       }
     },
-    /* quem me adicionou: farmInv/<eu>/<dono> = nome da fazenda. O dono escreve a própria entrada; eu posso sair (apagar). */
-    farmInv: {
-      "$b": {
-        ".read": "auth != null && auth.uid === $b",
-        "$o": {
-          ".write": "auth != null && ((auth.uid === $o && newData.exists()) || (auth.uid === $b && !newData.exists()) || (auth.uid === $o && !newData.exists()))",
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+    /* amigos (só contas de verdade). Pedido: friendReq/<para>/<de>. Quem aceita grava a própria lista e a espelhada na mesma gravação (o pedido ainda existe nas regras, que veem o estado antes da gravação).
+       Sair da amizade: qualquer um dos dois apaga as duas entradas. */
+    friends: {
+      "$u": {
+        ".read": "auth != null && auth.uid === $u",
+        "$f": {
+          ".write": "auth != null && !newData.exists() && (auth.uid === $u || auth.uid === $f) || auth != null && newData.exists() && " + REAL_USER + " && ((auth.uid === $u && root.child('friendReq/'+$u+'/'+$f).exists()) || (auth.uid === $f && root.child('friendReq/'+$f+'/'+$u).exists()))",
+          ".validate": "newData.hasChildren(['n', 't']) && $f !== $u",
+          n: { ".validate": str(1, 14) },
+          t: { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
+    friendReq: {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".write": "auth != null && ((!newData.exists() && (auth.uid === $to || auth.uid === $from)) || (newData.exists() && auth.uid === $from && $from !== $to && " + REAL_USER + " && !data.exists() && !root.child('friends/'+$to+'/'+$from).exists()))",
+          ".validate": "newData.hasChildren(['n', 't'])",
+          n: { ".validate": str(1, 14) },
+          t: { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
+    /* convite de um amigo para a sala dele: friendInv/<para>/<de> = {room, n, t, tok?}. Só entre amigos. */
+    friendInv: {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".write": "auth != null && ((!newData.exists() && (auth.uid === $to || auth.uid === $from)) || (newData.exists() && auth.uid === $from && root.child('friends/'+$from+'/'+$to).exists() && root.child('friends/'+$to+'/'+$from).exists()))",
+          ".validate": "newData.hasChildren(['room', 'n', 't'])",
+          room: { ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{4,40}$/)" },
+          tok: { ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9]{20,40}$/)" },
+          n: { ".validate": str(1, 14) },
+          t: { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
         }
       }
     },

@@ -214,7 +214,7 @@ check("toda espécie do acervo é aceita pelas regras", { allowed: especies.ever
 
 /* fazenda */
 const D1 = 60 * 60000;
-const farmDb = (extra = {}) => targaryen.database(rules, { farm: { ana: { n: "Ana", c: 50, f: { beto: true, caio: true }, p: { 0: { k: 0, t: NOW - D1, w: 0, e: 0, b: 0 }, 1: { k: 4, t: NOW - 1000, w: 0, e: 1, b: 0 } }, ...extra }, beto: { n: "Beto", c: 10 } } }, NOW);
+const farmDb = (extra = {}) => targaryen.database(rules, { farm: { ana: { n: "Ana", c: 50, p: { 0: { k: 0, t: NOW - D1, w: 0, e: 0, b: 0 }, 1: { k: 4, t: NOW - 1000, w: 0, e: 1, b: 0 } }, ...extra }, beto: { n: "Beto", c: 10 } }, friends: { ana: { beto: { n: "Beto", t: NOW }, caio: { n: "Caio", t: NOW } }, beto: { ana: { n: "Ana", t: NOW } } } }, NOW);
 const F = "/farm/ana";
 check("dono lê a própria fazenda", me(A, farmDb()).read(F), true);
 check("amigo lê a fazenda", me(B, farmDb()).read(F), true);
@@ -242,7 +242,7 @@ check("amigo não passa de 3 pragas", me(B, farmDb({ p: { 0: { k: 0, t: NOW - D1
 check("amigo não apaga a plantação", me(B, farmDb()).write(F + "/p/0", null), false);
 check("amigo não troca a planta", me(B, farmDb()).write(F + "/p/0/k", 4), false);
 check("amigo não mexe nas moedas do dono", me(B, farmDb()).write(F + "/c", 9999), false);
-check("amigo não adiciona outro amigo", me(B, farmDb()).write(F + "/f/dani", true), false);
+check("quem não é amigo não lê a fazenda (amizade vem de friends)", me({ uid: "dani" }, farmDb()).read(F), false);
 check("amigo rouba de planta madura (vaga a)", me(B, farmDb()).write(F + "/p/0/st/a", "beto"), true);
 check("não rouba antes de amadurecer (abóbora recém-plantada)", me(B, farmDb()).write(F + "/p/1/st/a", "beto"), false);
 check("não rouba em nome de outro", me(B, farmDb()).write(F + "/p/0/st/a", "caio"), false);
@@ -253,16 +253,39 @@ check("não sobrescreve roubo já feito", me({ uid: "caio" }, roubado).write(F +
 check("quem não é amigo não rouba", me({ uid: "dani" }, farmDb()).write(F + "/p/0/st/a", "dani"), false);
 check("visitante mexe na própria fazenda (ganha moedas)", me(B, farmDb()).write("/farm/beto/c", 20), true);
 check("visita e moedas na mesma atualização (atômico)", me(B, farmDb()).update("/", { "farm/ana/p/0/st/a": "beto", "farm/beto/c": 14 }), true);
-check("dono adiciona amigo (f + convite)", me(A, farmDb()).update("/", { "farm/ana/f/dani": true, "farmInv/dani/ana": "Ana" }), true);
-check("o convidado lê os próprios convites", me(B, targaryen.database(rules, { farmInv: { beto: { ana: "Ana" } } }, NOW)).read("/farmInv/beto"), true);
-check("ninguém lê convites de outro", me(A, targaryen.database(rules, { farmInv: { beto: { ana: "Ana" } } }, NOW)).read("/farmInv/beto"), false);
-check("ninguém convida em nome de outro", me(B, farmDb()).write("/farmInv/caio/ana", "Ana"), false);
-const inv = targaryen.database(rules, { farmInv: { beto: { ana: "Ana" } } }, NOW);
-check("convidado sai (apaga o convite)", me(B, inv).write("/farmInv/beto/ana", null), true);
-check("dono tira o convite", me(A, inv).write("/farmInv/beto/ana", null), true);
-check("terceiro não apaga convite", me({ uid: "caio" }, inv).write("/farmInv/beto/ana", null), false);
+/* amigos */
+const PW = { provider: "password" }, tk = u => ({ uid: u, token: { firebase: { sign_in_provider: "password" } } }), AN = { uid: "anon1", token: { firebase: { sign_in_provider: "anonymous" } } };
+const fdb = (extra = {}) => targaryen.database(rules, { friends: {}, friendReq: {}, friendInv: {}, ...extra }, NOW);
+check("conta pede amizade", me(tk("ana"), fdb()).write("/friendReq/beto/ana", { n: "Ana", t: NOW }), true);
+check("convidado (anônimo) não pede amizade", me(AN, fdb()).write("/friendReq/beto/anon1", { n: "Anon", t: NOW }), false);
+check("ninguém pede amizade em nome de outro", me(tk("caio"), fdb()).write("/friendReq/beto/ana", { n: "Ana", t: NOW }), false);
+check("quem recebeu lê os pedidos", me(tk("beto"), fdb({ friendReq: { beto: { ana: { n: "Ana", t: NOW } } } })).read("/friendReq/beto"), true);
+check("terceiro não lê os pedidos de outro", me(tk("caio"), fdb({ friendReq: { beto: { ana: { n: "Ana", t: NOW } } } })).read("/friendReq/beto"), false);
+const pend = fdb({ friendReq: { beto: { ana: { n: "Ana", t: NOW } } } });
+check("aceitar grava as duas listas e apaga o pedido (atômico)", me(tk("beto"), pend).update("/", { "friends/beto/ana": { n: "Ana", t: NOW }, "friends/ana/beto": { n: "Beto", t: NOW }, "friendReq/beto/ana": null }), true);
+check("sem pedido, ninguém se coloca na lista de outro", me(tk("caio"), fdb()).write("/friends/ana/caio", { n: "Caio", t: NOW }), false);
+check("sem pedido, nem na própria lista", me(tk("beto"), fdb()).write("/friends/beto/ana", { n: "Ana", t: NOW }), false);
+check("recusar apaga o pedido", me(tk("beto"), pend).write("/friendReq/beto/ana", null), true);
+check("quem pediu pode cancelar", me(tk("ana"), pend).write("/friendReq/beto/ana", null), true);
+check("terceiro não apaga pedido", me(tk("caio"), pend).write("/friendReq/beto/ana", null), false);
+const amigos = fdb({ friends: { ana: { beto: { n: "Beto", t: NOW } }, beto: { ana: { n: "Ana", t: NOW } } } });
+check("cada um lê só a própria lista", me(tk("ana"), amigos).read("/friends/ana"), true);
+check("não lê a lista de outro", me(tk("caio"), amigos).read("/friends/ana"), false);
+check("desfazer amizade: os dois lados apagam as duas entradas", me(tk("beto"), amigos).update("/", { "friends/beto/ana": null, "friends/ana/beto": null }), true);
+check("terceiro não desfaz amizade", me(tk("caio"), amigos).write("/friends/ana/beto", null), false);
+check("amigo lê a fazenda", me(tk("beto"), targaryen.database(rules, { farm: { ana: { n: "Ana", c: 5 } }, friends: { ana: { beto: { n: "Beto", t: NOW } } } }, NOW)).read("/farm/ana"), true);
+const conv = { room: "perm-abcdef123456", n: "Ana", t: NOW };
+check("amigo convida amigo para a sala", me(tk("ana"), amigos).write("/friendInv/beto/ana", conv), true);
+check("não amigo não convida", me(tk("caio"), amigos).write("/friendInv/beto/caio", conv), false);
+check("convite com sala inválida é recusado", me(tk("ana"), amigos).write("/friendInv/beto/ana", { ...conv, room: "x" }), false);
+check("convite com token", me(tk("ana"), amigos).write("/friendInv/beto/ana", { ...conv, tok: "A".repeat(24) }), true);
+const ci = fdb({ friends: { ana: { beto: { n: "Beto", t: NOW } }, beto: { ana: { n: "Ana", t: NOW } } }, friendInv: { beto: { ana: conv } } });
+check("só o convidado lê os convites", me(tk("beto"), ci).read("/friendInv/beto"), true);
+check("terceiro não lê convites de outro", me(tk("caio"), ci).read("/friendInv/beto"), false);
+check("convidado apaga o convite", me(tk("beto"), ci).write("/friendInv/beto/ana", null), true);
+check("terceiro não apaga convite", me(tk("caio"), ci).write("/friendInv/beto/ana", null), false);
 const gClient = [...require("fs").readFileSync(require("path").join(__dirname, "../../src/js/07f_fazenda.js"), "utf8").match(/^const FARM_CROPS = \[([\s\S]*?)\];/m)[1].matchAll(/ g: (\d+),/g)].map(m => +m[1]);
-check("tempos da fazenda nas regras = os do jogo", { allowed: gClient.length === 5 && gClient.every((g, i) => { const db2 = targaryen.database(rules, { farm: { ana: { n: "Ana", c: 1, f: { beto: true }, p: { 0: { k: i, t: NOW - g * 60000 * 0.7 - 1000, w: 0, e: 0, b: 0 } } } } }, NOW); const antes = targaryen.database(rules, { farm: { ana: { n: "Ana", c: 1, f: { beto: true }, p: { 0: { k: i, t: NOW - g * 60000 * 0.7 + 5000, w: 0, e: 0, b: 0 } } } } }, NOW); return db2.as(B).write(F + "/p/0/st/a", "beto").allowed && !antes.as(B).write(F + "/p/0/st/a", "beto").allowed; }) }, true);
+check("tempos da fazenda nas regras = os do jogo", { allowed: gClient.length === 5 && gClient.every((g, i) => { const FR = { ana: { beto: { n: "Beto", t: NOW } } }; const db2 = targaryen.database(rules, { friends: FR, farm: { ana: { n: "Ana", c: 1, p: { 0: { k: i, t: NOW - g * 60000 * 0.7 - 1000, w: 0, e: 0, b: 0 } } } } }, NOW); const antes = targaryen.database(rules, { friends: FR, farm: { ana: { n: "Ana", c: 1, p: { 0: { k: i, t: NOW - g * 60000 * 0.7 + 5000, w: 0, e: 0, b: 0 } } } } }, NOW); return db2.as(B).write(F + "/p/0/st/a", "beto").allowed && !antes.as(B).write(F + "/p/0/st/a", "beto").allowed; }) }, true);
 
 console.log(`\n${passed} passaram, ${failed} falharam.`);
 process.exit(failed ? 1 : 0);

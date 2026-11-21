@@ -141,6 +141,9 @@
   #decorpanel[hidden] { display:none; }
   #farmpanel { position:fixed; right:8px; top:56px; z-index:73; width:min(380px,calc(100vw - 16px)); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; padding:10px; }
   #farmpanel[hidden] { display:none; }
+  #friendpanel { position:fixed; right:8px; top:56px; z-index:74; width:min(400px,calc(100vw - 16px)); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; padding:10px; }
+  #friendpanel[hidden] { display:none; }
+  .frlist { display:grid; gap:4px; } .frh { color:var(--accent); font-weight:bold; margin-top:6px; } .frrow { display:flex; flex-wrap:wrap; gap:4px; align-items:center; background:#2a1b40; border:2px solid var(--line); padding:4px 6px; } .frrow span { flex:1 1 120px; overflow-wrap:anywhere; }
   .fzgrid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; } .fzplot.lock { background:#2f4a2c; border:2px dashed #4e7a49; opacity:.45; cursor:not-allowed; }  .fzplot { padding:0; border:2px solid #3a2414; background:#7a4e2a; aspect-ratio:1; line-height:0; }
   .fzplot canvas { width:100%; height:100%; image-rendering:pixelated; } .fzplot.ripe { outline:2px solid #f6c445; }
   .fztools { display:flex; flex-wrap:wrap; gap:4px; } .fztools button.on { outline:2px solid var(--accent, #f6c445); } .fzfriends { display:grid; gap:4px; }
@@ -495,6 +498,7 @@
     <button id="btnMix" title="Volume da voz de cada pessoa e mutar" aria-pressed="false">🎚 Vozes</button>
     <button id="btnMeet" title="Modo reunião: palco grande com a apresentação e as câmeras na lateral" hidden>🖥 Modo reunião</button>
     <button id="btnDecor" title="Decorar a casa: colocar, mover e guardar móveis" aria-pressed="false" hidden>🛏 Decorar</button>
+    <button id="btnFriends" title="Amigos: peça amizade, chame para a sala (voz e chat) e deixe visitar a sua fazenda" aria-pressed="false">👥 Amigos</button>
     <button id="btnFarm" title="Fazenda: plante, colha e visite as fazendas dos amigos" aria-pressed="false">🌱 Fazenda</button>
     <button id="btnJuke" title="Jukebox: música para a sala toda (comandos !play, !pular...)" aria-pressed="false">🎵 Jukebox</button>
     <button id="btnWard">Guarda-roupa</button>
@@ -555,6 +559,11 @@
     <div class="mxhead"><b>🎚 Volume das vozes</b><button id="mixClose" type="button" aria-label="Fechar">✕</button></div>
     <div class="muted mxnote">Só muda o que <b>você</b> ouve; ninguém fica sabendo. Fica salvo neste aparelho.</div>
     <div id="mixList"></div>
+  </div>
+  <div id="friendpanel" class="panel" hidden role="dialog" aria-label="Amigos">
+    <div class="mxhead"><b>👥 Amigos</b><button id="frClose" type="button" aria-label="Fechar">✕</button></div>
+    <div id="frList" class="frlist"></div>
+    <div id="frMsg" class="muted" role="status"></div>
   </div>
   <div id="farmpanel" class="panel" hidden role="dialog" aria-label="Fazenda">
     <div class="mxhead"><b id="fzTitle">🌱 Minha fazenda</b><button id="fzClose" type="button" aria-label="Fechar">✕</button></div>
@@ -3197,7 +3206,7 @@ setInterval(posSave, 1500); addEventListener("pagehide", posSave); document.addE
 function startGame(name, room) {
   myName = name; tabInGame = true; titleStop(); $("login").hidden = true; $("app").hidden = false; enterLayout();
   roomRef = db.ref("rooms/" + room); meRef = roomRef.child("players/" + uid);
-  posRoom = room; decorStart(); farmStart();
+  posRoom = room; decorStart(); farmStart(); friendsStart();
   const spawnPadrao = () => { let tries = 0; do { me.x = 10 + Math.floor(Math.random() * 6); me.y = 10 + Math.floor(Math.random() * 2); } while (tileBlocked(me.x, me.y) && ++tries < 30); me.dir = "d"; };
   const salvo = posLoad(room);                                          // recarregou a página ou a internet caiu: volta para onde estava (cinema, reunião e mesas dependem do lugar)
   if (salvo) { me.x = salvo.x; me.y = salvo.y; me.dir = salvo.dir; } else spawnPadrao();
@@ -5993,13 +6002,6 @@ function farmAct(i) {
   db.ref().update(up).catch(() => farmMsg("O servidor recusou (sem permissão ou fora do tempo)."));
 }
 
-/* ---------- amigos ---------- */
-function farmAddFriend(id, nome) {
-  const up = {}; up["farm/" + uid + "/f/" + id] = true; up["farmInv/" + id + "/" + uid] = farmMine && farmMine.n ? farmMine.n : cleanName(myName).slice(0, 14);
-  db.ref().update(up).then(() => farmMsg(cleanName(nome) + " agora pode visitar a sua fazenda.")).catch(() => farmMsg("Não consegui adicionar agora."));
-}
-function farmRemFriend(id) { const up = {}; up["farm/" + uid + "/f/" + id] = null; up["farmInv/" + id + "/" + uid] = null; db.ref().update(up).catch(() => {}); }
-
 /* ---------- horta no mapa (quintal) ---------- */
 const farmData = () => farmView === uid ? farmMine : farmTheirs;
 const farmIdx = (x, y) => { const c = x - FARM_X0, r = y - FARM_Y0; return c >= 0 && r >= 0 && c < FARM_COLS && r < FARM_COLS ? r * FARM_COLS + c : -1; };
@@ -6061,7 +6063,7 @@ let farmTry = 0;
 function farmWatch(u, keepTool) {                                                    // de quem é a fazenda que aparece no mapa: do dono da sala
   farmRefs.filter(r => r.tag === "view").forEach(r => r.ref.off("value", r.fn)); farmRefs = farmRefs.filter(r => r.tag !== "view");
   farmView = u; farmTheirs = null; farmTry = Date.now();
-  if (u !== uid) { const fn = s => { farmTheirs = farmClean(s.val()); farmRender(); }, ref = farmRef(u); ref.on("value", fn, () => { farmTheirs = null; farmMsg("Você ainda não é amigo do dono: peça para ele te adicionar."); farmRender(); }); farmRefs.push({ tag: "view", ref, fn }); }
+  if (u !== uid) { const fn = s => { farmTheirs = farmClean(s.val()); farmRender(); }, ref = farmRef(u); ref.on("value", fn, () => { farmTheirs = null; farmMsg("Só amigos do dono veem a fazenda. Peça amizade em 👥 Amigos."); farmRender(); }); farmRefs.push({ tag: "view", ref, fn }); }
   if (!keepTool) farmTool = u === uid ? "plant:0" : "water"; farmRender();
 }
 function farmRender() {
@@ -6077,13 +6079,8 @@ function farmRender() {
   tools.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t[1]; b.className = farmTool === t[0] ? "on" : ""; b.onclick = () => { farmTool = t[0]; farmRender(); }; bar.appendChild(b); });
   const fr = $("fzFriends"); fr.textContent = "";
   const sec = (txt) => { const h = document.createElement("div"); h.className = "muted"; h.textContent = txt; fr.appendChild(h); };
-  if (own) {
-    sec("Quem pode mexer na sua fazenda (ajudar ou sabotar)");
-    const mine = Object.keys((farmMine && farmMine.f) || {}); if (!mine.length) sec("Ninguém ainda.");
-    mine.forEach(k => { const nm = players[k] ? cleanName(players[k].name) : "amigo"; fr.appendChild(mkBtn("Tirar " + nm, "no", () => farmRemFriend(k))); });
-    const here = Object.keys(players).filter(k => k !== uid && !(farmMine && farmMine.f && farmMine.f[k]));
-    if (here.length) { sec("Adicionar quem está na sala"); here.forEach(k => fr.appendChild(mkBtn("Adicionar " + cleanName(players[k].name), "primary", () => farmAddFriend(k, players[k].name)))); }
-  } else sec("Você está na fazenda de " + cleanName((d && d.n) || "um amigo") + ": ajude ou apronte. 😈");
+  if (own) { sec("Seus amigos podem visitar a fazenda: ajudam (+2 moedas) ou aprontam. 😈"); fr.appendChild(mkBtn("👥 Gerenciar amigos", "primary", () => friendPanel(true))); }
+  else sec("Você está na fazenda de " + cleanName((d && d.n) || "um amigo") + ": ajude ou apronte. 😈");
 }
 function farmEnsure(snapVal) {
   if (snapVal) { farmMine = farmClean(snapVal); return; }
@@ -6113,6 +6110,84 @@ let farmDismissed = false;
 function farmStart() {
   $("btnFarm").onclick = () => { farmDismissed = farmOn; farmPanel(); }; $("fzClose").onclick = () => { farmDismissed = true; farmPanel(false); }; $("fzLand").onclick = farmExpand;
   clearInterval(farmStart.t); farmStart.t = setInterval(() => { farmSync(); if (farmOn) farmRender(); }, 1000);
+}
+/* =========================================================
+   AMIGOS: pedido/aceite entre contas, convite para a sala (e para o voip dela) e acesso à fazenda
+   friends/<eu>/<amigo> = {n,t} · friendReq/<para>/<de> = {n,t} · friendInv/<para>/<de> = {room,n,t,tok?}
+   Só contas de verdade têm amigos (convidado anônimo não: o id some quando limpa o navegador).
+   ========================================================= */
+let friendsOn = false, frData = {}, frReqs = {}, frInvs = {}, frListening = false, frSeenReq = {}, frSeenInv = {};
+const frReal = () => !!fbUser && isRealUser(fbUser) && !!uid && fbUser.uid === uid;
+const frName = () => cleanName(myName).slice(0, 14) || "Amigo";
+const frMsg = t => { const el = $("frMsg"); if (el) el.textContent = t || ""; };
+const frRef = p => db.ref(p);
+
+function friendListen() {                                          // escuta a minha lista, os pedidos e os convites (uma vez por sessão)
+  if (frListening || !db || !frReal()) return; frListening = true;
+  const on = (path, fn) => { try { frRef(path).on("value", s => { fn(s.val() || {}); friendRender(); }, () => {}); } catch (e) {} };
+  on("friends/" + uid, v => { frData = v; });
+  on("friendReq/" + uid, v => {
+    for (const k in v) if (!frSeenReq[k]) { frSeenReq[k] = 1; if (frSeenReq._ready) setStatus("👥 " + cleanName(v[k].n) + " quer ser seu amigo. Abra 👥 Amigos.", 6000); }
+    frSeenReq._ready = true; frReqs = v; friendBadge();
+  });
+  on("friendInv/" + uid, v => {
+    for (const k in v) if (!frSeenInv[k + v[k].t]) { frSeenInv[k + v[k].t] = 1; if (frSeenInv._ready) setStatus("🚪 " + cleanName(v[k].n) + " te chamou para a sala dele(a). Abra 👥 Amigos.", 7000); }
+    frSeenInv._ready = true; frInvs = v; friendBadge();
+  });
+}
+function friendBadge() { const n = Object.keys(frReqs).length + Object.keys(frInvs).length, b = $("btnFriends"); if (b) { b.classList.toggle("alerta", n > 0); b.textContent = "👥 Amigos" + (n ? " (" + n + ")" : ""); } }
+
+function friendRequest(id, nome) {
+  if (!frReal()) return frMsg("Entre numa conta para ter amigos (convidados não podem).");
+  frRef("friendReq/" + id + "/" + uid).set({ n: frName(), t: SVT() }).then(() => frMsg("Pedido enviado para " + cleanName(nome) + ".")).catch(() => frMsg("Não consegui enviar o pedido (a outra pessoa precisa ter conta)."));
+}
+function friendAccept(id) {
+  const r = frReqs[id]; if (!r) return;
+  const up = {}; up["friends/" + uid + "/" + id] = { n: cleanName(r.n).slice(0, 14), t: SVT() }; up["friends/" + id + "/" + uid] = { n: frName(), t: SVT() }; up["friendReq/" + uid + "/" + id] = null;
+  frRef("").update(up).then(() => frMsg("Vocês agora são amigos! 🎉")).catch(() => frMsg("Não consegui aceitar agora."));
+}
+const friendDecline = id => frRef("friendReq/" + uid + "/" + id).remove().catch(() => {});
+function friendRemove(id) { const up = {}; up["friends/" + uid + "/" + id] = null; up["friends/" + id + "/" + uid] = null; frRef("").update(up).catch(() => frMsg("Não consegui remover agora.")); }
+
+/* convida o amigo para a sala em que eu estou (o voip e o chat são da sala). Sala permanente: gera um convite de membro de 24 h. */
+async function friendInvite(id, nome) {
+  if (!roomRef) return;
+  const room = roomRef.key, iv = { room, n: frName(), t: SVT() };
+  if (isPermRoom()) {
+    if (!isHost()) return frMsg("Só o dono (ou co-anfitrião) convida para uma sala permanente.");
+    const tok = randTok(); try { await roomRef.child("invites/" + tok).set({ role: "member", exp: gNow() + 86400000, by: uid, once: true }); } catch (e) { return frMsg("O servidor recusou o convite da sala."); }
+    iv.tok = tok;
+  }
+  frRef("friendInv/" + id + "/" + uid).set(iv).then(() => frMsg("Convite enviado para " + cleanName(nome) + ".")).catch(() => frMsg("Não consegui convidar agora."));
+}
+function friendEnter(from) {
+  const v = frInvs[from]; if (!v) return;
+  frRef("friendInv/" + uid + "/" + from).remove().catch(() => {});
+  if (v.tok) { location.hash = "sala=" + v.room + "&convite=" + v.tok; location.reload(); return; }
+  copyText(v.room).then(() => frMsg("Sala " + v.room + " (código copiado). Saia desta sala e entre com esse código."));
+}
+const friendDismissInv = from => frRef("friendInv/" + uid + "/" + from).remove().catch(() => {});
+
+function friendRender() {
+  if (!friendsOn) return;
+  const box = $("frList"); box.textContent = "";
+  const sec = (t, cls) => { const h = document.createElement("div"); h.className = cls || "muted"; h.textContent = t; box.appendChild(h); };
+  if (!frReal()) { sec("Entre numa conta (aba “Minha conta”) para ter amigos, convidar para a sala e deixar eles visitarem a sua fazenda."); return; }
+  const row = (label, btns) => { const r = document.createElement("div"); r.className = "frrow"; const s = document.createElement("span"); s.textContent = label; r.appendChild(s); btns.forEach(b => r.appendChild(b)); box.appendChild(r); };
+  const ri = Object.keys(frInvs); if (ri.length) { sec("Convites para a sala", "frh"); ri.forEach(k => row("🚪 " + cleanName(frInvs[k].n), [mkBtn("Entrar", "primary", () => friendEnter(k)), mkBtn("Ignorar", "no", () => friendDismissInv(k))])); }
+  const rq = Object.keys(frReqs); if (rq.length) { sec("Pedidos de amizade", "frh"); rq.forEach(k => row("👤 " + cleanName(frReqs[k].n), [mkBtn("Aceitar", "primary", () => friendAccept(k)), mkBtn("Recusar", "no", () => friendDecline(k))])); }
+  const fs = Object.keys(frData); sec("Meus amigos (" + fs.length + ")", "frh"); if (!fs.length) sec("Ainda nenhum. Adicione quem está na sala abaixo.");
+  fs.forEach(k => { const here = !!players[k]; row((here ? "🟢 " : "⚪ ") + cleanName(frData[k].n) + (here ? " · na sala" : ""), [mkBtn("Chamar para a sala", "", () => friendInvite(k, frData[k].n)), mkBtn("Remover", "no", () => friendRemove(k))]); });
+  const cand = Object.keys(players).filter(k => k !== uid && players[k].acct === "user" && !frData[k]);
+  if (cand.length) { sec("Quem está na sala (adicionar)", "frh"); cand.forEach(k => row(cleanName(players[k].name), [mkBtn("Pedir amizade", "primary", () => friendRequest(k, players[k].name))])); }
+}
+function friendPanel(show) {
+  friendsOn = show === undefined ? !friendsOn : !!show; $("friendpanel").hidden = !friendsOn; $("btnFriends").setAttribute("aria-pressed", String(friendsOn)); $("btnFriends").classList.toggle("on", friendsOn);
+  if (friendsOn) { friendListen(); frMsg(""); friendRender(); }
+}
+function friendsStart() {
+  $("btnFriends").onclick = () => friendPanel(); $("frClose").onclick = () => friendPanel(false);
+  friendListen(); clearInterval(friendsStart.t); friendsStart.t = setInterval(() => { friendListen(); if (friendsOn) friendRender(); }, 3000);
 }
 /* =========================================================
    DESENHO (laço principal): mundo em pixel art + camada de rótulos

@@ -101,13 +101,6 @@ function farmAct(i) {
   db.ref().update(up).catch(() => farmMsg("O servidor recusou (sem permissão ou fora do tempo)."));
 }
 
-/* ---------- amigos ---------- */
-function farmAddFriend(id, nome) {
-  const up = {}; up["farm/" + uid + "/f/" + id] = true; up["farmInv/" + id + "/" + uid] = farmMine && farmMine.n ? farmMine.n : cleanName(myName).slice(0, 14);
-  db.ref().update(up).then(() => farmMsg(cleanName(nome) + " agora pode visitar a sua fazenda.")).catch(() => farmMsg("Não consegui adicionar agora."));
-}
-function farmRemFriend(id) { const up = {}; up["farm/" + uid + "/f/" + id] = null; up["farmInv/" + id + "/" + uid] = null; db.ref().update(up).catch(() => {}); }
-
 /* ---------- horta no mapa (quintal) ---------- */
 const farmData = () => farmView === uid ? farmMine : farmTheirs;
 const farmIdx = (x, y) => { const c = x - FARM_X0, r = y - FARM_Y0; return c >= 0 && r >= 0 && c < FARM_COLS && r < FARM_COLS ? r * FARM_COLS + c : -1; };
@@ -169,7 +162,7 @@ let farmTry = 0;
 function farmWatch(u, keepTool) {                                                    // de quem é a fazenda que aparece no mapa: do dono da sala
   farmRefs.filter(r => r.tag === "view").forEach(r => r.ref.off("value", r.fn)); farmRefs = farmRefs.filter(r => r.tag !== "view");
   farmView = u; farmTheirs = null; farmTry = Date.now();
-  if (u !== uid) { const fn = s => { farmTheirs = farmClean(s.val()); farmRender(); }, ref = farmRef(u); ref.on("value", fn, () => { farmTheirs = null; farmMsg("Você ainda não é amigo do dono: peça para ele te adicionar."); farmRender(); }); farmRefs.push({ tag: "view", ref, fn }); }
+  if (u !== uid) { const fn = s => { farmTheirs = farmClean(s.val()); farmRender(); }, ref = farmRef(u); ref.on("value", fn, () => { farmTheirs = null; farmMsg("Só amigos do dono veem a fazenda. Peça amizade em 👥 Amigos."); farmRender(); }); farmRefs.push({ tag: "view", ref, fn }); }
   if (!keepTool) farmTool = u === uid ? "plant:0" : "water"; farmRender();
 }
 function farmRender() {
@@ -185,13 +178,8 @@ function farmRender() {
   tools.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t[1]; b.className = farmTool === t[0] ? "on" : ""; b.onclick = () => { farmTool = t[0]; farmRender(); }; bar.appendChild(b); });
   const fr = $("fzFriends"); fr.textContent = "";
   const sec = (txt) => { const h = document.createElement("div"); h.className = "muted"; h.textContent = txt; fr.appendChild(h); };
-  if (own) {
-    sec("Quem pode mexer na sua fazenda (ajudar ou sabotar)");
-    const mine = Object.keys((farmMine && farmMine.f) || {}); if (!mine.length) sec("Ninguém ainda.");
-    mine.forEach(k => { const nm = players[k] ? cleanName(players[k].name) : "amigo"; fr.appendChild(mkBtn("Tirar " + nm, "no", () => farmRemFriend(k))); });
-    const here = Object.keys(players).filter(k => k !== uid && !(farmMine && farmMine.f && farmMine.f[k]));
-    if (here.length) { sec("Adicionar quem está na sala"); here.forEach(k => fr.appendChild(mkBtn("Adicionar " + cleanName(players[k].name), "primary", () => farmAddFriend(k, players[k].name)))); }
-  } else sec("Você está na fazenda de " + cleanName((d && d.n) || "um amigo") + ": ajude ou apronte. 😈");
+  if (own) { sec("Seus amigos podem visitar a fazenda: ajudam (+2 moedas) ou aprontam. 😈"); fr.appendChild(mkBtn("👥 Gerenciar amigos", "primary", () => friendPanel(true))); }
+  else sec("Você está na fazenda de " + cleanName((d && d.n) || "um amigo") + ": ajude ou apronte. 😈");
 }
 function farmEnsure(snapVal) {
   if (snapVal) { farmMine = farmClean(snapVal); return; }
