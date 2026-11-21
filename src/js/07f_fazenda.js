@@ -9,7 +9,13 @@ const FARM_CROPS = [
   { n: "Morango", g: 30, s: 55, v: 40, c1: "#e8456a", c2: "#3a9150" },
   { n: "Abóbora", g: 60, s: 110, v: 80, c1: "#e8872a", c2: "#3b8a3b" }
 ];
-const FARM_N = 12, FARM_UNITS = 3, FARM_REGA = .1, FARM_START = 50;
+/* Terreno expansível: grade fixa de 6×6 (índice = linha*6 + coluna, estável entre níveis). O nível s libera um retângulo no canto superior esquerdo. */
+const FARM_COLS = 6, FARM_N = 36;
+const FARM_LAND = [[3, 2, 0], [3, 3, 60], [4, 3, 150], [4, 4, 350], [5, 4, 700], [5, 5, 1400], [6, 5, 2800], [6, 6, 5000]];   // [colunas, linhas, preço de chegar neste nível]
+const farmLevel = d => Math.max(1, Math.min(FARM_LAND.length, (d && d.s) || 1));
+const farmOpen = (d, i) => { const L = FARM_LAND[farmLevel(d) - 1]; return (i % FARM_COLS) < L[0] && Math.floor(i / FARM_COLS) < L[1]; };
+const farmAcres = d => { const L = FARM_LAND[farmLevel(d) - 1]; return L[0] * L[1]; };
+const FARM_UNITS = 3, FARM_REGA = .1, FARM_START = 50;
 let farmOn = false, farmView = null, farmMine = null, farmTheirs = null, farmInvs = {}, farmTool = "plant:0", farmTick = 0, farmRefs = [];
 const farmGrowMs = p => FARM_CROPS[p.k].g * 60000 * (1 - FARM_REGA * Math.min(3, p.w || 0));
 const farmRipe = p => !!p && jSrv() >= p.t + farmGrowMs(p);
@@ -49,8 +55,16 @@ function farmDraw(cv2, p, now) {
 
 /* ---------- ações ---------- */
 function farmPlot(i) { const d = farmView === uid ? farmMine : farmTheirs; return d && d.p ? farmClean(d.p[i]) : null; }
+function farmExpand() {
+  if (!farmMine || farmView !== uid) return;
+  const lv = farmLevel(farmMine); if (lv >= FARM_LAND.length) return farmMsg("Seu terreno já está no tamanho máximo.");
+  const cost = FARM_LAND[lv][2]; if ((farmMine.c || 0) < cost) return farmMsg("Faltam " + (cost - (farmMine.c || 0)) + " moedas para ampliar o terreno (" + cost + ").");
+  const up = {}; up["farm/" + uid + "/s"] = lv + 1; up["farm/" + uid + "/c"] = (farmMine.c || 0) - cost;
+  db.ref().update(up).then(() => farmMsg("Terreno ampliado para " + FARM_LAND[lv][0] * FARM_LAND[lv][1] + " canteiros! 🌾")).catch(() => farmMsg("O servidor recusou a ampliação."));
+}
 function farmAct(i) {
   const own = farmView === uid, d = own ? farmMine : farmTheirs; if (!d || !farmMine) return;
+  if (!farmOpen(d, i)) return farmMsg(own ? "Terra ainda não liberada. Use «Ampliar terreno»." : "Esta parte do terreno ainda não foi liberada.");
   const p = farmPlot(i), [tool, arg] = farmTool.split(":"), pp = "p/" + i, up = {};
   const add = (path, v) => { up[path] = v; }, mineC = path => { add("farm/" + uid + "/c", path); };
   const fail = t => farmMsg(t);
@@ -108,10 +122,13 @@ function farmRender() {
   const grid = $("fzGrid"); grid.textContent = "";
   for (let i = 0; i < FARM_N; i++) {
     const b = document.createElement("button"), c = document.createElement("canvas"); c.width = 16; c.height = 16; b.type = "button"; b.className = "fzplot"; b.appendChild(c);
+    if (!farmOpen(d, i)) { b.classList.add("lock"); b.dataset.i = i; b.title = "Terra não liberada"; b.onclick = () => farmAct(i); grid.appendChild(b); continue; }
     const p = farmPlot(i); farmDraw(c, p, Date.now()); b.dataset.i = i; if (p && farmRipe(p)) b.classList.add("ripe");
     b.title = p ? FARM_CROPS[p.k].n + (farmRipe(p) ? " (pronto)" : " (" + Math.round(farmRipeFrac(p) * 100) + "%)") : "Canteiro vazio";
     b.onclick = () => farmAct(i); grid.appendChild(b);
   }
+  const lv = farmLevel(d), nx = FARM_LAND[lv], eb = $("fzLand");
+  eb.hidden = !own; eb.textContent = nx ? "🌾 Ampliar terreno: " + nx[0] * nx[1] + " canteiros (" + nx[2] + " moedas)" : "🌾 Terreno no tamanho máximo (" + farmAcres(d) + ")"; eb.disabled = !nx;
   const bar = $("fzTools"); bar.textContent = "";
   const tools = own ? FARM_CROPS.map((C, k) => ["plant:" + k, C.n + " (" + C.s + ")"]).concat([["water", "💧 Regar"], ["clean", "🧹 Limpar"], ["harvest", "🧺 Colher"]])
     : [["water", "💧 Regar"], ["clean", "🧹 Ajudar a limpar"], ["steal", "😈 Roubar"], ["weed", "🌿 Erva daninha"], ["bug", "🐛 Praga"]];
@@ -132,7 +149,7 @@ function farmRender() {
 }
 function farmEnsure(snapVal) {
   if (snapVal) { farmMine = farmClean(snapVal); return; }
-  farmMine = { n: cleanName(myName).slice(0, 14), c: FARM_START };                                 // primeira vez: cria a fazenda com moedas iniciais
+  farmMine = { n: cleanName(myName).slice(0, 14), c: FARM_START, s: 1 };                                 // primeira vez: cria a fazenda com moedas iniciais
   farmRef(uid).set(farmMine).catch(() => farmMsg("Não consegui criar a sua fazenda (confira as regras do Firebase)."));
 }
 function farmPanel(show) {
@@ -145,4 +162,4 @@ function farmPanel(show) {
   farmTick = setInterval(() => { if (farmOn) farmRender(); }, 5000);                                  // a barra de crescimento anda sozinha
   farmRender();
 }
-function farmStart() { $("btnFarm").onclick = () => farmPanel(); $("fzClose").onclick = () => farmPanel(false); $("fzBack").onclick = () => farmWatch(uid); }
+function farmStart() { $("btnFarm").onclick = () => farmPanel(); $("fzClose").onclick = () => farmPanel(false); $("fzBack").onclick = () => farmWatch(uid); $("fzLand").onclick = farmExpand; }

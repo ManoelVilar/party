@@ -36,7 +36,7 @@ with sync_playwright() as p:
     ROOM = "party-teste-fazenda-1234"
     A, B = mk(ctx, "Ana", ROOM), mk(ctx, "Beto", ROOM)
     A.click("#btnFarm"); ok(ev(A, "farmOn && !$('farmpanel').hidden") and wait_for(A, "farmMine && farmMine.c === 50"), "abre a fazenda e cria com 50 moedas")
-    ok(ev(A, "document.querySelectorAll('.fzplot').length") == 12, "são 12 canteiros")
+    ok(ev(A, "document.querySelectorAll('.fzplot').length") == 36 and ev(A, "document.querySelectorAll('.fzplot:not(.lock)').length") == 6, "o terreno começa com 6 canteiros liberados (de 36)")
     ok("Minha fazenda" in ev(A, "$('fzTitle').textContent") and "50" in ev(A, "$('fzCoins').textContent"), "título e moedas aparecem")
     tool(A, "Cenoura"); plot(A, 0)
     ok(wait_for(A, "farmMine.p && farmMine.p[0] && farmMine.p[0].k === 0 && farmMine.c === 45"), "plantar cenoura gasta a semente (5 moedas)")
@@ -66,6 +66,12 @@ with sync_playwright() as p:
     tool(A, "Limpar"); plot(A, 0); ok(wait_for(A, "farmMine.p[0].b === 0 && farmMine.p[0].e === 0"), "a dona limpa tudo de uma vez")
     ok(ev(A, "farmUnits(farmMine.p[0])") == 2, "sem estrago, a colheita é 3 - 1 roubado = 2")
     tool(A, "Colher"); plot(A, 0); ok(wait_for(A, "!farmMine.p || !farmMine.p[0]") and ev(A, "farmMine.c") == 45 + 2 * 4, "colher paga as unidades que sobraram e libera o canteiro")
+    # terreno expansível
+    A.click("#fzLand"); ok("Faltam" in ev(A, "$('fzMsg').textContent"), "sem moedas não amplia o terreno")
+    A.locator(".fzplot.lock").first.click(); ok("não liberada" in ev(A, "$('fzMsg').textContent"), "terra bloqueada não aceita plantio")
+    ev(A, "farmRef(uid).child('c').set(100)"); ok(wait_for(A, "farmMine.c === 100"), "(moedas para ampliar)")
+    A.click("#fzLand"); ok(wait_for(A, "farmMine.s === 2 && farmMine.c === 40") and ev(A, "document.querySelectorAll('.fzplot:not(.lock)').length") == 9, "ampliar gasta 60 moedas e libera 9 canteiros")
+    ev(A, "farmRef(uid).child('s').set(8)"); ok(wait_for(A, "document.querySelectorAll('.fzplot:not(.lock)').length === 36") and ev(A, "$('fzLand').disabled"), "no nível máximo todos os 36 estão livres e o botão trava")
     B.click("#fzBack"); ok(ev(B, "farmView === uid"), "voltar para a minha fazenda")
     A.locator("#fzFriends button", has_text="Tirar Beto").click(); ok(wait_for(A, "!farmMine.f || Object.keys(farmMine.f).length === 0"), "a dona tira o amigo")
     ok(not errors, "nenhum erro de JavaScript: " + "; ".join(errors[:2]))

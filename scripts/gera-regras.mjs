@@ -16,6 +16,7 @@ const deskKey = d => d.x + "_" + d.y;
 const desksOf = o => layout.desks.filter(d => d.office === o);
 const DAY30 = 2592000000;
 /* tempo (em minutos) para cada planta da fazenda amadurecer: os MESMOS números de FARM_CROPS em src/js/07f_fazenda.js (o teste das regras confere) */
+const FARM_NIVEIS = readFileSync(join(root, "src/js/07f_fazenda.js"), "utf8").match(/^const FARM_LAND = \[(.*)\];/m)[1].split("],").length;
 const FARM_G = [...readFileSync(join(root, "src/js/07f_fazenda.js"), "utf8").match(/^const FARM_CROPS = \[([\s\S]*?)\];/m)[1].matchAll(/ g: (\d+),/g)].map(m => +m[1]);
 const FRIEND = "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true";
 const PK = "root.child('farm/'+$o+'/p/'+$i+'/k').val()", PT = "root.child('farm/'+$o+'/p/'+$i+'/t').val()";
@@ -117,10 +118,11 @@ const rules = {
         ".validate": "newData.hasChildren(['n', 'c'])",
         n: { ".validate": str(1, 14) },
         c: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999999" },
+        s: { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= " + FARM_NIVEIS },
         f: { "$u": { ".validate": "newData.val() === true" } },
         p: {
           "$i": {
-            ".validate": "$i.matches(/^([0-9]|1[01])$/) && newData.hasChildren(['k', 't', 'w', 'e', 'b'])",
+            ".validate": "$i.matches(/^([0-9]|[12][0-9]|3[0-5])$/) && newData.hasChildren(['k', 't', 'w', 'e', 'b'])",
             k: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < " + FARM_G.length },
             t: { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
             w: { ".write": FRIEND + " && data.parent().child('k').exists() && newData.isNumber() && newData.val() === data.val() + 1", ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },

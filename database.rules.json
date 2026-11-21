@@ -25,6 +25,9 @@
         "c": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999999"
         },
+        "s": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 8"
+        },
         "f": {
           "$u": {
             ".validate": "newData.val() === true"
@@ -32,7 +35,7 @@
         },
         "p": {
           "$i": {
-            ".validate": "$i.matches(/^([0-9]|1[01])$/) && newData.hasChildren(['k', 't', 'w', 'e', 'b'])",
+            ".validate": "$i.matches(/^([0-9]|[12][0-9]|3[0-5])$/) && newData.hasChildren(['k', 't', 'w', 'e', 'b'])",
             "k": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 5"
             },
