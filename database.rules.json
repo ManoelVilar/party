@@ -14,6 +14,75 @@
         }
       }
     },
+    "farm": {
+      "$o": {
+        ".read": "auth != null && (auth.uid === $o || root.child('farm/'+$o+'/f/'+auth.uid).val() === true)",
+        ".write": "auth != null && auth.uid === $o",
+        ".validate": "newData.hasChildren(['n', 'c'])",
+        "n": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+        },
+        "c": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999999"
+        },
+        "f": {
+          "$u": {
+            ".validate": "newData.val() === true"
+          }
+        },
+        "p": {
+          "$i": {
+            ".validate": "$i.matches(/^([0-9]|1[01])$/) && newData.hasChildren(['k', 't', 'w', 'e', 'b'])",
+            "k": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 5"
+            },
+            "t": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+            },
+            "w": {
+              ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && data.parent().child('k').exists() && newData.isNumber() && newData.val() === data.val() + 1",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
+            },
+            "e": {
+              ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
+            },
+            "b": {
+              ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
+            },
+            "st": {
+              "a": {
+                ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('b').val() !== auth.uid",
+                ".validate": "newData.isString() && newData.val().length <= 40"
+              },
+              "b": {
+                ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('a').val() !== auth.uid",
+                ".validate": "newData.isString() && newData.val().length <= 40"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "farmInv": {
+      "$b": {
+        ".read": "auth != null && auth.uid === $b",
+        "$o": {
+          ".write": "auth != null && ((auth.uid === $o && newData.exists()) || (auth.uid === $b && !newData.exists()) || (auth.uid === $o && !newData.exists()))",
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+        }
+      }
+    },
     "ytcache": {
       "$k": {
         ".validate": "$k.matches(/^[a-z0-9]{4,24}$/)",

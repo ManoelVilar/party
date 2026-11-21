@@ -15,6 +15,12 @@ const OFFICES = Object.keys(layout.offices);
 const deskKey = d => d.x + "_" + d.y;
 const desksOf = o => layout.desks.filter(d => d.office === o);
 const DAY30 = 2592000000;
+/* tempo (em minutos) para cada planta da fazenda amadurecer: os MESMOS números de FARM_CROPS em src/js/07f_fazenda.js (o teste das regras confere) */
+const FARM_G = [...readFileSync(join(root, "src/js/07f_fazenda.js"), "utf8").match(/^const FARM_CROPS = \[([\s\S]*?)\];/m)[1].matchAll(/ g: (\d+),/g)].map(m => +m[1]);
+const FRIEND = "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true";
+const PK = "root.child('farm/'+$o+'/p/'+$i+'/k').val()", PT = "root.child('farm/'+$o+'/p/'+$i+'/t').val()";
+/* menor tempo possível até amadurecer (planta com 3 regas = 70%): antes disso ninguém rouba */
+const RIPE_LB = `now >= ${PT} + (${FARM_G.map((g, k) => k < FARM_G.length - 1 ? `${PK} === ${k} ? ${Math.floor(g * 60000 * 0.7)} : ` : String(Math.floor(g * 60000 * 0.7))).join("")})`;
 const COLS = 45, ROWS = 20;                                   // tamanho do mapa (igual a src/js/01_core.js)
 /* móveis que podem ser colocados ao decorar a casa: a MESMA lista de DECOR em src/js/04d_decor.js (o teste das regras confere) */
 const DECOR_TIPOS = readFileSync(join(root, "src/js/04d_decor.js"), "utf8").match(/^const DECOR = \[([\s\S]*?)\];/m)[1].match(/t: "(\w+)"/g).map(x => x.slice(4, -1));
@@ -99,6 +105,46 @@ const rules = {
         ".write": `auth != null && auth.uid === $u && ${REAL_USER}`,
         room: { ".validate": "newData.isString() && newData.val().matches(/^perm-[a-z0-9]{12,24}$/) && !data.exists() && !root.child('rooms/'+newData.val()).exists()" },
         "$other": { ".validate": false }
+      }
+    },
+
+    /* fazenda de cada conta. O dono escreve livre; amigo (farm/<dono>/f/<amigo>) só rega, capina/atrapalha e rouba, com limites. Lê: dono e amigos. */
+    farm: {
+      "$o": {
+        ".read": "auth != null && (auth.uid === $o || root.child('farm/'+$o+'/f/'+auth.uid).val() === true)",
+        ".write": "auth != null && auth.uid === $o",
+        ".validate": "newData.hasChildren(['n', 'c'])",
+        n: { ".validate": str(1, 14) },
+        c: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999999" },
+        f: { "$u": { ".validate": "newData.val() === true" } },
+        p: {
+          "$i": {
+            ".validate": "$i.matches(/^([0-9]|1[01])$/) && newData.hasChildren(['k', 't', 'w', 'e', 'b'])",
+            k: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < " + FARM_G.length },
+            t: { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+            w: { ".write": FRIEND + " && data.parent().child('k').exists() && newData.isNumber() && newData.val() === data.val() + 1", ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+            e: { ".write": FRIEND + " && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)", ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+            b: { ".write": FRIEND + " && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)", ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+            /* roubo: até 2 por canteiro (vagas a e b), um por visitante, só depois do mínimo de tempo (planta com 3 regas) */
+            st: {
+              a: { ".write": FRIEND + " && " + RIPE_LB + " && !data.exists() && newData.val() === auth.uid && data.parent().child('b').val() !== auth.uid", ".validate": "newData.isString() && newData.val().length <= 40" },
+              b: { ".write": FRIEND + " && " + RIPE_LB + " && !data.exists() && newData.val() === auth.uid && data.parent().child('a').val() !== auth.uid", ".validate": "newData.isString() && newData.val().length <= 40" },
+              "$other": { ".validate": false }
+            },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    },
+    /* quem me adicionou: farmInv/<eu>/<dono> = nome da fazenda. O dono escreve a própria entrada; eu posso sair (apagar). */
+    farmInv: {
+      "$b": {
+        ".read": "auth != null && auth.uid === $b",
+        "$o": {
+          ".write": "auth != null && ((auth.uid === $o && newData.exists()) || (auth.uid === $b && !newData.exists()) || (auth.uid === $o && !newData.exists()))",
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+        }
       }
     },
 

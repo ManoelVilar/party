@@ -5,6 +5,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Adicionado
+- **Fazenda (estilo Colheita Feliz)**: botão 🌱 Fazenda abre o seu terreno de 12 canteiros. Compre sementes com moedas (você começa com 50), plante, regue (cada rega encurta 10% do tempo), limpe e colha. Adicione pessoas da sala como amigos: elas visitam a sua fazenda e podem **ajudar** (regar/limpar, +2 moedas) ou **sabotar** (roubar planta madura, erva daninha, pragas; estrago e roubo reduzem a colheita). A fazenda é ligada à conta (visitante perde se limpar o navegador). Detalhes em `docs/FAZENDA.md`. **Republicar as regras** (`database.rules.json`: `farm` e `farmInv`).
+
 - **Decorar a casa (estilo Habbo)**: botão 🛏 Decorar com catálogo de 13 móveis (sofá, poltrona, cadeira, mesa, balcão, estante, planta, luminária, cama e 4 tapetes). Toque no chão para colocar (sombra verde/vermelha), toque num móvel colocado para pegar e mover, R gira, Esc sai. Aparece ao vivo para todos. O dono (e co-anfitriões) decoram; o dono libera outras pessoas em **Sala → Na sala agora → Deixar decorar**. Não bloqueia portas, limite de 60 móveis. Detalhes em `docs/DECORAR.md`. **Republicar as regras** (`database.rules.json`: `decor` e `editors`).
 
 ### Corrigido
