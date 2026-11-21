@@ -25,23 +25,24 @@ const messCount = () => Object.keys(messes).length;
 
 /* ---------- sprite do gato (poses: andar, sentar, dormir, comer, beber, caixa de areia, brincar) ---------- */
 function drawCat(g, X, Y, kind, st, flip, now, seed, sub, noShadow) {
-  const bk = kind === "black";
-  const c = { body: bk ? "#2f2f3c" : "#9096a0", hi: bk ? "#4a4a5c" : "#b4bac2", dk: bk ? "#17171f" : "#5a606a", bel: bk ? "#3d3d4c" : "#cfd3d9", eye: bk ? "#ffd84a" : "#9be8a8", ear: bk ? "#7a4a60" : "#e0a0ac" };
+  if (PET_SP[kind] && !PET_SP[kind].cat) return drawPet(g, X, Y, kind, st, flip, now, seed, sub, noShadow);
+  const bk = kind === "black", PAL = { black: ["#2f2f3c", "#4a4a5c", "#17171f", "#3d3d4c", "#ffd84a", "#7a4a60"], tabby: ["#9096a0", "#b4bac2", "#5a606a", "#cfd3d9", "#9be8a8", "#e0a0ac"], orange: ["#e0873a", "#f2aa62", "#a8561e", "#f6cf9c", "#8be0a0", "#f0a0a8"], white: ["#f1eee8", "#ffffff", "#bdb6a8", "#ffffff", "#7cc4f0", "#f0a0a8"] }, pl = PAL[kind] || PAL.tabby;
+  const c = { body: pl[0], hi: pl[1], dk: pl[2], bel: pl[3], eye: pl[4], ear: pl[5] };
   g.save(); g.translate(X, Y);
   if (flip) g.scale(-1, 1);
   if (!noShadow) el(g, 0, 0, 12, 4.8, "rgba(26,16,38,.28)");
   const tail = (bx, by, cx, cy, ex, ey) => {
     g.lineCap = "round"; g.lineWidth = 3.4; g.strokeStyle = c.body; g.beginPath(); g.moveTo(bx, by); g.quadraticCurveTo(cx, cy, ex, ey); g.stroke();
-    if (!bk) { g.strokeStyle = c.dk; g.beginPath(); g.moveTo(ex + (cx - ex) * .35, ey + (cy - ey) * .35); g.lineTo(ex, ey); g.stroke(); }
+    if (!bk && kind !== "white") { g.strokeStyle = c.dk; g.beginPath(); g.moveTo(ex + (cx - ex) * .35, ey + (cy - ey) * .35); g.lineTo(ex, ey); g.stroke(); }
   };
-  const stripes = (x0, y0, n, dx, len) => { if (bk) return; g.strokeStyle = c.dk; g.lineWidth = 1.5; g.lineCap = "round"; for (let i = 0; i < n; i++) { g.beginPath(); g.moveTo(x0 + i * dx, y0); g.lineTo(x0 + i * dx + 1, y0 + len); g.stroke(); } };
+  const stripes = (x0, y0, n, dx, len) => { if (bk || kind === "white") return; g.strokeStyle = c.dk; g.lineWidth = 1.5; g.lineCap = "round"; for (let i = 0; i < n; i++) { g.beginPath(); g.moveTo(x0 + i * dx, y0); g.lineTo(x0 + i * dx + 1, y0 + len); g.stroke(); } };
   const face = (hx, hy, r, mode, mouth) => {
     el(g, hx, hy, r, r * .92, c.body);
     tri(g, hx - r * .8, hy - r * .45, hx - r * .45, hy - r * 1.5, hx - r * .05, hy - r * .8, c.body);
     tri(g, hx + r * .05, hy - r * .8, hx + r * .55, hy - r * 1.5, hx + r * .85, hy - r * .35, c.body);
     tri(g, hx - r * .6, hy - r * .6, hx - r * .45, hy - r * 1.1, hx - r * .2, hy - r * .75, c.ear);
     tri(g, hx + r * .25, hy - r * .75, hx + r * .5, hy - r * 1.1, hx + r * .65, hy - r * .5, c.ear);
-    if (!bk) { g.strokeStyle = c.dk; g.lineWidth = 1.2; g.beginPath(); g.moveTo(hx - 2, hy - r * .9); g.lineTo(hx - 1.5, hy - r * .35); g.moveTo(hx + 1, hy - r * .9); g.lineTo(hx + 1, hy - r * .35); g.moveTo(hx + 4, hy - r * .8); g.lineTo(hx + 3.4, hy - r * .35); g.stroke(); }
+    if (!bk && kind !== "white") { g.strokeStyle = c.dk; g.lineWidth = 1.2; g.beginPath(); g.moveTo(hx - 2, hy - r * .9); g.lineTo(hx - 1.5, hy - r * .35); g.moveTo(hx + 1, hy - r * .9); g.lineTo(hx + 1, hy - r * .35); g.moveTo(hx + 4, hy - r * .8); g.lineTo(hx + 3.4, hy - r * .35); g.stroke(); }
     el(g, hx + r * .35, hy + r * .38, r * .52, r * .38, c.bel);
     const ex1 = hx - r * .32, ex2 = hx + r * .5, ey = hy - r * .05;
     if (mode === "closed") { g.strokeStyle = "#0b0b10"; g.lineWidth = 1.3; g.lineCap = "round"; g.beginPath(); g.moveTo(ex1 - 1.5, ey); g.lineTo(ex1 + 1.5, ey); g.moveTo(ex2 - 1.5, ey); g.lineTo(ex2 + 1.5, ey); g.stroke(); }
@@ -348,26 +349,26 @@ const catCooldown = {};
 const CAT_NEAR = 3;
 function catDist(id) { const c = cats[id]; if (!c || c.x == null) return 99; return Math.hypot((c.rx != null ? c.rx : c.x) - me.x, (c.ry != null ? c.ry : c.y) - me.y); }
 const catNear = id => catDist(id) <= CAT_NEAR;
-function catBusyMsg(id) { const c = cats[id]; return c.st === "sleep" ? CATS[id].name + " está dormindo. Deixe descansar." : c.st === "litter" ? CATS[id].name + " está na caixa de areia. Aguarde." : null; }
+function catBusyMsg(id) { const c = cats[id]; return c.st === "sleep" ? petName(id) + " está dormindo. Deixe descansar." : c.st === "litter" ? petName(id) + " está na caixa de areia. Aguarde." : null; }
 function callCat(id) {
   const c = cats[id]; if (!c) return; const busy = catBusyMsg(id); if (busy) return setStatus(busy, 2500);
-  const key = id + "call", now = Date.now(); if ((catCooldown[key] || 0) > now) return setStatus("Espere um instante para chamar " + CATS[id].name + " de novo.", 2000);
+  const key = id + "call", now = Date.now(); if ((catCooldown[key] || 0) > now) return setStatus("Espere um instante para chamar " + petName(id) + " de novo.", 2000);
   catCooldown[key] = now + 6000;
   const v = { t: now, x: me.x, y: me.y }; c.call = v; if (roomRef) roomRef.child("cats/" + id + "/call").set(v);
-  setStatus("📣 Chamando " + CATS[id].name + "...", 2500);
+  setStatus("📣 Chamando " + petName(id) + "...", 2500);
 }
 function catAction(id, type) {
   const c = cats[id]; if (!c) return;
   if (type === "call") return callCat(id);
-  if (!catNear(id)) return setStatus(CATS[id].name + " está longe. Toque em Chamar ou chegue mais perto.", 2500);
+  if (!catNear(id)) return setStatus(petName(id) + " está longe. Toque em Chamar ou chegue mais perto.", 2500);
   const busy = catBusyMsg(id); if (busy) return setStatus(busy, 2500);       // não gasta o tempo de espera à toa
-  if (type === "play" && catWeak(c)) return setStatus("😿 " + CATS[id].name + " está fraco demais para brincar. Dê comida, água ou um petisco.", 3500);
+  if (type === "play" && catWeak(c)) return setStatus("😿 " + petName(id) + " está fraco demais para brincar. Dê comida, água ou um petisco.", 3500);
   const key = id + type, cd = { pet: 15000, treat: 30000, play: 30000 }[type], now = Date.now();
-  if ((catCooldown[key] || 0) > now) return setStatus(CATS[id].name + " precisa de um tempinho antes de " + { pet: "mais carinho", treat: "outro petisco", play: "brincar de novo" }[type] + ".", 2500);
+  if ((catCooldown[key] || 0) > now) return setStatus(petName(id) + " precisa de um tempinho antes de " + { pet: "mais carinho", treat: "outro petisco", play: "brincar de novo" }[type] + ".", 2500);
   catCooldown[key] = now + cd;
   if (roomRef) roomRef.child("cats/" + id + "/" + type).set(now);
   if (type === "pet") { c.pet = now; }
-  setStatus({ pet: "💗 Carinho em ", treat: "🍗 Petisco para ", play: "🧶 Brincando com " }[type] + CATS[id].name + "!", 2500);
+  setStatus({ pet: "💗 Carinho em ", treat: "🍗 Petisco para ", play: "🧶 Brincando com " }[type] + petName(id) + "!", 2500);
 }
 function nearestCatTo(x, y, r) { let best = null, bd = r || 1.3; for (const id in cats) { const c = cats[id]; if (!CATS[id] || c.x == null) continue; const d = Math.hypot((c.rx != null ? c.rx : c.x) - x, (c.ry != null ? c.ry : c.y) - y); if (d < bd) { bd = d; best = id; } } return best; }
 function selectCat(id) { selectedCat = id; renderCatPanel(true); }
@@ -416,16 +417,16 @@ function renderCatPanel(force) {
   const box = $("catpanel"); if (!box) return;
   if (!catPanelBuilt || force === "rebuild") {
     catPanelBuilt = true;
-    box.innerHTML = '<div class="head"><b>Gatos</b><span id="cpSup"></span><span id="cpPots"></span><button id="cpAuto" type="button"></button><span id="cpHyg"></span><span class="muted" id="cpHint">Toque num gato para ver as necessidades e interagir.</span></div><div class="cats"></div>';
+    box.innerHTML = '<div class="head"><b>Pets</b><span id="cpSup"></span><span id="cpPots"></span><button id="cpAuto" type="button"></button><span id="cpHyg"></span><span class="muted" id="cpHint">Toque num pet para ver as necessidades e interagir.</span></div><div class="cats"></div>';
     $("cpAuto").onclick = () => { care.auto = !care.auto; if (roomRef) roomRef.child("care/auto").set(care.auto); setStatus(care.auto ? "🤖 Reposição automática ligada: os potes enchem sozinhos (a ração sai do estoque)." : "Reposição automática desligada: você enche os potes.", 4000); renderCatPanel(true); };
     const wrap = box.querySelector(".cats");
     Object.keys(CATS).forEach(id => {
       const d = document.createElement("div"); d.className = "cc"; d.dataset.id = id;
       d.innerHTML = '<div class="ttl"><b></b><span class="mood"></span></div>' + NEEDS.map(n => `<div class="nb" data-k="${n[0]}">${iconImg(n[1], 16)}<span>${n[2]}</span><div class="bar"><i></i></div><em style="font-style:normal;text-align:right"></em></div>`).join("") +
-        '<div class="acts" hidden><button data-a="pet">Carinho</button><button data-a="treat">Petisco</button><button data-a="play">Brincar</button><button data-a="call">📣 Chamar</button></div>';
-      d.querySelector("b").textContent = CATS[id].name;
+        '<div class="acts" hidden><button data-a="pet">Carinho</button><button data-a="treat">Petisco</button><button data-a="play">Brincar</button><button data-a="call">📣 Chamar</button><button data-a="edit">✏️ Editar</button></div>';
+      d.querySelector("b").textContent = petName(id);
       d.onclick = e => { if (e.target.closest("button")) return; selectCat(id); };
-      d.querySelectorAll("[data-a]").forEach(b => b.onclick = () => catAction(id, b.dataset.a));
+      d.querySelectorAll("[data-a]").forEach(b => b.onclick = () => b.dataset.a === "edit" ? petOpen(id) : catAction(id, b.dataset.a));
       wrap.appendChild(d);
     });
   }
@@ -436,7 +437,7 @@ function renderCatPanel(force) {
   $("cpAuto").title = "Enche os potes quando baixam de " + POTE_BAIXO + "% e limpa as caixas de areia sujas (gasta ração e sacos do estoque da despensa)";
   const hy = houseHygiene(); $("cpHyg").innerHTML = "Higiene da casa <b style='color:" + sevColor(100 - hy) + "'>" + hy + "%</b>" + (messCount() ? " · " + messCount() + " sujeira(s)" : "");
   box.querySelectorAll(".cc").forEach(d => {
-    const id = d.dataset.id, c = cats[id]; d.classList.toggle("sel", selectedCat === id);
+    const id = d.dataset.id, c = cats[id]; d.classList.toggle("sel", selectedCat === id); d.querySelector(".ttl b").textContent = petName(id);
     if (!c) return;
     const vals = { hunger: num(c.hunger, 0), thirst: num(c.thirst, 0), energy: num(c.energy, 0), need: Math.max(num(c.bladder, 0), num(c.bowel, 0)), well: num(c.well, 0) };
     NEEDS.forEach(n => { const row = d.querySelector('[data-k="' + n[0] + '"]'), v = vals[n[0]], bar = row.querySelector("i"); bar.style.width = clamp(v) + "%"; bar.style.background = sevColor(n[3] ? 100 - v : v); row.querySelector("em").textContent = Math.round(v); });
@@ -453,7 +454,7 @@ function catAlerts(now) {
   let urgente = false;
   for (const id in cats) {
     const c = cats[id]; if (!CATS[id] || c.hunger == null) continue;
-    const n = CATS[id].name;
+    const n = petName(id);
     if (catWeak(c)) { urgente = true; al("weak" + id, 150000, "😿 " + n + " está fraco de " + (c.hunger >= 92 ? "fome" : "sede") + " e não quer brincar. Dê comida, água ou um petisco!"); }
     if (c.hunger >= 85 && semRacao) { urgente = true; al("food" + id, 120000, "😿 " + n + " está com muita fome e o pote de ração está vazio! " + (supOf("racao") > 0 ? "Encha o pote (ou ligue o automático no painel dos gatos)." : "Pegue ração na despensa e encha o pote.")); }
     if (c.thirst >= 85 && semAgua) { urgente = true; al("water" + id, 120000, "💧 " + n + " está com sede e o pote de água está vazio!"); }

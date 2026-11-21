@@ -99,13 +99,13 @@ function frame() {
     list.push({ d, run: () => {
       if (selectedCat === id) { ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 1.4; const q = P(c.rx + .5, c.ry + .5, 0); ctx.beginPath(); ctx.ellipse(q[0], q[1], 15, 7, 0, 0, 7); ctx.stroke(); }
       const q = P(c.rx + .5, c.ry + .5, z); ctx.fillStyle = "rgba(26,16,38,.14)"; ctx.beginPath(); ctx.ellipse(q[0], q[1], 15, 6.4, 0, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(26,16,38,.26)"; ctx.beginPath(); ctx.ellipse(q[0], q[1], 10.5, 4.2, 0, 0, 7); ctx.fill();
-      outlined(w[0], w[1], g => drawCat(g, 0, 0, info.kind, st, flip, now, seed, sub, true));
+      outlined(w[0], w[1], g => drawCat(g, 0, 0, petKindOf(id), st, flip, now, seed, sub, true));
     }});
     let icon = null;
     if (st !== "sleep" && st !== "eat" && st !== "drink" && st !== "litter") {
       if (Math.max(num(c.bladder, 0), num(c.bowel, 0)) >= 85) icon = "poop"; else if (num(c.thirst, 0) >= 80) icon = "drop"; else if (num(c.hunger, 0) >= 80) icon = "fish"; else if (num(c.energy, 100) <= 18) icon = "zzz";
     }
-    labels.push({ wx: w[0], wy: w[1] - (st === "sit" ? 46 : 36), name: info.name, small: true, heart: c.pet && now - c.pet < 2800 && st !== "walk", icon, sel: selectedCat === id });
+    labels.push({ wx: w[0], wy: w[1] - (st === "sit" ? 46 : 36), name: petName(id), small: true, heart: c.pet && now - c.pet < 2800 && st !== "walk", icon, sel: selectedCat === id });
   }
   /* pessoas */
   for (const id in players) {

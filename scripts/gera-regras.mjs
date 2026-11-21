@@ -23,6 +23,7 @@ const PK = "root.child('farm/'+$o+'/p/'+$i+'/k').val()", PT = "root.child('farm/
 const RIPE_LB = `now >= ${PT} + (${FARM_G.map((g, k) => k < FARM_G.length - 1 ? `${PK} === ${k} ? ${Math.floor(g * 60000 * 0.7)} : ` : String(Math.floor(g * 60000 * 0.7))).join("")})`;
 const COLS = 45, ROWS = 20;                                   // tamanho do mapa (igual a src/js/01_core.js)
 /* móveis que podem ser colocados ao decorar a casa: a MESMA lista de DECOR em src/js/04d_decor.js (o teste das regras confere) */
+const PET_KINDS = readFileSync(join(root, "src/js/03b_pets.js"), "utf8").match(/^const PET_ORDER = \[(.*?)\];/m)[1].match(/"(\w+)"/g).map(x => x.slice(1, -1));
 const DECOR_TIPOS = readFileSync(join(root, "src/js/04d_decor.js"), "utf8").match(/^const DECOR = \[([\s\S]*?)\];/m)[1].match(/t: "(\w+)"/g).map(x => x.slice(4, -1));
 
 /* ---------- trechos reutilizados (todos olham os dados ANTES da escrita, via root) ---------- */
@@ -307,6 +308,8 @@ const rules = {
           "$cid": {
             ...writeM,
             ".validate": "$cid.matches(/^(sombra|neblina)$/)",
+            name: { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14" },
+            kind: { ".validate": `newData.isString() && newData.val().matches(/^(${PET_KINDS.join("|")})$/)` },
             "$f": { ".validate": "newData.isNumber() || newData.isBoolean() || (newData.isString() && newData.val().length <= 20) || newData.hasChildren(['t'])" }
           }
         },
