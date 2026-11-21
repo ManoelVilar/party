@@ -6,7 +6,7 @@
   const AUK="__au"; const loadAu=()=>{try{return JSON.parse(sessionStorage[AUK]||"null");}catch(e){return null;}}; let cur=loadAu();
   const bc=new BroadcastChannel("fbstub"); const opsBc=new BroadcastChannel("fbops"); const logOp=(op,p,v)=>{try{opsBc.postMessage({t:Date.now(),u:cur&&cur.uid||null,pv:cur?(cur.anon?"anonymous":cur.provider):null,ev:!!(cur&&cur.verified),op,p,v:v===undefined?null:JSON.parse(JSON.stringify(v))});}catch(e){}};
   const sv=v=>{ if(v&&typeof v==="object"){ if(v[".sv"]==="timestamp")return Date.now(); const o=Array.isArray(v)?[]:{}; for(const k in v)o[k]=sv(v[k]); return o;} return v; }; const conn=[]; window.__fbNet=on=>conn.forEach(c=>c({val:()=>on})); window.__fbSet=(p,v)=>setv(p,v);
-  function setv(p,v,remote){const ks=split(p);if(!ks.length)return;let n=root;for(let i=0;i<ks.length-1;i++){if(n[ks[i]]==null||typeof n[ks[i]]!=="object")n[ks[i]]={};n=n[ks[i]];}
+  function setv(p,v,remote){const ks=split(p);if(!ks.length)return;p=ks.join("/");let n=root;for(let i=0;i<ks.length-1;i++){if(n[ks[i]]==null||typeof n[ks[i]]!=="object")n[ks[i]]={};n=n[ks[i]];}
     const last=ks[ks.length-1]; if(v==null)delete n[last]; else n[last]=clone(sv(v)); prune(); fire(p); if(!remote)bc.postMessage({t:'set',p,v:v==null?null:clone(sv(v))});}
   function prune(){(function r(o){for(const k in o){if(o[k]&&typeof o[k]==="object"){r(o[k]);if(!Object.keys(o[k]).length)delete o[k];}}})(root);}
   const snap=(p)=>{const v=get(p);return {val:()=>clone(v),key:split(p).pop(),exists:()=>v!=null,get ref(){return ref(p);}};};

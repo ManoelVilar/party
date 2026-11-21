@@ -24,6 +24,7 @@ python3 gatos.py
 python3 jukebox.py
 python3 cinema_busca.py
 python3 decor.py
+python3 fazenda.py
 python3 turn.py
 python3 meet.py
 python3 chat.py
