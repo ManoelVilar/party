@@ -17,7 +17,7 @@ const ROOM_NATAL = {
   coz:  { floor: ["#fbf6ee", "#efe6d6"], wall: "#d0604f" }, cin:  { floor: ["#4a1e2c", "#431a28"], wall: "#2f5a4a" },
   sala: { floor: ["#d9b48a", "#cda57a"], wall: "#2f7a52" }, q1:   { floor: ["#f2e2e6", "#eadadf"], wall: "#c05a6a" },
   q2:   { floor: ["#dbe8ef", "#d0dfe8"], wall: "#5f9bb8" }, ban:  { floor: ["#d2ebf3", "#c5e2ec"], wall: "#7fb9c9" },
-  reu:  { floor: ["#d6dde8", "#ccd5e2"], wall: "#3f6c8f" }
+  reu:  { floor: ["#d6dde8", "#ccd5e2"], wall: "#3f6c8f" }, faz: { floor: ["#6fb34a", "#66a944"], wall: "#4f8a3a" }
 };
 function refreshWalls() {                                      // as paredes guardam a cor do cômodo no momento da criação
   WALLTILES.forEach(w => { const rS = roomOf(w.x, w.y + 1), rE = roomOf(w.x + 1, w.y); w.cL = rS ? ROOMBY[rS].wall : null; w.cR = rE ? ROOMBY[rE].wall : null; });

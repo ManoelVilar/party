@@ -141,6 +141,9 @@
   #decorpanel[hidden] { display:none; }
   #farmpanel { position:fixed; right:8px; top:56px; z-index:73; width:min(380px,calc(100vw - 16px)); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; padding:10px; }
   #farmpanel[hidden] { display:none; }
+  #friendpanel { position:fixed; right:8px; top:56px; z-index:74; width:min(400px,calc(100vw - 16px)); max-height:calc(100dvh - 70px); overflow:auto; display:grid; gap:8px; padding:10px; }
+  #friendpanel[hidden] { display:none; }
+  .frlist { display:grid; gap:4px; } .frh { color:var(--accent); font-weight:bold; margin-top:6px; } .frrow { display:flex; flex-wrap:wrap; gap:4px; align-items:center; background:#2a1b40; border:2px solid var(--line); padding:4px 6px; } .frrow span { flex:1 1 120px; overflow-wrap:anywhere; }
   .fzgrid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; } .fzplot.lock { background:#2f4a2c; border:2px dashed #4e7a49; opacity:.45; cursor:not-allowed; }  .fzplot { padding:0; border:2px solid #3a2414; background:#7a4e2a; aspect-ratio:1; line-height:0; }
   .fzplot canvas { width:100%; height:100%; image-rendering:pixelated; } .fzplot.ripe { outline:2px solid #f6c445; }
   .fztools { display:flex; flex-wrap:wrap; gap:4px; } .fztools button.on { outline:2px solid var(--accent, #f6c445); } .fzfriends { display:grid; gap:4px; }
@@ -495,6 +498,7 @@
     <button id="btnMix" title="Volume da voz de cada pessoa e mutar" aria-pressed="false">🎚 Vozes</button>
     <button id="btnMeet" title="Modo reunião: palco grande com a apresentação e as câmeras na lateral" hidden>🖥 Modo reunião</button>
     <button id="btnDecor" title="Decorar a casa: colocar, mover e guardar móveis" aria-pressed="false" hidden>🛏 Decorar</button>
+    <button id="btnFriends" title="Amigos: peça amizade, chame para a sala (voz e chat) e deixe visitar a sua fazenda" aria-pressed="false">👥 Amigos</button>
     <button id="btnFarm" title="Fazenda: plante, colha e visite as fazendas dos amigos" aria-pressed="false">🌱 Fazenda</button>
     <button id="btnJuke" title="Jukebox: música para a sala toda (comandos !play, !pular...)" aria-pressed="false">🎵 Jukebox</button>
     <button id="btnWard">Guarda-roupa</button>
@@ -556,10 +560,14 @@
     <div class="muted mxnote">Só muda o que <b>você</b> ouve; ninguém fica sabendo. Fica salvo neste aparelho.</div>
     <div id="mixList"></div>
   </div>
+  <div id="friendpanel" class="panel" hidden role="dialog" aria-label="Amigos">
+    <div class="mxhead"><b>👥 Amigos</b><button id="frClose" type="button" aria-label="Fechar">✕</button></div>
+    <div id="frList" class="frlist"></div>
+    <div id="frMsg" class="muted" role="status"></div>
+  </div>
   <div id="farmpanel" class="panel" hidden role="dialog" aria-label="Fazenda">
     <div class="mxhead"><b id="fzTitle">🌱 Minha fazenda</b><button id="fzClose" type="button" aria-label="Fechar">✕</button></div>
-    <div class="row"><span id="fzCoins" class="muted"></span><button id="fzBack" type="button" hidden>← Minha fazenda</button></div>
-    <div id="fzGrid" class="fzgrid"></div>
+    <div class="row"><span id="fzCoins" class="muted"></span></div>
     <button id="fzLand" type="button" hidden></button>
     <div id="fzTools" class="fztools"></div>
     <div id="fzMsg" class="muted" role="status"></div>

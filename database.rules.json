@@ -16,7 +16,7 @@
     },
     "farm": {
       "$o": {
-        ".read": "auth != null && (auth.uid === $o || root.child('farm/'+$o+'/f/'+auth.uid).val() === true)",
+        ".read": "auth != null && (auth.uid === $o || root.child('friends/'+$o+'/'+auth.uid).exists())",
         ".write": "auth != null && auth.uid === $o",
         ".validate": "newData.hasChildren(['n', 'c'])",
         "n": {
@@ -28,11 +28,6 @@
         "s": {
           ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 8"
         },
-        "f": {
-          "$u": {
-            ".validate": "newData.val() === true"
-          }
-        },
         "p": {
           "$i": {
             ".validate": "$i.matches(/^([0-9]|[12][0-9]|3[0-5])$/) && newData.hasChildren(['k', 't', 'w', 'e', 'b'])",
@@ -43,24 +38,24 @@
               ".validate": "newData.isNumber() && newData.val() <= now + 60000"
             },
             "w": {
-              ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && data.parent().child('k').exists() && newData.isNumber() && newData.val() === data.val() + 1",
+              ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && data.parent().child('k').exists() && newData.isNumber() && newData.val() === data.val() + 1",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
             },
             "e": {
-              ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
+              ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
             },
             "b": {
-              ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
+              ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && data.parent().child('k').exists() && newData.isNumber() && (newData.val() === data.val() + 1 || newData.val() === data.val() - 1)",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
             },
             "st": {
               "a": {
-                ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('b').val() !== auth.uid",
+                ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('b').val() !== auth.uid",
                 ".validate": "newData.isString() && newData.val().length <= 40"
               },
               "b": {
-                ".write": "auth != null && root.child('farm/'+$o+'/f/'+auth.uid).val() === true && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('a').val() !== auth.uid",
+                ".write": "auth != null && root.child('friends/'+$o+'/'+auth.uid).exists() && now >= root.child('farm/'+$o+'/p/'+$i+'/t').val() + (root.child('farm/'+$o+'/p/'+$i+'/k').val() === 0 ? 125999 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 1 ? 336000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 2 ? 630000 : root.child('farm/'+$o+'/p/'+$i+'/k').val() === 3 ? 1260000 : 2520000) && !data.exists() && newData.val() === auth.uid && data.parent().child('a').val() !== auth.uid",
                 ".validate": "newData.isString() && newData.val().length <= 40"
               },
               "$other": {
@@ -77,12 +72,63 @@
         }
       }
     },
-    "farmInv": {
-      "$b": {
-        ".read": "auth != null && auth.uid === $b",
-        "$o": {
-          ".write": "auth != null && ((auth.uid === $o && newData.exists()) || (auth.uid === $b && !newData.exists()) || (auth.uid === $o && !newData.exists()))",
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+    "friends": {
+      "$u": {
+        ".read": "auth != null && auth.uid === $u",
+        "$f": {
+          ".write": "auth != null && !newData.exists() && (auth.uid === $u || auth.uid === $f) || auth != null && newData.exists() && auth.token.firebase.sign_in_provider !== 'anonymous' && ((auth.uid === $u && root.child('friendReq/'+$u+'/'+$f).exists()) || (auth.uid === $f && root.child('friendReq/'+$f+'/'+$u).exists()))",
+          ".validate": "newData.hasChildren(['n', 't']) && $f !== $u",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+          },
+          "t": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "friendReq": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".write": "auth != null && ((!newData.exists() && (auth.uid === $to || auth.uid === $from)) || (newData.exists() && auth.uid === $from && $from !== $to && auth.token.firebase.sign_in_provider !== 'anonymous' && !data.exists() && !root.child('friends/'+$to+'/'+$from).exists()))",
+          ".validate": "newData.hasChildren(['n', 't'])",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+          },
+          "t": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "friendInv": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".write": "auth != null && ((!newData.exists() && (auth.uid === $to || auth.uid === $from)) || (newData.exists() && auth.uid === $from && root.child('friends/'+$from+'/'+$to).exists() && root.child('friends/'+$to+'/'+$from).exists()))",
+          ".validate": "newData.hasChildren(['room', 'n', 't'])",
+          "room": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{4,40}$/)"
+          },
+          "tok": {
+            ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9]{20,40}$/)"
+          },
+          "n": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
+          },
+          "t": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
         }
       }
     },
@@ -635,7 +681,7 @@
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 44"
             },
             "y": {
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 19"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 33"
             },
             "f": {
               ".validate": "newData.isString() && newData.val().matches(/^[dulr]$/)"

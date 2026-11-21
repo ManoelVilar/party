@@ -15,12 +15,14 @@ const ROOMS = [
   { id: "q1",   name: "Quarto 1",     x: 1,  y: 14, w: 9,  h: 5,  floor: ["#e5d3e3", "#dcc8da"], wall: "#dba7ba", talk: "room", pat: "carpet" },
   { id: "q2",   name: "Quarto 2",     x: 11, y: 14, w: 9,  h: 5,  floor: ["#d2e0e9", "#c7d7e2"], wall: "#a7cadb", talk: "room", pat: "carpet" },
   { id: "ban",  name: "Banheiro",     x: 21, y: 14, w: 8,  h: 5,  floor: ["#c3e3f0", "#b3d6e6"], wall: "#90d2d2", talk: "room", pat: "tile" },
-  { id: "reu",  name: "Sala de Reuniões", ...LAYOUT.offices.reu, floor: ["#c9d3e0", "#bfcad9"], wall: "#8fb0d9", talk: "room", pat: "carpet" }
+  { id: "reu",  name: "Sala de Reuniões", ...LAYOUT.offices.reu, floor: ["#c9d3e0", "#bfcad9"], wall: "#8fb0d9", talk: "room", pat: "carpet" },
+  { id: "faz",  name: "Fazenda",      x: 1,  y: 20, w: 43, h: 13, floor: ["#6fb34a", "#66a944"], wall: "#4f8a3a", talk: "near", pat: "grass" }   // quintal ao ar livre: horta, celeiro e bichos
 ];
 const ROOMBY = {}; ROOMS.forEach(r => ROOMBY[r.id] = r);
 const rid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 ROOMS.forEach(r => { for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) rid[y][x] = r.id; });
 [[5, 13], [6, 13], [15, 13], [16, 13], [24, 13], [25, 13], [21, 8], [22, 8], [23, 8], [4, 8], [12, 8], [35, 8], [36, 8], [37, 8], [36, 13]].forEach(p => { rid[p[1]][p[0]] = "sala"; });
+[[5, 19], [6, 19]].forEach(p => { rid[p[1]][p[0]] = "q1"; }); [[15, 19], [16, 19]].forEach(p => { rid[p[1]][p[0]] = "q2"; });   // portas dos fundos: os quartos 1 e 2 dão para o quintal
 /* portas com "bater e permitir": escritórios 1 e 2 e sala de reuniões (um tile de porta cada) */
 const DOORS = Object.keys(LAYOUT.doors).map(o => ({ office: o, x: LAYOUT.doors[o][0], y: LAYOUT.doors[o][1] }));
 const inO = o => (o === "reu" ? "na " : "no ") + ROOMBY[o].name, ofO = o => (o === "reu" ? "da " : "do ") + ROOMBY[o].name;
@@ -49,6 +51,49 @@ function alertaMarca(gx, gy, z) {
   ctx.fillStyle = "#fff"; ctx.fillRect(p[0] - 1, p[1] - 4, 2, 5); ctx.fillRect(p[0] - 1, p[1] + 2, 2, 2);
 }
 const DEF = {
+  /* quintal */
+  arvore: { solid: true, draw(o) {
+    const x = o.x, y = o.y; box(x, y, .38, .38, .62, .62, 0, 36, "#7a4f2a");
+    ball(x + .5, y + .5, 52, -10, 15, "#2f8446"); ball(x + .5, y + .5, 50, 11, 14, "#3f9a52"); ball(x + .5, y + .5, 66, 0, 16, "#3f9a52"); ball(x + .5, y + .5, 80, -2, 12, "#5cc27a");
+  }},
+  celeiro: { solid: true, w: 4, h: 3, draw(o) {
+    const x = o.x, y = o.y;
+    box(x, y, .1, .1, 3.9, 2.9, 0, 58, "#c0392b");
+    box(x, y, .06, .06, 3.94, 2.94, 58, 64, "#8f2218"); box(x, y, .3, .3, 3.7, 2.7, 64, 78, "#a02a20"); box(x, y, .8, .8, 3.2, 2.2, 78, 90, "#8f2218");
+    faceY(x, y, 1.2, 2.8, 2.9, 0, 46, "#f4f1ea"); faceY(x, y, 1.3, 2.7, 2.905, 0, 44, "#c0392b");
+    poly([P(x + 1.3, y + 2.91, 44), P(x + 2.7, y + 2.91, 0), P(x + 2.7, y + 2.91, 4), P(x + 1.34, y + 2.91, 44)], "#f4f1ea"); poly([P(x + 2.7, y + 2.91, 44), P(x + 1.3, y + 2.91, 0), P(x + 1.34, y + 2.91, 0), P(x + 2.7, y + 2.91, 40)], "#f4f1ea");
+    faceY(x, y, 1.8, 2.2, 2.9, 66, 76, "#f6e7b0");
+  }},
+  feno: { solid: true, draw(o) { const x = o.x, y = o.y; box(x, y, .1, .15, .9, .85, 0, 20, "#e0c25a"); box(x, y, .15, .2, .85, .8, 20, 24, "#f0d878"); [.3, .5, .7].forEach(v => faceY(x, y, v - .02, v + .02, .85, 2, 18, "#b89a38")); }},
+  cerca: { solid: true, draw(o) {
+    const x = o.x, y = o.y, wood = "#b07a44", dark = "#7a4f2a";
+    [[-1, 0, 0, .5, .46, .54], [1, 0, .5, 1, .46, .54]].forEach(r => { if (adj(x + r[0], y, "cerca")) { box(x, y, r[2], r[4], r[3], r[5], 24, 28, wood); box(x, y, r[2], r[4], r[3], r[5], 12, 16, wood); } });
+    [[-1, 0, .46, .54, 0, .5], [1, 0, .46, .54, .5, 1]].forEach(r => { if (adj(x, y + r[1] * 0 + (r[0] < 0 ? -1 : 1), "cerca")) { box(x, y, r[2], r[4], r[3], r[5], 24, 28, wood); box(x, y, r[2], r[4], r[3], r[5], 12, 16, wood); } });
+    box(x, y, .4, .4, .6, .6, 0, 34, dark); box(x, y, .38, .38, .62, .62, 34, 37, wood);
+  }},
+  caminho: { solid: false, flat: true, draw(o) { const x = o.x, y = o.y, v = ((x * 7 + y * 13) % 5); flat(x, y, 0, 0, 1, 1, 0, v % 2 ? "#cfae74" : "#c9a46a"); flat(x, y, .1 + v * .05, .15, .3 + v * .05, .3, 0, "#b8935a"); flat(x, y, .6, .55 - v * .04, .8, .7, 0, "#dcc08a"); }},
+  lagoa: { solid: true, flat: true, w: 4, h: 3, draw(o) {
+    const x = o.x, y = o.y;
+    flat(x, y, -.1, -.1, 4.1, 3.1, 0, "#8a7a52"); flat(x, y, 0, 0, 4, 3, 0, "#4f9fd8"); flat(x, y, .25, .25, 3.75, 2.75, 0, "#62b0e6"); flat(x, y, .7, .6, 2.2, 1.3, 0, "#8cd0f4");
+    [[.9, .8, 1.3, .86], [2.1, 1.7, 2.7, 1.76], [1.6, 2.2, 2.0, 2.26]].forEach(r => flat(x, y, r[0], r[1], r[2], r[3], 0, "#d6efff"));
+    ball(x + 3.3, y + .5, 6, 0, 3, "#3f9a52"); ball(x + 3.7, y + 2.4, 5, 0, 2.5, "#4fb066");                // vitórias-régias
+  }},
+  poco: { solid: true, draw(o) {
+    const x = o.x, y = o.y; box(x, y, .15, .15, .85, .85, 0, 22, "#9a9aa6"); box(x, y, .22, .22, .78, .78, 22, 24, "#4d9ad8");
+    box(x, y, .12, .12, .2, .2, 22, 58, "#8a5a30"); box(x, y, .8, .12, .88, .2, 22, 58, "#8a5a30"); box(x, y, .05, .05, .95, .95, 58, 63, "#a8452e"); box(x, y, .2, .2, .8, .8, 63, 70, "#c0583a");
+  }},
+  espantalho: { solid: true, draw(o) {
+    const x = o.x, y = o.y; box(x, y, .46, .46, .54, .54, 0, 64, "#8a5a30"); box(x, y, .1, .44, .9, .56, 38, 44, "#8a5a30");
+    box(x, y, .3, .35, .7, .65, 24, 46, "#d6a83a"); ball(x + .5, y + .5, 56, 0, 7, "#e8c98a"); box(x, y, .3, .3, .7, .7, 62, 65, "#6a4322"); box(x, y, .38, .38, .62, .62, 65, 76, "#6a4322");
+    faceY(x, y, .4, .45, .66, 54, 56, "#1a1620"); faceY(x, y, .55, .6, .66, 54, 56, "#1a1620");
+  }},
+  arbusto: { solid: true, draw(o) { const x = o.x, y = o.y; ball(x + .5, y + .5, 10, -8, 10, "#2f8446"); ball(x + .5, y + .5, 10, 8, 9, "#3f9a52"); ball(x + .5, y + .5, 18, 0, 10, "#4fb066"); [[-6, 16, "#ff7aa8"], [5, 20, "#ffd84a"], [9, 12, "#fff"]].forEach(f => ball(x + .5, y + .5, f[1], f[0], 1.8, f[2])); }},
+  flores: { solid: false, draw(o) {
+    const x = o.x, y = o.y, h = (x * 31 + y * 17) % 4, c = [["#ff7aa8", "#ffd84a"], ["#ffffff", "#ffd84a"], ["#9a7aff", "#fff"], ["#ff9a4a", "#ffe08a"]][h];
+    [[.25, .3], [.7, .25], [.45, .7], [.8, .75]].forEach((q, i) => { box(x, y, q[0] - .01, q[1] - .01, q[0] + .01, q[1] + .01, 0, 7, "#3a9a44", false); ball(x + q[0], y + q[1], 9, 0, 2.6, c[i % 2]); ball(x + q[0], y + q[1], 9, 0, 1, c[(i + 1) % 2]); });
+  }},
+  placa: { solid: true, draw(o) { const x = o.x, y = o.y; box(x, y, .46, .5, .54, .58, 0, 26, "#8a5a30"); box(x, y, .1, .44, .9, .62, 20, 34, "#c99a5b"); faceY(x, y, .16, .84, .62, 22, 32, "#e3c48a"); faceY(x, y, .26, .74, .622, 26, 29, "#4d8a3a"); }},
+  cocho: { solid: true, draw(o) { const x = o.x, y = o.y; box(x, y, .1, .2, .9, .8, 0, 14, "#8a5a30"); box(x, y, .18, .28, .82, .72, 12, 15, "#4d9ad8"); }},
   /* mesa gamer de escritório tech: tela ultrawide com código (acende quando alguém senta), torre com RGB, teclado e mouse. Cor do neon por escritório. */
   gamer: { solid: true, draw(o) {
     const x = o.x, y = o.y, on = deskLit(x, y), ac = neonOf(x), fr = "#1a1e2c";
@@ -340,6 +385,14 @@ const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o)
   add("cadeira", 32, 16, { f: "r" }); add("cadeira", 41, 16, { f: "l" });
   add("tela", 38, 14, { w: 5, screen: "reu" }); add("quadro", 31, 14, { w: 3 }); add("painel", 43, 15, { kind: "reuniao" });
   add("planta", 30, 18); add("planta", 43, 18); add("luz", 30, 14);
+  /* quintal (Fazenda): celeiro, feno, cochos e árvores; a horta 6x6 fica em FARM_X0,FARM_Y0 (07f_fazenda.js) */
+  for (let x = 5; x <= 16; x++) add("caminho", x, 20); add("caminho", 8, 21); add("caminho", 9, 21);          // trilha dos quartos até o portão da horta
+  for (let x = 5; x <= 12; x++) { if (x !== 8 && x !== 9) add("cerca", x, 21); add("cerca", x, 28); } for (let y = 22; y <= 27; y++) { add("cerca", 5, y); add("cerca", 12, y); }   // cerca em volta da horta (o portão fica em 8-9)
+  add("lagoa", 20, 27); add("poco", 3, 24); add("espantalho", 14, 25); add("placa", 4, 21);
+  [[4, 22], [4, 27], [13, 22], [13, 27], [3, 21], [3, 29], [17, 21], [18, 21], [25, 21], [26, 22], [19, 25], [24, 30], [32, 29], [40, 28], [41, 23]].forEach(p => add("flores", p[0], p[1]));
+  [[3, 20], [13, 21], [18, 31], [27, 31], [34, 31], [43, 29], [16, 24]].forEach(p => add("arbusto", p[0], p[1]));
+  add("celeiro", 36, 21); add("feno", 35, 22); add("feno", 35, 23); add("cocho", 28, 25); add("cocho", 29, 25);
+  [[2, 21], [2, 26], [2, 31], [14, 31], [22, 31], [30, 31], [42, 31], [42, 26], [20, 22], [44 - 1, 21]].forEach(p => add("arvore", p[0], p[1]));
 })();
 
 /* ---------- paredes (cubos 3D) ---------- */
@@ -347,8 +400,8 @@ const WALLTILES = [];
 const WALL_T = 96, WALL_L = 38, WT0 = .35, WT1 = .65;           // altura alta/baixa e espessura (fina, no meio do tile)
 const wallLike = (x, y) => isWall(x, y) || !!DOORAT[x + "_" + y];
 for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (isWall(x, y)) {
-  const tall = (y === 0 || x === 0), rS = roomOf(x, y + 1), rE = roomOf(x + 1, y);
-  WALLTILES.push({ x, y, H: tall ? WALL_T : WALL_L, tall, cL: rS ? ROOMBY[rS].wall : null, cR: rE ? ROOMBY[rE].wall : null,
+  const tall = (y === 0 || x === 0) && y < 20, fence = y >= 20, rS = roomOf(x, y + 1), rE = roomOf(x + 1, y);
+  WALLTILES.push({ x, y, H: tall ? WALL_T : WALL_L, tall, fence, cL: rS ? ROOMBY[rS].wall : null, cR: rE ? ROOMBY[rE].wall : null,
     nW: wallLike(x - 1, y), nE: wallLike(x + 1, y), nN: wallLike(x, y - 1), nS: wallLike(x, y + 1) });
 }
 /* paredes finas: um poste central + braços até as paredes vizinhas */
@@ -358,7 +411,19 @@ function wslab(x, y, x0, y0, x1, y1, H, topC, cS, cE) {
   poly([P(bx, ay, H), P(bx, by, H), P(bx, by, 0), P(bx, ay, 0)], cE);                 // face leste
   poly([P(ax, ay, H), P(bx, ay, H), P(bx, by, H), P(ax, by, H)], topC);               // topo
 }
+/* cerca do quintal: poste no meio do tile e duas ripas até os vizinhos */
+function drawFence(w) {
+  const x = w.x, y = w.y, fr = roomOf(x, y + 1) || roomOf(x + 1, y) || roomOf(x, y - 1) || roomOf(x - 1, y);
+  if (fr) poly([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], ROOMBY[fr].floor[(x + y) % 2 ? 0 : 1]);
+  const wood = "#a8723c", dark = "#7a4f2a";
+  if (w.nW) { box(x, y, 0, .46, .5, .54, 24, 28, wood); box(x, y, 0, .46, .5, .54, 11, 15, wood); }
+  if (w.nE) { box(x, y, .5, .46, 1, .54, 24, 28, wood); box(x, y, .5, .46, 1, .54, 11, 15, wood); }
+  if (w.nN) { box(x, y, .46, 0, .54, .5, 24, 28, wood); box(x, y, .46, 0, .54, .5, 11, 15, wood); }
+  if (w.nS) { box(x, y, .46, .5, .54, 1, 24, 28, wood); box(x, y, .46, .5, .54, 1, 11, 15, wood); }
+  box(x, y, .4, .4, .6, .6, 0, 34, dark); box(x, y, .38, .38, .62, .62, 34, 37, wood);
+}
 function drawWall(w) {
+  if (w.fence) return drawFence(w);
   const x = w.x, y = w.y, H = w.H, top = NATAL ? (w.tall ? "#f6f9ff" : "#ffffff") : (w.tall ? "#f1eef7" : "#e4e0ee");
   const oc = NATAL ? "#aebbd2" : "#8d7fa8";                                                  // face de fora das paredes (no Natal: azul-gelo)
   const cS = shade(w.cL || oc, .95), cE = shade(w.cR || oc, .78), bS = shade(w.cL || oc, .7), bE = shade(w.cR || oc, .55);
@@ -446,6 +511,11 @@ function drawFloor(kx, ky, vw, vh) {
       const sx = (y % 2 ? .25 : .75) + (v % 7) * .01; poly([P(x + sx, y), P(x + sx + .03, y), P(x + sx + .03, y + .5), P(x + sx, y + .5)], "rgba(26,16,38,.1)");
       const g = .12 + (v % 5) * .1; poly([P(x + g, y + .2), P(x + g + .3, y + .2), P(x + g + .3, y + .23), P(x + g, y + .23)], "rgba(255,246,216,.07)");
       poly([P(x + .55 - g * .3, y + .72), P(x + .9 - g * .3, y + .72), P(x + .9 - g * .3, y + .75), P(x + .55 - g * .3, y + .75)], "rgba(26,16,38,.06)");
+    }
+    if (R.pat === "grass") {                                                       // tufos de grama e florzinhas
+      for (let i = 0; i < 3; i++) { const a = ((hv >>> (i * 6)) % 86) / 100 + .07, b = ((hv >>> (i * 6 + 3)) % 86) / 100 + .07;
+        poly([P(x + a, y + b), P(x + a + .05, y + b), P(x + a + .05, y + b + .1), P(x + a, y + b + .1)], i % 2 ? "#8fd35e" : "#4f9a33"); }
+      if (v % 17 === 0) { const a = .2 + (v % 5) * .12, b = .25 + (v % 3) * .2; poly([P(x + a, y + b), P(x + a + .07, y + b), P(x + a + .07, y + b + .07), P(x + a, y + b + .07)], v % 2 ? "#fff6d8" : "#ffd84a"); }
     }
     if (R.pat === "tile") {
       poly([P(x + .08, y + .08), P(x + .92, y + .08), P(x + .92, y + .92), P(x + .08, y + .92)], null, "rgba(255,246,216,.4)");
