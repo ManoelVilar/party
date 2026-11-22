@@ -10,6 +10,7 @@ const PET_SP = {
   orange:  { n: "Gato laranja", e: "🐈", cat: true },
   white:   { n: "Gato branco",  e: "😺", cat: true },
   cachorro: { n: "Cachorro", e: "🐶", body: "#b98a58", hi: "#d4a875", dk: "#7a5636", bel: "#ecd9bd" },
+  poodle:   { n: "Poodle branco", e: "🐩", body: "#f7f5f0", hi: "#ffffff", dk: "#cfc9bd", bel: "#ffffff" },
   porco:    { n: "Porco",    e: "🐷", body: "#f0a6b4", hi: "#f8c6cf", dk: "#c9707f", bel: "#f8c6cf" },
   galinha:  { n: "Galinha",  e: "🐔", bird: true, body: "#f4f0e6", hi: "#ffffff", dk: "#c9c2ae", bel: "#f4f0e6" },
   pato:     { n: "Pato",     e: "🦆", bird: true, body: "#f2d54a", hi: "#ffe98a", dk: "#c9a82a", bel: "#f2d54a" },
@@ -17,7 +18,7 @@ const PET_SP = {
   ovelha:   { n: "Ovelha",   e: "🐑", body: "#f5f2ea", hi: "#ffffff", dk: "#3a3440", bel: "#f5f2ea" },
   vaca:     { n: "Vaca",     e: "🐮", body: "#f6f3ee", hi: "#ffffff", dk: "#2b2830", bel: "#f6f3ee" }
 };
-const PET_ORDER = ["black", "tabby", "orange", "white", "cachorro", "porco", "galinha", "pato", "coelho", "ovelha", "vaca"];
+const PET_ORDER = ["black", "tabby", "orange", "white", "cachorro", "poodle", "porco", "galinha", "pato", "coelho", "ovelha", "vaca"];
 const PET_NAME_MAX = 14;
 const petKindOf = id => { const k = cats[id] && cats[id].kind; return PET_SP[k] ? k : CATS[id].kind; };
 const petName = id => { const n = cats[id] && typeof cats[id].name === "string" ? cleanName(cats[id].name).slice(0, PET_NAME_MAX) : ""; return n || CATS[id].name; };
@@ -52,9 +53,11 @@ function drawPet(g, X, Y, kind, st, flip, now, seed, sub, noShadow) {
     if (kind === "ovelha") { [[-7, by - 2], [-2, by - 4], [4, by - 3], [8, by - 1], [-5, by + 2], [3, by + 2]].forEach(p => el(g, p[0], p[1], 4.6, 4.2, S.body)); [[-7, by - 5], [0, by - 7], [6, by - 5]].forEach(p => el(g, p[0], p[1], 3.4, 2.4, S.hi)); }
     if (kind === "vaca") { el(g, -5, by - 1, 3.2, 2.6, S.dk); el(g, 3, by + 2, 3.8, 2.6, S.dk); el(g, 7, by - 3, 2.2, 2, S.dk); }
     if (kind === "cachorro") { el(g, 4, by - 2, 3, 2.4, S.dk); }
-    const tw = Math.sin(now / (kind === "cachorro" ? 110 : 420) + seed) * 3;
+    if (kind === "poodle") { [[-7, by - 1], [-2, by - 3], [4, by - 2], [8, by], [-4, by + 2], [2, by + 2]].forEach(p => el(g, p[0], p[1], 4.4, 4, S.body)); [[-6, by - 4], [0, by - 5.5], [6, by - 4]].forEach(p => el(g, p[0], p[1], 3.2, 2.2, S.hi)); [-8, -3, 3, 8].forEach((x, i) => el(g, x + (i % 2 ? lg : -lg), -2.4, 3.2, 2.6, S.body)); }
+    const tw = Math.sin(now / (kind === "cachorro" || kind === "poodle" ? 110 : 420) + seed) * 3;
     if (kind === "coelho") el(g, -11, by - 1, 3.6, 3.4, "#ffffff");
     else if (kind === "porco") { g.strokeStyle = S.dk; g.lineWidth = 1.5; g.lineCap = "round"; g.beginPath(); g.arc(-12, by - 2, 2.4, 0, Math.PI * 1.6); g.stroke(); }
+    else if (kind === "poodle") { g.strokeStyle = S.dk; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-9, by - 2); g.lineTo(-12, by - 7 + tw * .3); g.stroke(); el(g, -12.5, by - 9 + tw * .4, 3.6, 3.4, S.body); el(g, -12.9, by - 9.8 + tw * .4, 1.8, 1.4, S.hi); }
     else if (kind === "vaca") { g.strokeStyle = S.dk; g.lineWidth = 1.6; g.lineCap = "round"; g.beginPath(); g.moveTo(-10, by - 3); g.quadraticCurveTo(-15, by + 2, -14 + tw * .3, by + 8); g.stroke(); el(g, -14 + tw * .3, by + 9, 1.6, 2.2, S.dk); }
     else if (kind === "ovelha") el(g, -12, by - 1, 2.6, 2.4, S.body);
     else { g.strokeStyle = S.body; g.lineWidth = 2.6; g.lineCap = "round"; g.beginPath(); g.moveTo(-10, by - 3); g.quadraticCurveTo(-15, by - 8 + tw, -14 + tw * .4, by - 12); g.stroke(); }
@@ -101,6 +104,13 @@ function petHead(g, kind, S, hx, hy, closed, now, seed, chew) {
     el(g, hx, hy, 5.8, 5.2, S.body); el(g, hx - 2, hy - 2.4, 2.4, 2, S.dk);
     rr(g, hx + 1.6, hy + .6, 5.6, 4, 1.8, "#f0a6b4"); el(g, hx + 3.6, hy + 2.6, .6, .8, "#7a2f3c"); el(g, hx + 5.6, hy + 2.6, .6, .8, "#7a2f3c");
     petEyes(g, hx + 1.2, hy - 1.4, closed);
+  } else if (kind === "poodle") {
+    el(g, hx - 3.6, hy + 2.2, 3.6, 4.4, S.body); el(g, hx - 4, hy + 1.2, 2, 2.4, S.hi);          // orelha cacheada
+    el(g, hx, hy, 5.2, 4.8, S.body); el(g, hx - .6, hy - 5, 4.8, 3.8, S.body); el(g, hx - 1.4, hy - 6, 2.4, 1.6, S.hi); el(g, hx + 2, hy - 4.4, 2.4, 2, S.body);   // topete (pompom)
+    el(g, hx + 4.4, hy + 2, 3, 2.2, S.hi); el(g, hx + 6.8, hy + 1.4, 1.2, 1, "#1a1620");
+    if (chew) el(g, hx + 5.4, hy + 4.2, 1.6, 1.2, "#e8707a");
+    petEyes(g, hx + 1.8, hy - 1, closed);
+    el(g, hx + 3, hy + 3.6, 1.9, 1, "#e0505a");                                                   // lacinho
   } else {                                                                                       // cachorro
     el(g, hx, hy, 5.6, 5.2, S.body); el(g, hx + 4, hy + 2, 3.4, 2.6, S.bel); el(g, hx + 6.6, hy + 1.2, 1.2, 1, "#1a1620");
     rr(g, hx - 5, hy - 3.6, 3.4, 6.6, 1.6, S.dk); rr(g, hx + 0.6, hy - 4, 3, 5.6, 1.4, S.dk);

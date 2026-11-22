@@ -5,6 +5,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ## [Não lançado]
 
 ### Adicionado
+- **Jacarés na lagoa + Lana Del Rey**: a lagoa do quintal ficou maior (6x4) e ganhou 3 jacarés nadando (enfeite local). Perto da lagoa aparece "Mexer com os jacarés" (ou toque na lagoa): eles abrem a boca, dançam e toca Lana Del Rey num player do YouTube sempre visível (próxima música, fechar e link para abrir no YouTube). Nada grava no banco.
+- **Tobi, o poodle branco**: novo bichinho da casa (vaga `tobi`, espécie `poodle` no acervo, editável como os outros). Passeia pela casa e, com mais frequência, pelo sítio. **Republique as regras do Firebase** (o id `tobi` foi liberado em `cats`).
 - **Ícones em pixel art na fazenda e nos amigos**: 19 ícones novos na paleta do jogo (planta, amigos, regar, cesta, pegadas, moeda, lápis, trigo, diabo, erva, praga, casa, aviso, ok e as 5 culturas) no lugar dos emojis dos botões e painéis; `🛏`, `🥣`, `🧽`, `🛑`, `🐈`, `⛔`, `⚠` e `✅` também passam a usar ícone.
 - **Amigos em geral**: o painel 👥 funciona fora das salas (botão na tela da conta, depois de entrar). Mostra se cada amigo está online e em que sala (`presence/<uid>`, só amigos leem) e tem **Ir até lá** (sala temporária, preenche o código) e **Chamar para a sala** (dentro de uma sala). **Republicar as regras** (`presence`).
 - **Fazenda só com conta**: plantar, colher, ampliar e visitar exigem estar logado (as regras também exigem conta para escrever na fazenda). Convidados veem a terra vazia e uma dica para entrar numa conta.

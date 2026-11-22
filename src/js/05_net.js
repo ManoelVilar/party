@@ -282,6 +282,7 @@ cv.addEventListener("pointerleave", () => { hover = null; });
 cv.addEventListener("pointerdown", e => {
   if (!meRef || ptrs.size > 1) return;
   if (decorClick(e)) return;
+  if (jacareClick(e)) return;
   if (farmWorldClick(e)) return;                                           // modo decorar: o toque coloca/pega móvel em vez de andar
   if (me.act && me.act.type === "sleep") return wake();
   if (me.act && me.act.type === "shower") return;
@@ -377,6 +378,7 @@ function currentActions() {
     a.push({ k: "treat" + id, l: "🍗 Petisco · " + petName(id), fn: () => catAction(id, "treat") });
     a.push({ k: "play" + id, l: "🧶 Brincar · " + petName(id), fn: () => catAction(id, "play") });
   }
+  jacareActions(a);
   DOORS.forEach(d => {
     if (Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) <= 2 && roomOf(me.x, me.y) !== d.office && !doorOpenFor(d)) {
       if (officeLocked(d.office)) a.push({ k: "lock" + d.office, l: "🔒 Reservado ao anfitrião · " + ROOMBY[d.office].name, fn: () => setStatus("🔒 " + ROOMBY[d.office].name + ": " + lockReason(d.office) + ". Só o anfitrião entra; pedir para bater não adianta.", 5000) });

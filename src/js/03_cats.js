@@ -4,7 +4,8 @@
 /* Para adicionar outro gato basta uma linha aqui: toda a lógica é compartilhada. */
 const CATS = {
   sombra:  { name: "Sombra",  kind: "black", x: 12, y: 11, r: { hunger: 1.15, thirst: .9, bladder: 1.05, bowel: .9 }, start: { hunger: 34, thirst: 22, bladder: 12, bowel: 14 } },
-  neblina: { name: "Neblina", kind: "tabby", x: 24, y: 10, r: { hunger: .9, thirst: 1.1, bladder: .9, bowel: 1.1 }, start: { hunger: 26, thirst: 30, bladder: 18, bowel: 6 } }
+  neblina: { name: "Neblina", kind: "tabby", x: 24, y: 10, r: { hunger: .9, thirst: 1.1, bladder: .9, bowel: 1.1 }, start: { hunger: 26, thirst: 30, bladder: 18, bowel: 6 } },
+  tobi:    { name: "Tobi",    kind: "poodle", x: 20, y: 23, yard: true, r: { hunger: 1, thirst: 1, bladder: .95, bowel: 1 }, start: { hunger: 30, thirst: 25, bladder: 10, bowel: 10 } }   // poodle branco: homenagem ao Tobi; passeia pela casa e pelo sítio
 };
 const CAT_STEP = 380;                                                   // ms por casa andada
 const CAT_RATES = { hunger: 1.5, thirst: 2.0, bladder: 1.6, bowel: 1.0, energyDown: 1.2, energyUp: 12 };   // por minuto real (cada gato tem seu ritmo: campo r em CATS)
@@ -264,7 +265,8 @@ function tryGoal(id, a, c, t, now) {
 function wander(id, a, c, now) {
   const fav = favSpots(); let tx, ty, tries = 0;
   do {
-    if (Math.random() < .4 && fav.length) { const f = fav[Math.floor(Math.random() * fav.length)]; tx = f[0]; ty = f[1]; }
+    if (CATS[id].yard && Math.random() < .5) { tx = 2 + Math.floor(Math.random() * 40); ty = 21 + Math.floor(Math.random() * 11); }          // Tobi gosta do quintal
+    else if (Math.random() < .4 && fav.length) { const f = fav[Math.floor(Math.random() * fav.length)]; tx = f[0]; ty = f[1]; }
     else { tx = c.x + Math.floor(Math.random() * 15) - 7; ty = c.y + Math.floor(Math.random() * 9) - 4; }
   } while (catBlocked(tx, ty) && ++tries < 25);
   const p = !catBlocked(tx, ty) && pathTo(c, tx, ty);
