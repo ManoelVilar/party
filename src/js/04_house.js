@@ -72,11 +72,11 @@ const DEF = {
     box(x, y, .4, .4, .6, .6, 0, 34, dark); box(x, y, .38, .38, .62, .62, 34, 37, wood);
   }},
   caminho: { solid: false, flat: true, draw(o) { const x = o.x, y = o.y, v = ((x * 7 + y * 13) % 5); flat(x, y, 0, 0, 1, 1, 0, v % 2 ? "#cfae74" : "#c9a46a"); flat(x, y, .1 + v * .05, .15, .3 + v * .05, .3, 0, "#b8935a"); flat(x, y, .6, .55 - v * .04, .8, .7, 0, "#dcc08a"); }},
-  lagoa: { solid: true, flat: true, w: 4, h: 3, draw(o) {
-    const x = o.x, y = o.y;
-    flat(x, y, -.1, -.1, 4.1, 3.1, 0, "#8a7a52"); flat(x, y, 0, 0, 4, 3, 0, "#4f9fd8"); flat(x, y, .25, .25, 3.75, 2.75, 0, "#62b0e6"); flat(x, y, .7, .6, 2.2, 1.3, 0, "#8cd0f4");
-    [[.9, .8, 1.3, .86], [2.1, 1.7, 2.7, 1.76], [1.6, 2.2, 2.0, 2.26]].forEach(r => flat(x, y, r[0], r[1], r[2], r[3], 0, "#d6efff"));
-    ball(x + 3.3, y + .5, 6, 0, 3, "#3f9a52"); ball(x + 3.7, y + 2.4, 5, 0, 2.5, "#4fb066");                // vitórias-régias
+  lagoa: { solid: true, flat: true, w: 6, h: 4, draw(o) {
+    const x = o.x, y = o.y, W = o.w, H = o.h;
+    flat(x, y, -.1, -.1, W + .1, H + .1, 0, "#8a7a52"); flat(x, y, 0, 0, W, H, 0, "#4f9fd8"); flat(x, y, .25, .25, W - .25, H - .25, 0, "#62b0e6"); flat(x, y, .8, .7, W - 1.4, H - 1.2, 0, "#8cd0f4");
+    [[.9, .8, 1.5, .86], [3.1, 1.7, 3.8, 1.76], [1.6, 3.1, 2.2, 3.16], [4.2, 2.9, 4.8, 2.96]].forEach(r => flat(x, y, r[0], r[1], r[2], r[3], 0, "#d6efff"));
+    ball(x + W - .7, y + .5, 6, 0, 3, "#3f9a52"); ball(x + W - .3, y + H - .6, 5, 0, 2.5, "#4fb066"); ball(x + .5, y + H - .5, 5, 0, 2.5, "#3f9a52");     // vitórias-régias
   }},
   poco: { solid: true, draw(o) {
     const x = o.x, y = o.y; box(x, y, .15, .15, .85, .85, 0, 22, "#9a9aa6"); box(x, y, .22, .22, .78, .78, 22, 24, "#4d9ad8");
@@ -388,11 +388,11 @@ const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o)
   /* quintal (Fazenda): celeiro, feno, cochos e árvores; a horta 6x6 fica em FARM_X0,FARM_Y0 (07f_fazenda.js) */
   for (let x = 5; x <= 16; x++) add("caminho", x, 20); add("caminho", 8, 21); add("caminho", 9, 21);          // trilha dos quartos até o portão da horta
   for (let x = 5; x <= 12; x++) { if (x !== 8 && x !== 9) add("cerca", x, 21); add("cerca", x, 28); } for (let y = 22; y <= 27; y++) { add("cerca", 5, y); add("cerca", 12, y); }   // cerca em volta da horta (o portão fica em 8-9)
-  add("lagoa", 20, 27); add("poco", 3, 24); add("espantalho", 14, 25); add("placa", 4, 21);
-  [[4, 22], [4, 27], [13, 22], [13, 27], [3, 21], [3, 29], [17, 21], [18, 21], [25, 21], [26, 22], [19, 25], [24, 30], [32, 29], [40, 28], [41, 23]].forEach(p => add("flores", p[0], p[1]));
+  add("lagoa", 19, 27); add("poco", 3, 24); add("espantalho", 14, 25); add("placa", 4, 21);
+  [[4, 22], [4, 27], [13, 22], [13, 27], [3, 21], [3, 29], [17, 21], [18, 21], [25, 21], [26, 22], [19, 25], [32, 29], [40, 28], [41, 23]].forEach(p => add("flores", p[0], p[1]));
   [[3, 20], [13, 21], [18, 31], [27, 31], [34, 31], [43, 29], [16, 24]].forEach(p => add("arbusto", p[0], p[1]));
   add("celeiro", 36, 21); add("feno", 35, 22); add("feno", 35, 23); add("cocho", 28, 25); add("cocho", 29, 25);
-  [[2, 21], [2, 26], [2, 31], [14, 31], [22, 31], [30, 31], [42, 31], [42, 26], [20, 22], [44 - 1, 21]].forEach(p => add("arvore", p[0], p[1]));
+  [[2, 21], [2, 26], [2, 31], [14, 31], [17, 31], [30, 31], [42, 31], [42, 26], [20, 22], [44 - 1, 21]].forEach(p => add("arvore", p[0], p[1]));
 })();
 
 /* ---------- paredes (cubos 3D) ---------- */

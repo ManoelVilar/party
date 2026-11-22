@@ -1615,7 +1615,8 @@ function renderPreview(cnv, L, dir, frame) {
 /* Para adicionar outro gato basta uma linha aqui: toda a lógica é compartilhada. */
 const CATS = {
   sombra:  { name: "Sombra",  kind: "black", x: 12, y: 11, r: { hunger: 1.15, thirst: .9, bladder: 1.05, bowel: .9 }, start: { hunger: 34, thirst: 22, bladder: 12, bowel: 14 } },
-  neblina: { name: "Neblina", kind: "tabby", x: 24, y: 10, r: { hunger: .9, thirst: 1.1, bladder: .9, bowel: 1.1 }, start: { hunger: 26, thirst: 30, bladder: 18, bowel: 6 } }
+  neblina: { name: "Neblina", kind: "tabby", x: 24, y: 10, r: { hunger: .9, thirst: 1.1, bladder: .9, bowel: 1.1 }, start: { hunger: 26, thirst: 30, bladder: 18, bowel: 6 } },
+  tobi:    { name: "Tobi",    kind: "poodle", x: 20, y: 23, yard: true, r: { hunger: 1, thirst: 1, bladder: .95, bowel: 1 }, start: { hunger: 30, thirst: 25, bladder: 10, bowel: 10 } }   // poodle branco: homenagem ao Tobi; passeia pela casa e pelo sítio
 };
 const CAT_STEP = 380;                                                   // ms por casa andada
 const CAT_RATES = { hunger: 1.5, thirst: 2.0, bladder: 1.6, bowel: 1.0, energyDown: 1.2, energyUp: 12 };   // por minuto real (cada gato tem seu ritmo: campo r em CATS)
@@ -1875,7 +1876,8 @@ function tryGoal(id, a, c, t, now) {
 function wander(id, a, c, now) {
   const fav = favSpots(); let tx, ty, tries = 0;
   do {
-    if (Math.random() < .4 && fav.length) { const f = fav[Math.floor(Math.random() * fav.length)]; tx = f[0]; ty = f[1]; }
+    if (CATS[id].yard && Math.random() < .5) { tx = 2 + Math.floor(Math.random() * 40); ty = 21 + Math.floor(Math.random() * 11); }          // Tobi gosta do quintal
+    else if (Math.random() < .4 && fav.length) { const f = fav[Math.floor(Math.random() * fav.length)]; tx = f[0]; ty = f[1]; }
     else { tx = c.x + Math.floor(Math.random() * 15) - 7; ty = c.y + Math.floor(Math.random() * 9) - 4; }
   } while (catBlocked(tx, ty) && ++tries < 25);
   const p = !catBlocked(tx, ty) && pathTo(c, tx, ty);
@@ -2096,6 +2098,7 @@ const PET_SP = {
   orange:  { n: "Gato laranja", e: "🐈", cat: true },
   white:   { n: "Gato branco",  e: "😺", cat: true },
   cachorro: { n: "Cachorro", e: "🐶", body: "#b98a58", hi: "#d4a875", dk: "#7a5636", bel: "#ecd9bd" },
+  poodle:   { n: "Poodle branco", e: "🐩", body: "#f7f5f0", hi: "#ffffff", dk: "#cfc9bd", bel: "#ffffff" },
   porco:    { n: "Porco",    e: "🐷", body: "#f0a6b4", hi: "#f8c6cf", dk: "#c9707f", bel: "#f8c6cf" },
   galinha:  { n: "Galinha",  e: "🐔", bird: true, body: "#f4f0e6", hi: "#ffffff", dk: "#c9c2ae", bel: "#f4f0e6" },
   pato:     { n: "Pato",     e: "🦆", bird: true, body: "#f2d54a", hi: "#ffe98a", dk: "#c9a82a", bel: "#f2d54a" },
@@ -2103,7 +2106,7 @@ const PET_SP = {
   ovelha:   { n: "Ovelha",   e: "🐑", body: "#f5f2ea", hi: "#ffffff", dk: "#3a3440", bel: "#f5f2ea" },
   vaca:     { n: "Vaca",     e: "🐮", body: "#f6f3ee", hi: "#ffffff", dk: "#2b2830", bel: "#f6f3ee" }
 };
-const PET_ORDER = ["black", "tabby", "orange", "white", "cachorro", "porco", "galinha", "pato", "coelho", "ovelha", "vaca"];
+const PET_ORDER = ["black", "tabby", "orange", "white", "cachorro", "poodle", "porco", "galinha", "pato", "coelho", "ovelha", "vaca"];
 const PET_NAME_MAX = 14;
 const petKindOf = id => { const k = cats[id] && cats[id].kind; return PET_SP[k] ? k : CATS[id].kind; };
 const petName = id => { const n = cats[id] && typeof cats[id].name === "string" ? cleanName(cats[id].name).slice(0, PET_NAME_MAX) : ""; return n || CATS[id].name; };
@@ -2138,9 +2141,11 @@ function drawPet(g, X, Y, kind, st, flip, now, seed, sub, noShadow) {
     if (kind === "ovelha") { [[-7, by - 2], [-2, by - 4], [4, by - 3], [8, by - 1], [-5, by + 2], [3, by + 2]].forEach(p => el(g, p[0], p[1], 4.6, 4.2, S.body)); [[-7, by - 5], [0, by - 7], [6, by - 5]].forEach(p => el(g, p[0], p[1], 3.4, 2.4, S.hi)); }
     if (kind === "vaca") { el(g, -5, by - 1, 3.2, 2.6, S.dk); el(g, 3, by + 2, 3.8, 2.6, S.dk); el(g, 7, by - 3, 2.2, 2, S.dk); }
     if (kind === "cachorro") { el(g, 4, by - 2, 3, 2.4, S.dk); }
-    const tw = Math.sin(now / (kind === "cachorro" ? 110 : 420) + seed) * 3;
+    if (kind === "poodle") { [[-7, by - 1], [-2, by - 3], [4, by - 2], [8, by], [-4, by + 2], [2, by + 2]].forEach(p => el(g, p[0], p[1], 4.4, 4, S.body)); [[-6, by - 4], [0, by - 5.5], [6, by - 4]].forEach(p => el(g, p[0], p[1], 3.2, 2.2, S.hi)); [-8, -3, 3, 8].forEach((x, i) => el(g, x + (i % 2 ? lg : -lg), -2.4, 3.2, 2.6, S.body)); }
+    const tw = Math.sin(now / (kind === "cachorro" || kind === "poodle" ? 110 : 420) + seed) * 3;
     if (kind === "coelho") el(g, -11, by - 1, 3.6, 3.4, "#ffffff");
     else if (kind === "porco") { g.strokeStyle = S.dk; g.lineWidth = 1.5; g.lineCap = "round"; g.beginPath(); g.arc(-12, by - 2, 2.4, 0, Math.PI * 1.6); g.stroke(); }
+    else if (kind === "poodle") { g.strokeStyle = S.dk; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-9, by - 2); g.lineTo(-12, by - 7 + tw * .3); g.stroke(); el(g, -12.5, by - 9 + tw * .4, 3.6, 3.4, S.body); el(g, -12.9, by - 9.8 + tw * .4, 1.8, 1.4, S.hi); }
     else if (kind === "vaca") { g.strokeStyle = S.dk; g.lineWidth = 1.6; g.lineCap = "round"; g.beginPath(); g.moveTo(-10, by - 3); g.quadraticCurveTo(-15, by + 2, -14 + tw * .3, by + 8); g.stroke(); el(g, -14 + tw * .3, by + 9, 1.6, 2.2, S.dk); }
     else if (kind === "ovelha") el(g, -12, by - 1, 2.6, 2.4, S.body);
     else { g.strokeStyle = S.body; g.lineWidth = 2.6; g.lineCap = "round"; g.beginPath(); g.moveTo(-10, by - 3); g.quadraticCurveTo(-15, by - 8 + tw, -14 + tw * .4, by - 12); g.stroke(); }
@@ -2187,6 +2192,13 @@ function petHead(g, kind, S, hx, hy, closed, now, seed, chew) {
     el(g, hx, hy, 5.8, 5.2, S.body); el(g, hx - 2, hy - 2.4, 2.4, 2, S.dk);
     rr(g, hx + 1.6, hy + .6, 5.6, 4, 1.8, "#f0a6b4"); el(g, hx + 3.6, hy + 2.6, .6, .8, "#7a2f3c"); el(g, hx + 5.6, hy + 2.6, .6, .8, "#7a2f3c");
     petEyes(g, hx + 1.2, hy - 1.4, closed);
+  } else if (kind === "poodle") {
+    el(g, hx - 3.6, hy + 2.2, 3.6, 4.4, S.body); el(g, hx - 4, hy + 1.2, 2, 2.4, S.hi);          // orelha cacheada
+    el(g, hx, hy, 5.2, 4.8, S.body); el(g, hx - .6, hy - 5, 4.8, 3.8, S.body); el(g, hx - 1.4, hy - 6, 2.4, 1.6, S.hi); el(g, hx + 2, hy - 4.4, 2.4, 2, S.body);   // topete (pompom)
+    el(g, hx + 4.4, hy + 2, 3, 2.2, S.hi); el(g, hx + 6.8, hy + 1.4, 1.2, 1, "#1a1620");
+    if (chew) el(g, hx + 5.4, hy + 4.2, 1.6, 1.2, "#e8707a");
+    petEyes(g, hx + 1.8, hy - 1, closed);
+    el(g, hx + 3, hy + 3.6, 1.9, 1, "#e0505a");                                                   // lacinho
   } else {                                                                                       // cachorro
     el(g, hx, hy, 5.6, 5.2, S.body); el(g, hx + 4, hy + 2, 3.4, 2.6, S.bel); el(g, hx + 6.6, hy + 1.2, 1.2, 1, "#1a1620");
     rr(g, hx - 5, hy - 3.6, 3.4, 6.6, 1.6, S.dk); rr(g, hx + 0.6, hy - 4, 3, 5.6, 1.4, S.dk);
@@ -2309,11 +2321,11 @@ const DEF = {
     box(x, y, .4, .4, .6, .6, 0, 34, dark); box(x, y, .38, .38, .62, .62, 34, 37, wood);
   }},
   caminho: { solid: false, flat: true, draw(o) { const x = o.x, y = o.y, v = ((x * 7 + y * 13) % 5); flat(x, y, 0, 0, 1, 1, 0, v % 2 ? "#cfae74" : "#c9a46a"); flat(x, y, .1 + v * .05, .15, .3 + v * .05, .3, 0, "#b8935a"); flat(x, y, .6, .55 - v * .04, .8, .7, 0, "#dcc08a"); }},
-  lagoa: { solid: true, flat: true, w: 4, h: 3, draw(o) {
-    const x = o.x, y = o.y;
-    flat(x, y, -.1, -.1, 4.1, 3.1, 0, "#8a7a52"); flat(x, y, 0, 0, 4, 3, 0, "#4f9fd8"); flat(x, y, .25, .25, 3.75, 2.75, 0, "#62b0e6"); flat(x, y, .7, .6, 2.2, 1.3, 0, "#8cd0f4");
-    [[.9, .8, 1.3, .86], [2.1, 1.7, 2.7, 1.76], [1.6, 2.2, 2.0, 2.26]].forEach(r => flat(x, y, r[0], r[1], r[2], r[3], 0, "#d6efff"));
-    ball(x + 3.3, y + .5, 6, 0, 3, "#3f9a52"); ball(x + 3.7, y + 2.4, 5, 0, 2.5, "#4fb066");                // vitórias-régias
+  lagoa: { solid: true, flat: true, w: 6, h: 4, draw(o) {
+    const x = o.x, y = o.y, W = o.w, H = o.h;
+    flat(x, y, -.1, -.1, W + .1, H + .1, 0, "#8a7a52"); flat(x, y, 0, 0, W, H, 0, "#4f9fd8"); flat(x, y, .25, .25, W - .25, H - .25, 0, "#62b0e6"); flat(x, y, .8, .7, W - 1.4, H - 1.2, 0, "#8cd0f4");
+    [[.9, .8, 1.5, .86], [3.1, 1.7, 3.8, 1.76], [1.6, 3.1, 2.2, 3.16], [4.2, 2.9, 4.8, 2.96]].forEach(r => flat(x, y, r[0], r[1], r[2], r[3], 0, "#d6efff"));
+    ball(x + W - .7, y + .5, 6, 0, 3, "#3f9a52"); ball(x + W - .3, y + H - .6, 5, 0, 2.5, "#4fb066"); ball(x + .5, y + H - .5, 5, 0, 2.5, "#3f9a52");     // vitórias-régias
   }},
   poco: { solid: true, draw(o) {
     const x = o.x, y = o.y; box(x, y, .15, .15, .85, .85, 0, 22, "#9a9aa6"); box(x, y, .22, .22, .78, .78, 22, 24, "#4d9ad8");
@@ -2625,11 +2637,11 @@ const row = (t, x, y, n, o) => { for (let i = 0; i < n; i++) add(t, x + i, y, o)
   /* quintal (Fazenda): celeiro, feno, cochos e árvores; a horta 6x6 fica em FARM_X0,FARM_Y0 (07f_fazenda.js) */
   for (let x = 5; x <= 16; x++) add("caminho", x, 20); add("caminho", 8, 21); add("caminho", 9, 21);          // trilha dos quartos até o portão da horta
   for (let x = 5; x <= 12; x++) { if (x !== 8 && x !== 9) add("cerca", x, 21); add("cerca", x, 28); } for (let y = 22; y <= 27; y++) { add("cerca", 5, y); add("cerca", 12, y); }   // cerca em volta da horta (o portão fica em 8-9)
-  add("lagoa", 20, 27); add("poco", 3, 24); add("espantalho", 14, 25); add("placa", 4, 21);
-  [[4, 22], [4, 27], [13, 22], [13, 27], [3, 21], [3, 29], [17, 21], [18, 21], [25, 21], [26, 22], [19, 25], [24, 30], [32, 29], [40, 28], [41, 23]].forEach(p => add("flores", p[0], p[1]));
+  add("lagoa", 19, 27); add("poco", 3, 24); add("espantalho", 14, 25); add("placa", 4, 21);
+  [[4, 22], [4, 27], [13, 22], [13, 27], [3, 21], [3, 29], [17, 21], [18, 21], [25, 21], [26, 22], [19, 25], [32, 29], [40, 28], [41, 23]].forEach(p => add("flores", p[0], p[1]));
   [[3, 20], [13, 21], [18, 31], [27, 31], [34, 31], [43, 29], [16, 24]].forEach(p => add("arbusto", p[0], p[1]));
   add("celeiro", 36, 21); add("feno", 35, 22); add("feno", 35, 23); add("cocho", 28, 25); add("cocho", 29, 25);
-  [[2, 21], [2, 26], [2, 31], [14, 31], [22, 31], [30, 31], [42, 31], [42, 26], [20, 22], [44 - 1, 21]].forEach(p => add("arvore", p[0], p[1]));
+  [[2, 21], [2, 26], [2, 31], [14, 31], [17, 31], [30, 31], [42, 31], [42, 26], [20, 22], [44 - 1, 21]].forEach(p => add("arvore", p[0], p[1]));
 })();
 
 /* ---------- paredes (cubos 3D) ---------- */
@@ -3428,6 +3440,7 @@ cv.addEventListener("pointerleave", () => { hover = null; });
 cv.addEventListener("pointerdown", e => {
   if (!meRef || ptrs.size > 1) return;
   if (decorClick(e)) return;
+  if (jacareClick(e)) return;
   if (farmWorldClick(e)) return;                                           // modo decorar: o toque coloca/pega móvel em vez de andar
   if (me.act && me.act.type === "sleep") return wake();
   if (me.act && me.act.type === "shower") return;
@@ -3523,6 +3536,7 @@ function currentActions() {
     a.push({ k: "treat" + id, l: "🍗 Petisco · " + petName(id), fn: () => catAction(id, "treat") });
     a.push({ k: "play" + id, l: "🧶 Brincar · " + petName(id), fn: () => catAction(id, "play") });
   }
+  jacareActions(a);
   DOORS.forEach(d => {
     if (Math.max(Math.abs(d.x - me.x), Math.abs(d.y - me.y)) <= 2 && roomOf(me.x, me.y) !== d.office && !doorOpenFor(d)) {
       if (officeLocked(d.office)) a.push({ k: "lock" + d.office, l: "🔒 Reservado ao anfitrião · " + ROOMBY[d.office].name, fn: () => setStatus("🔒 " + ROOMBY[d.office].name + ": " + lockReason(d.office) + ". Só o anfitrião entra; pedir para bater não adianta.", 5000) });
@@ -6345,6 +6359,87 @@ function friendsStart() {
   friendListen(); clearInterval(friendsStart.t); friendsStart.t = setInterval(() => { friendListen(); frPresenceSync(); friendBadge(); if (friendsOn) friendRender(); }, 3000);
 }
 /* =========================================================
+   JACARÉS DA LAGOA (quintal): enfeite local. Ao interagir com um jacaré toca Lana Del Rey
+   num player do YouTube SEMPRE VISÍVEL (a política do YouTube exige o player à vista).
+   Nada disso sincroniza nem grava no banco.
+   ========================================================= */
+const JAC_POND = { x: 19, y: 27, w: 6, h: 4 };                                   // mesma lagoa de 04_house.js
+const JAC_SONGS = [
+  { t: "Summertime Sadness", id: "TdrL3QxjyVw" }, { t: "Video Games", id: "cE6wxDqdOV0" },
+  { t: "Born to Die", id: "Bag1gUxuU0g" }, { t: "Young and Beautiful", id: "o_1aF54DO60" }
+];
+const JAC = [0, 1, 2].map(k => ({ x: JAC_POND.x + 1.5 + k * 1.7, y: JAC_POND.y + 1 + (k % 2) * 1.6, tx: 0, ty: 0, vx: 1, vy: 0, sp: .35 + k * .08, seed: k * 5 + 1, until: 0, snap: 0 }));
+let jacSong = -1, jacOn = false, jacLast = 0;
+const jacIn = (x, y, m) => x >= JAC_POND.x + (m || 0) && x <= JAC_POND.x + JAC_POND.w - (m || 0) && y >= JAC_POND.y + (m || 0) && y <= JAC_POND.y + JAC_POND.h - (m || 0);
+function jacStep(now) {
+  const dt = Math.min(.1, jacLast ? (now - jacLast) / 1000 : .016); jacLast = now;
+  for (const a of JAC) {
+    if (now < a.until) continue;
+    const dx = a.tx - a.x, dy = a.ty - a.y, d = Math.hypot(dx, dy);
+    if (!a.tx || d < .12) { a.tx = JAC_POND.x + .8 + Math.random() * (JAC_POND.w - 1.6); a.ty = JAC_POND.y + .8 + Math.random() * (JAC_POND.h - 1.6); a.until = now + 600 + Math.random() * 2600; continue; }
+    const sp = a.sp * (jacOn ? 1.8 : 1); a.vx += (dx / d - a.vx) * Math.min(1, dt * 3); a.vy += (dy / d - a.vy) * Math.min(1, dt * 3);
+    const n = Math.hypot(a.vx, a.vy) || 1; a.vx /= n; a.vy /= n; a.x += a.vx * sp * dt; a.y += a.vy * sp * dt;
+  }
+}
+function jacDraw(g, a, now) {                                                    // um jacaré boiando: ondas, lombo com escamas, cauda, focinho e olhos
+  const q = P(a.x, a.y, 0), q2 = P(a.x + a.vx, a.y + a.vy, 0), ang = Math.atan2(q2[1] - q[1], q2[0] - q[0]);
+  const sw = Math.sin(now / 420 + a.seed) , bob = Math.sin(now / 600 + a.seed) * .6, open = now < a.snap ? 1 : 0, dance = jacOn ? Math.sin(now / 160 + a.seed) * 1.6 : 0;
+  g.save(); g.translate(q[0], q[1] + bob + dance);
+  g.strokeStyle = "rgba(255,255,255,.5)"; g.lineWidth = 1; for (let i = 0; i < 2; i++) { const r = ((now / 900 + a.seed * .3 + i * .5) % 1); g.globalAlpha = .6 * (1 - r); g.beginPath(); g.ellipse(0, 1, 16 + r * 12, 6 + r * 5, 0, 0, 7); g.stroke(); } g.globalAlpha = 1;
+  g.rotate(ang);
+  const tail = sw * 3;
+  g.fillStyle = "#2f6b3a"; g.beginPath(); g.moveTo(-8, -2.6); g.quadraticCurveTo(-18, tail - 1, -26, tail * 1.4); g.quadraticCurveTo(-17, tail + 2, -8, 2.6); g.fill();   // cauda
+  el(g, 0, 0, 12, 4.4, "#3f8a4a"); el(g, 1, -1.4, 9.5, 2.4, "#5aa862");                                                                           // corpo
+  g.fillStyle = "#2a5a32"; for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(i * 2.6 - 1, -1.8); g.lineTo(i * 2.6, -4); g.lineTo(i * 2.6 + 1, -1.8); g.fill(); }   // escamas do dorso
+  rr(g, 9, -2.4, 11, 4.8, 2, "#4a9a54"); rr(g, 10, -1.8, 9, 2, 1, "#6bba74");                                                                       // focinho
+  if (open) { g.fillStyle = "#e8707a"; g.beginPath(); g.moveTo(11, 0); g.lineTo(20, -2.8); g.lineTo(20, 3.2); g.closePath(); g.fill(); g.fillStyle = "#fff"; for (let i = 0; i < 4; i++) g.fillRect(12 + i * 2, -1.2, 1, 1.4); }
+  g.restore();
+  g.save(); g.translate(q[0], q[1] + bob + dance); g.rotate(ang);
+  [[7, -3.6], [7, 3.4]].forEach(e => { el(g, e[0], e[1] - 1.6, 2.1, 2.1, "#4a9a54"); el(g, e[0] + .4, e[1] - 1.6, 1.1, 1.3, "#ffd84a"); el(g, e[0] + .5, e[1] - 1.6, .4, 1, "#0b0b10"); });   // olhinhos saltados
+  g.restore();
+}
+function jacareWorldPush(list, now) {
+  jacStep(now);
+  for (const a of JAC) list.push({ d: a.x + a.y + 1.2, run: () => jacDraw(ctx, a, now) });
+  if (jacOn) {                                                                    // notinhas subindo da lagoa enquanto a música toca
+    const c = P(JAC_POND.x + JAC_POND.w / 2, JAC_POND.y + JAC_POND.h / 2, 0);
+    list.push({ d: JAC_POND.x + JAC_POND.w + JAC_POND.y + JAC_POND.h, run: () => {
+      ctx.fillStyle = "#fff"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+      for (let i = 0; i < 4; i++) { const t = ((now / 1800) + i * .25) % 1; ctx.globalAlpha = 1 - t; ctx.fillText(i % 2 ? "♪" : "♫", c[0] + Math.sin(t * 6 + i * 2) * 26 + (i - 1.5) * 14, c[1] - 14 - t * 52); }
+      ctx.globalAlpha = 1;
+    }});
+  }
+}
+/* ---------- player visível ---------- */
+function jacBox() {
+  let b = document.getElementById("jacplayer"); if (b) return b;
+  b = document.createElement("div"); b.id = "jacplayer"; b.hidden = true; b.setAttribute("role", "dialog"); b.setAttribute("aria-label", "Música dos jacarés");
+  b.style.cssText = "position:fixed;left:12px;bottom:12px;z-index:40;width:min(340px,calc(100vw - 24px));background:#1c1730;color:#fff;border:1px solid #4a3f70;border-radius:12px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);font:13px/1.3 system-ui,sans-serif";
+  b.innerHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><b id="jacttl" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></b><button type="button" data-j="next" title="Próxima música">⏭</button><button type="button" data-j="close" title="Fechar">✕</button></div><div id="jacvid" style="aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden"></div><div style="margin-top:6px;font-size:12px;opacity:.85">🐊 Os jacarés estão dançando · <a id="jaclink" target="_blank" rel="noopener" style="color:#9fd0ff">abrir no YouTube</a></div>';
+  document.body.appendChild(b);
+  b.addEventListener("click", e => { const k = e.target.closest("[data-j]"); if (!k) return; if (k.dataset.j === "close") jacClose(); else jacToca(); });
+  return b;
+}
+function jacToca(i) {
+  jacSong = i != null ? i : (jacSong + 1) % JAC_SONGS.length; const s = JAC_SONGS[jacSong], b = jacBox();
+  $("jacttl").textContent = "Lana Del Rey · " + s.t; $("jaclink").href = "https://www.youtube.com/watch?v=" + s.id;
+  const f = document.createElement("iframe"); f.src = "https://www.youtube-nocookie.com/embed/" + s.id + "?autoplay=1&rel=0&playsinline=1"; f.title = "Lana Del Rey · " + s.t;
+  f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.setAttribute("allowfullscreen", ""); f.style.cssText = "width:100%;height:100%;border:0";
+  $("jacvid").replaceChildren(f); b.hidden = false; jacOn = true;
+}
+function jacClose() { const b = document.getElementById("jacplayer"); if (b) { b.hidden = true; $("jacvid").replaceChildren(); } jacOn = false; }
+function jacarePerto() { return Math.max(0, JAC_POND.x - me.x, me.x - (JAC_POND.x + JAC_POND.w - 1), JAC_POND.y - me.y, me.y - (JAC_POND.y + JAC_POND.h - 1)) <= 2; }
+function jacareCutuca() {                                                          // o jacaré mais perto abre a boca e a música começa
+  const now = performance.now(); JAC.forEach(a => { if (Math.hypot(a.x - me.x, a.y - me.y) < 3.5 || a === JAC[0]) a.snap = now + 1400; });
+  jacToca(jacOn ? undefined : (jacSong < 0 ? 0 : (jacSong + 1) % JAC_SONGS.length)); setStatus("🐊 Nhac! Os jacarés curtiram… tocando Lana Del Rey.");
+}
+function jacareActions(a) { if (roomOf(me.x, me.y) === "faz" && jacarePerto()) a.push({ k: "jacare", l: "🐊 Mexer com os jacarés (toca Lana Del Rey)", fn: jacareCutuca }); }
+function jacareClick(e) {
+  const t = tileAt(e); if (!jacIn(t[0] + .5, t[1] + .5, 0) && !JAC.some(a => Math.hypot(a.x - (t[0] + .5), a.y - (t[1] + .5)) < 1.2)) return false;
+  if (!jacarePerto()) { setStatus("🐊 Chegue mais perto da lagoa para falar com os jacarés."); return true; }
+  jacareCutuca(); return true;
+}
+/* =========================================================
    DESENHO (laço principal): mundo em pixel art + camada de rótulos
    ========================================================= */
 const DEFL = normLook(null);
@@ -6432,7 +6527,7 @@ function frame() {
   DOORS.forEach(d => list.push({ d: d.x + d.y + 1.02, run: () => drawDoor(d) }));
   if (NATAL) natalPushDecor(list, vis);
 
-  farmWorldPush(list, vis); farmAnimais(list, vis, now);
+  farmWorldPush(list, vis); farmAnimais(list, vis, now); jacareWorldPush(list, now);
   /* gatos */
   for (const id in cats) {
     const c = cats[id], info = CATS[id]; if (!info || c.x == null) continue;

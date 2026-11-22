@@ -26,6 +26,7 @@ python3 cinema_busca.py
 python3 decor.py
 python3 fazenda.py
 python3 pets.py
+python3 jacares.py
 python3 amigos.py
 python3 turn.py
 python3 meet.py

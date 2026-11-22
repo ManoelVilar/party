@@ -435,12 +435,12 @@
           ".read": "auth != null && !(root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').exists() && root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').val() <= now) && ((!$room.matches(/^perm-/) && root.child('rooms/'+$room+'/meta/kind').val() !== 'perm') || root.child('rooms/'+$room+'/meta/owner').val() === auth.uid || root.child('rooms/'+$room+'/acl/'+auth.uid+'/role').exists())",
           "$cid": {
             ".write": "auth != null && !(root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').exists() && root.child('rooms/'+$room+'/acl/'+auth.uid+'/exp').val() <= now) && ((!$room.matches(/^perm-/) && root.child('rooms/'+$room+'/meta/kind').val() !== 'perm') || root.child('rooms/'+$room+'/meta/owner').val() === auth.uid || root.child('rooms/'+$room+'/acl/'+auth.uid+'/role').exists()) && root.child('rooms/'+$room+'/acl/'+auth.uid+'/role').val() !== 'agent'",
-            ".validate": "$cid.matches(/^(sombra|neblina)$/)",
+            ".validate": "$cid.matches(/^(sombra|neblina|tobi)$/)",
             "name": {
               ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14"
             },
             "kind": {
-              ".validate": "newData.isString() && newData.val().matches(/^(black|tabby|orange|white|cachorro|porco|galinha|pato|coelho|ovelha|vaca)$/)"
+              ".validate": "newData.isString() && newData.val().matches(/^(black|tabby|orange|white|cachorro|poodle|porco|galinha|pato|coelho|ovelha|vaca)$/)"
             },
             "$f": {
               ".validate": "newData.isNumber() || newData.isBoolean() || (newData.isString() && newData.val().length <= 20) || newData.hasChildren(['t'])"

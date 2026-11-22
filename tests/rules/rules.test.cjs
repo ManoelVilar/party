@@ -74,6 +74,8 @@ check("quem está fora não dá passe a si mesmo", me(A, inReu).write(R + "/pass
 check("passe só aceita true", me(B, inReu).write(R + "/pass/reu/ana", "sim"), false);
 
 /* gatos, cuidados, cinema */
+check("o Tobi (poodle) também é uma vaga de pet", me(A).update(R + "/cats/tobi", { x: 20, y: 23, st: "sit", hunger: 30, ts: NOW }), true);
+check("pet desconhecido é recusado", me(A).update(R + "/cats/rex", { x: 1, y: 1, ts: NOW }), false);
 check("atualiza gato", me(A).update(R + "/cats/sombra", { x: 5, y: 6, st: "sit", hunger: 30, ts: NOW }), true);
 check("gato desconhecido é recusado", me(A).update(R + "/cats/leao", { x: 5 }), false);
 check("ração do pote", me(A).write(R + "/care/res/racao1", 55), true);

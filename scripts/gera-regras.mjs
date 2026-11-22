@@ -351,7 +351,7 @@ const rules = {
           ...readM,
           "$cid": {
             ...writeM,
-            ".validate": "$cid.matches(/^(sombra|neblina)$/)",
+            ".validate": "$cid.matches(/^(sombra|neblina|tobi)$/)",
             name: { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14" },
             kind: { ".validate": `newData.isString() && newData.val().matches(/^(${PET_KINDS.join("|")})$/)` },
             "$f": { ".validate": "newData.isNumber() || newData.isBoolean() || (newData.isString() && newData.val().length <= 20) || newData.hasChildren(['t'])" }

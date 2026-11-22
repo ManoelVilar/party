@@ -86,7 +86,7 @@ function frame() {
   DOORS.forEach(d => list.push({ d: d.x + d.y + 1.02, run: () => drawDoor(d) }));
   if (NATAL) natalPushDecor(list, vis);
 
-  farmWorldPush(list, vis); farmAnimais(list, vis, now);
+  farmWorldPush(list, vis); farmAnimais(list, vis, now); jacareWorldPush(list, now);
   /* gatos */
   for (const id in cats) {
     const c = cats[id], info = CATS[id]; if (!info || c.x == null) continue;
